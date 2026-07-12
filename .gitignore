@@ -1,3 +1,7 @@
+# === Cursor (локально, не в репозиторий) ===
+.cursorignore
+.cursor/
+
 # === Секреты и конфиги окружения (НЕ коммитить) ===
 bitrix/.settings.php
 bitrix/license_key.php
