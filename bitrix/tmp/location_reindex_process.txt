@@ -1,0 +1,29 @@
+[14:51:21] PROCESS STARTED, STAGE CLEANUP
+[14:51:21] ### NEXT STAGE >>> CREATE_DICTIONARY in 442451:51:21, mem peak = 0 mb
+HIT ENDED [14:51:22]
+#############################
+HIT STARTED [14:51:22]
+[14:51:23] ### NEXT STAGE >>> RESORT_DICTIONARY in 0:00:01, mem peak = 19.107002258301 mb
+HIT ENDED [14:51:23]
+#############################
+HIT STARTED [14:51:24]
+[14:51:24] ### NEXT STAGE >>> CREATE_SEARCH_INDEX in 0:00:02, mem peak = 19.58642578125 mb
+HIT ENDED [14:51:24]
+#############################
+HIT STARTED [14:51:24]
+[14:51:27] ### NEXT STAGE >>> CREATE_SITE2LOCATION_INDEX in 0:00:05, mem peak = 19.58642578125 mb
+HIT ENDED [14:51:27]
+#############################
+HIT STARTED [14:51:27]
+[14:51:27] ### NEXT STAGE >>> RESTORE_DB_INDEXES in 0:00:05, mem peak = 19.58642578125 mb
+HIT ENDED [14:51:27]
+#############################
+HIT STARTED [14:51:28]
+HIT ENDED [14:51:28]
+#############################
+HIT STARTED [14:51:28]
+HIT ENDED [14:51:28]
+#############################
+HIT STARTED [14:51:29]
+[14:51:29] ### NEXT STAGE >>>  in 0:00:07, mem peak = 19.58642578125 mb
+HIT ENDED [14:51:29]

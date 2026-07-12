@@ -1,0 +1,62 @@
+# === Bitrix: кеш ===
+bitrix/cache/
+bitrix/managed_cache/
+bitrix/stack_cache/
+
+# === Bitrix: ядро (не кастомный код) ===
+bitrix/admin/
+bitrix/components/bitrix/
+bitrix/js/
+bitrix/css/
+bitrix/fonts/
+bitrix/images/
+bitrix/panel/
+bitrix/sounds/
+bitrix/gadgets/
+bitrix/activities/
+bitrix/legal/
+bitrix/services/
+bitrix/otp/
+bitrix/template/
+
+# === Bitrix: чужие шаблоны (кастомный — metplus) ===
+bitrix/templates/askaron_pro1c_empty/
+bitrix/templates/calendar_sharing/
+bitrix/templates/call_app/
+bitrix/templates/eshop_bootstrap_v4/
+bitrix/templates/learning/
+bitrix/templates/mail_user/
+
+# === Медиа и файлы товаров ===
+upload/
+images/
+
+# === Дампы, архивы, бэкапы ===
+*.sql
+*.sql.gz
+*.tar.gz
+*.zip
+iBlockConverter.tar.gz
+iBlockConverter/
+
+# === Бинарные и медиафайлы ===
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+*.ico
+*.pdf
+*.xlsx
+*.woff
+*.woff2
+*.ttf
+*.eot
+*.mp3
+*.mp4
+
+# === Статика и служебное ===
+html/
+desktop_app/
+.DS_Store
+*.log

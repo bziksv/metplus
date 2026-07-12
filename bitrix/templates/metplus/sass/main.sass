@@ -1,0 +1,6108 @@
+@charset "UTF-8"
+html
+	&.is-hidden
+		overflow: hidden
+	min-height: 100vh
+
+
+body
+	background: #fff
+	font-family: 'roboto', Arial, Verdana, Tahoma, sans-serif
+	font-size: 18px
+	line-height: 1.3
+	color: #2b2b2b
+	opacity: 1
+	min-height: 100vh
+
+.global-wrapper
+	min-width: 320px
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	flex-direction: column
+	min-height: 100vh
+	overflow: hidden
+.global-pad
+	padding-top: 165px
+
+ol, ul
+	list-style: none
+	margin-bottom: 0
+
+input
+	background: none
+	border: 0
+	margin: 0
+	padding: 0
+	outline: none !important
+
+*
+	margin: 0
+	padding: 0
+	box-sizing: border-box
+	-webkit-tap-highlight-color: rgba(0, 0, 0, 0)
+
+p
+	line-height: 1.4
+	margin-bottom: 1em
+
+a
+	text-decoration: none
+	color: inherit
+
+\::-webkit-contacts-auto-fill-button
+	visibility: hidden
+	pointer-events: none
+	position: absolute
+	right: 0
+
+body a
+	&:hover, &:active, &:focus
+		text-decoration: none
+		outline: 0
+
+input:focus
+	border: none
+	outline: none
+
+button
+	-webkit-appearance: button
+	cursor: pointer
+	&:focus
+		outline: none
+
+input:-webkit-autofill,textarea:-webkit-autofill, select:-webkit-autofill
+	background-color: transparent !important
+
+html input[type="button"]
+	-webkit-appearance: button
+	cursor: pointer
+
+input
+	font-family: inherit
+	font-size: inherit
+	line-height: inherit
+	&[type="reset"], &[type="submit"]
+		-webkit-appearance: button
+		cursor: pointer
+	&[type="hidden"]
+		display: none
+
+button, select, textarea
+	font-family: inherit
+	font-size: inherit
+	line-height: inherit
+.text-left
+	text-align: left
+.text-center
+	text-align: center
+.text-right
+	text-align: right
+.text-upper
+	text-transform: uppercase
+.min
+	display: block
+.col-mod-left
+	padding-left: 0
+.col-mod-right
+	padding-right: 0
+
+ul:not([class])
+	margin: 0 0 1em
+	list-style-type: disc
+	padding-left: 15px
+	li
+		margin-bottom: 5px
+		&:last-child
+			margin-bottom: 0
+ol:not([class])
+	margin: 0 0 1em
+	padding-left: 15px
+	list-style-type: decimal
+	li
+		margin-bottom: 5px
+		&:last-child
+			margin-bottom: 0
+.main-btn
+	display: inline-block
+	min-width: 226px
+	height: 50px
+	line-height: 50px
+	background-color: #3ebbf3
+	padding: 0 1em
+	color: #fff
+	text-align: center
+	transition: background-color .3s
+	white-space: nowrap
+	&:hover
+		background-color: darken(#3ebbf3, 10%)
+	&:active
+		box-shadow: inset 1px 2px darken(#3ebbf3, 30%)
+		border-top: 1px solid darken(#3ebbf3, 30%)
+.gray-btn
+	display: inline-block
+	min-width: 251px
+	height: 55px
+	line-height: 55px
+	background-color: #9e9e9e
+	padding: 0 1em
+	color: #fff
+	text-align: center
+	transition: background-color .3s
+	white-space: nowrap
+	&:hover
+		background-color: darken(#9e9e9e, 10%)
+	&:active
+		box-shadow: inset 1px 2px darken(#9e9e9e, 30%)
+		border-top: 1px solid darken(#9e9e9e, 30%)
+h2,.section-title
+	font-size: 2.25rem
+	font-weight: 800
+	line-height: 1.1
+	color: #3d3c3c
+	margin-bottom: 1.5em
+	padding-left: .6em
+	border-left: 6px solid #3ebbf3
+	text-transform: uppercase
+h1
+	font-size: 1.875rem
+	font-weight: 800
+	color: #fff
+	margin-top: 0
+	line-height: 1.15
+	margin-bottom: 1em
+	text-transform: uppercase
+h3,.title-h3
+	font-size: 1.875rem
+	font-weight: 800
+	margin: 0 0 1.6em
+.white-title
+	color: #fff
+.blue-color
+	color: #24a6d7
+@media screen and (-webkit-min-device-pixel-ratio:0)
+	::i-block-chrome,.row
+		display: block
+	::i-block-chrome,.row:after
+		content: ''
+		display: table
+		height: 0
+		clear: both
+
+@media (min-resolution: 0.001dpcm)
+	_:-o-prefocus, body
+		.row
+			display: block
+			&:after
+				content: ''
+				display: table
+				height: 0
+				clear: both
+[class^="col-"]
+	float: left
+
+@media all and (min-width:0\0) and (min-resolution:.001dpcm)
+	.row
+		&:after
+			content: ''
+			display: table
+			height: 0
+			clear: both
+@font-face
+	font-family: 'roboto'
+	src:  url('../fonts/Roboto-Regular/Roboto-Regular.woff') format("woff"), url('../fonts/Roboto-Regular/Roboto-Regular.ttf') format("truetype")
+	font-weight: normal
+	font-style: normal
+
+
+@font-face
+	font-family: 'roboto'
+	src:  url('../fonts/Roboto-Bold/Roboto-Bold.woff') format("woff"), url('../fonts/Roboto-Bold/Roboto-Bold.ttf') format("truetype")
+	font-weight: 800
+	font-style: normal
+
+
+@font-face
+	font-family: 'roboto'
+	src:  url('../fonts/Roboto-Medium/Roboto-Medium.woff') format("woff"), url('../fonts/Roboto-Medium/Roboto-Medium.ttf') format("truetype")
+	font-weight: 600
+	font-style: normal
+
+@font-face
+	font-family: 'GothamPro'
+	src: url('../fonts/GothamPro/GothamPro.woff') format("woff"), url('../fonts/GothamPro/GothamPro.ttf') format("truetype")
+	font-weight: 400
+	font-style: normal
+
+@font-face
+	font-family: 'GothamPro'
+	src: url('../fonts/GothamPro-Medium/GothamPro-Medium.woff') format("woff"), url('../fonts/GothamPro-Medium/GothamPro-Medium.ttf') format("truetype")
+	font-weight: 600
+	font-style: normal
+
+@font-face
+	font-family: 'GothamPro'
+	src: url('../fonts/GothamPro-Bold/GothamPro-Bold.woff') format("woff"), url('../fonts/GothamPro-Bold/GothamPro-Bold.ttf') format("truetype")
+	font-weight: 800
+	font-style: normal
+
+
+@font-face
+	font-family: 'glipf-icon'
+	src: url('../fonts/icons/glipf-icon.eot?5am02o')
+	src: url('../fonts/icons/glipf-icon.eot?5am02o#iefix') format("embedded-opentype"), url('../fonts/icons/glipf-icon.ttf?5am02o') format("truetype"), url('../fonts/icons/glipf-icon.woff?5am02o') format("woff"), url('../fonts/icons/glipf-icon.svg?5am02o#glipf-icon') format("svg")
+	font-weight: normal
+	font-style: normal
+
+[class^="glipf-"], [class*=" glipf-"]
+	font-family: 'glipf-icon' !important
+	speak: none
+	font-style: normal
+	font-weight: normal
+	font-variant: normal
+	text-transform: none
+	line-height: 1
+	-webkit-font-smoothing: antialiased
+	-moz-osx-font-smoothing: grayscale
+
+.glipf-place-2:before
+	content: "\e918"
+
+.glipf-clock-2:before
+	content: "\e917"
+
+.glipf-placeholder:before
+	content: "\e916"
+
+.glipf-pdf:before
+	content: "\e915"
+
+.glipf-paper-clip:before
+	content: "\e914"
+
+.glipf-award:before
+	content: "\e900"
+
+.glipf-boxes:before
+	content: "\e901"
+
+.glipf-call-answer:before
+	content: "\e902"
+
+.glipf-cart:before
+	content: "\e903"
+
+.glipf-clock:before
+	content: "\e904"
+
+.glipf-delete:before
+	content: "\e905"
+
+.glipf-development:before
+	content: "\e906"
+
+.glipf-discount:before
+	content: "\e907"
+
+.glipf-download:before
+	content: "\e908"
+
+.glipf-email:before
+	content: "\e909"
+
+.glipf-facebook:before
+	content: "\e90a"
+
+.glipf-frandshiip:before
+	content: "\e90b"
+
+.glipf-odnoklassniki:before
+	content: "\e90c"
+
+.glipf-place:before
+	content: "\e90d"
+
+.glipf-reset:before
+	content: "\e90e"
+
+.glipf-search:before
+	content: "\e90f"
+
+.glipf-sport:before
+	content: "\e910"
+
+.glipf-truck:before
+	content: "\e911"
+
+.glipf-twitter:before
+	content: "\e912"
+
+.glipf-vk:before
+	content: "\e913"
+	
+.wrapper-loader
+	background: #24A5D8
+	z-index: 1000
+
+/*****HEADER*****/
+.ui-header
+	position: relative
+	z-index: 50
+	&.is-overflow
+		overflow-y: scroll
+.main-head
+	padding: 1.3em 0 .6em
+.main-head_left-column,.main-head_right-column
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	justify-content: space-between
+.head-logo
+	margin-right: .6em
+	position: relative
+	top: -6px
+	img
+		max-width: 100%
+.head_phone-box
+	margin-right: auto
+.head_phone-number
+	color: #363637
+	white-space: nowrap
+.head_callback-btn
+	a
+		color: #3dbdf4
+		font-size: 1rem
+		font-weight: 600
+	.text
+		border-bottom: 1px solid #3dbdf4
+		transition: border-bottom-color .3s
+	&:hover
+		.text
+			border-bottom-color: transparent
+	.glipf-call-answer
+		position: relative
+		top: 2px
+		font-size: .8rem
+		margin-right: 5px
+.fixed-menu
+	position: fixed
+	top: 0
+	left: 0
+	box-shadow: 0 4px 15px rgba(4, 6, 4, 0.06)
+	background: #fff
+	padding: 0
+	transform: translate3d(0, -100px ,0)
+	visibility: visible!important
+	width: 100%
+	z-index: 100
+	&.is-overflow
+		overflow-y: scroll
+	.head-logo
+		top: 0
+	.main-head
+		padding: 0
+	.main-head_left-column, .main-head_right-column
+		align-items: center
+	.head_callback-btn
+		display: none
+	.head_opening-hours
+		display: none
+	.fixed-menu_hamburger
+		display: block
+		margin: 0 1em
+	.dropdown-submenu
+		border-right: 1px solid #D1D1D1
+		border-bottom: 1px solid #D1D1D1
+	.head_form-search_input
+		border-left: none
+		border-right: none
+		border-top: none
+		background-color: transparent
+		border-radius: 0
+		&:focus
+			border: none
+			border-bottom: 1px solid  #24A5D8
+	.fixed-menu_catalog
+		display: block
+	.head_form-search
+		max-width: 250px
+	.head-nav
+		display: none
+		background: #073E71
+		position: absolute
+		top: 100%
+		left: 0
+		left: 0
+		width: 100%
+		max-height: 100vh
+		overflow: hidden
+		overflow-y: auto
+	.head-menu_catalog-item
+		display: none
+	.dropdown-content
+		transform: skew(0) translate(0,15px)
+		left: 0
+	.dropdown-submenu_img
+		display: none !important
+.scroll-transform
+	transform: translate3d(0, 0 ,0)!important
+	transition: transform .4s
+.head_opening-hours
+	font-size: .75rem
+	color: #828282
+	margin-right: 5%
+	strong
+		font-weight: 600
+		color: #363637
+.fixed-menu_catalog
+	display: none
+	&.is-active
+		.dropdown-content
+			visibility: visible
+			transform:  translate(0,0)
+.head_select-city
+	display: inline-block
+	margin-top: -7px
+	margin-right: 3%
+	color: #363637
+	white-space: nowrap
+.select-city_btn
+	font-size: .75rem
+	border-bottom: 1px dashed #3EBBF4
+	transition: border-bottom-color .3s
+	&:hover
+		border-bottom-color: transparent
+.select-city_field
+	margin-top: 1px
+	font-weight: 800
+.modal-dialog-city
+	max-width: 600px
+.modal-content
+	background: #fff
+	border-radius: 0
+	box-shadow: 0 3px 15px rgba(0, 0, 0, 0.13)
+	padding: 1.5em 2.5em
+.modal
+		z-index: 200
+.modal-city_list-unstyled
+	li
+		margin-bottom: 1em
+		cursor: pointer
+		transition: color .3s
+		&:hover
+			color: #3EBBF3
+.uhified_close-btn
+	width: 37px
+	height: 37px
+	position: absolute
+	top: .2em
+	right: .2em
+	left: auto
+	opacity: 1 !important
+	cursor: pointer
+	transform: rotate(45deg)
+	transition: border-color .3s
+	&:hover
+		border-color: #3EBBF3!important
+		&:after,&:before
+			background: #3EBBF3
+	&:after,&:before
+		content: ''
+		display: block
+		background-color: #595959
+		position: absolute
+		top: 0
+		right: 0
+		bottom: 0
+		left: 0
+		margin: auto
+		transition: background .3s
+	&:after
+		width: 100%
+		height: 6px
+	&:before
+		height: 100%
+		width: 6px
+.head-nav
+	background: #073E71
+.head-menu
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	justify-content: space-between
+.head-menu_item
+	flex: 1
+	border-right: 2px solid #fff
+	position: relative
+	transform: skew(-45deg)
+	&.active
+		background: #24A6D7
+	&:first-child
+		flex: .8
+	&:last-child
+		border-right: none
+		position: relative
+		flex: .65
+		z-index: 1
+		>a
+			position: relative
+			z-index: 1
+			&:hover
+				background-color: transparent
+				&:before
+					background: #24A5D8
+			&:before
+				content: ''
+				display: block
+				height: 100%
+				width: 1000%
+				background: transparent
+				position: absolute
+				top: 0
+				left: 0
+				transition: background .3s
+				z-index: -1
+		&.active
+			&:before
+				content: ''
+				display: block
+				height: 100%
+				width: 1000%
+				background: #24A5D8
+				position: absolute
+				top: 0
+				left: 0
+				z-index: -1
+	>a
+		display: block
+		padding: 1.35em 1em
+		font-weight: 600
+		color: #fff
+		text-align: center
+		text-transform: uppercase
+		transition: background .3s
+		&:hover
+			background: #24A6D7
+.fixed-panel_catalog-btn
+	display: block
+	background: #073E71
+	height: 100%
+	padding: 1.35em 3em
+	color: #fff
+	transform: skew(-45deg)
+	transition: background .3s
+	&:hover
+		background: #24A6D7
+.head-menu_catalog-item
+	position: relative
+	z-index: 1
+	>a
+		position: relative
+		z-index: 1
+		&:hover
+			background-color: transparent
+			&:before
+				background: #24A5D8
+		&:before
+			content: ''
+			display: block
+			height: 100%
+			width: 1000%
+			background: tarnsaprent
+			position: absolute
+			top: 0
+			right: 0
+			transition: background .3s
+			z-index: -1
+	&.active
+		&:before
+			content: ''
+			display: block
+			height: 100%
+			width: 1000%
+			background: #24A5D8
+			position: absolute
+			top: 0
+			right: 0
+			z-index: -1
+	&.is-active
+		.dropdown-content
+			visibility: visible
+			transform: skew(45deg) translate(0,0)
+.head-menu_text
+	display: block
+	transform: skew(45deg)
+.head_form-search
+	max-width: 375px
+	height: 43px
+	position: relative
+	width: 100%
+	.wrapper_submit-btn
+		position: absolute
+		top: 0
+		right: 0
+		width: 45px
+		height: 100%
+		&:hover
+			.glipf-search
+				color: #3EBBF3
+	.glipf-search
+		position: absolute
+		top: 0
+		left: 0
+		display: -webkit-flex
+		display: -moz-flex
+		display: -ms-flex
+		display: -o-flex
+		display: flex
+		align-items: center
+		padding-top: 1px
+		font-size: 1.3rem
+		width: 100%
+		height: 100%
+		color: #B7B7B7
+		transition: color .3s
+.form-search_submit-btn
+	position: absolute
+	top: 0
+	left: 0
+	width: 100%
+	height: 100%
+	background-color: transparent
+	z-index: 2
+.head_form-search_input
+	width: 100%
+	height: 100%
+	background-color: #fafafa
+	border: 1px solid #b2b2b2
+	padding: 0 50px 0 1em
+	line-height: 43px
+	border-radius: 10px
+	transition: border .3s
+	&:focus
+		border: 1px solid  #24A5D8
+	&::-webkit-input-placeholder
+		color: #a9a9a9
+		font-size: .75rem
+	&::-moz-placeholder
+		color: #a9a9a9
+		font-size: .75rem
+	&::-ms-input-placeholder
+		color: #a9a9a9
+		font-size: .75rem
+	&::input-placeholder
+		color: #a9a9a9
+		font-size: .75rem
+.dropdown-content
+	position: absolute
+	top: 100%
+	left: 320px
+	min-width: 318px
+	background-color: white
+	box-shadow: 0 0 4px 1px rgba(0, 1, 5, 0.16)
+	transform: skew(45deg) translate(0,15px)
+	visibility: hidden
+	z-index: 50
+	&.is-animation
+		transition: visibility .3s, transform .3s
+.dropdown-menu_item
+	font-family: "GothamPro"
+	font-weight: 600
+	text-transform: uppercase
+	&.is-active
+		.dropdown-submenu-content
+			display: block
+	>a
+		display: -webkit-flex
+		display: -moz-flex
+		display: -ms-flex
+		display: -o-flex
+		display: flex
+		align-items: center
+		min-height: 40px
+		font-size: 1rem
+		padding: .4em 1em
+		transition: background .3s, color .3s
+.menu-icon
+	width: 28px
+	flex: 28px 0 0
+	margin-right: .4em
+	position: relative
+	text-align: center
+	transition: filter .3s
+	&:after
+		content: ''
+		display: inline-block
+		background-image: url(../img/icons/spritesheet-2.png)
+		background-repeat: no-repeat
+.menu-icon_first
+	&:after
+		width: 23px
+		height: 21px
+		background-position: -20px -20px
+.menu-icon_second
+	&:after
+		width: 21px
+		height: 21px
+		background-position: -20px -81px
+.menu-icon_third
+	&:after
+		width: 21px
+		height: 21px
+		background-position: -20px -142px
+.menu-icon_fourth
+	&:after
+		width: 22px
+		height: 21px
+		background-position: -20px -203px
+.menu-icon_fifth
+	&:after
+		width: 19px
+		height: 19px
+		background-position: -20px -264px
+.menu-icon_six
+	&:after
+		width: 18px
+		height: 18px
+		background-position: -20px -323px
+.menu-icon_seven
+	&:after
+		width: 15px
+		height: 16px
+		background-position: -20px -381px
+.menu-icon_eight
+	&:after
+		width: 19px
+		height: 19px
+		background-position: -20px -437px
+.menu-icon_nine
+	&:after
+		width: 22px
+		height: 22px
+		background-position: -20px -496px
+.menu-icon_ten
+	&:after
+		width: 24px
+		height: 24px
+		background-position: -20px -558px
+.menu-icon_eleven
+	&:after
+		width: 28px
+		height: 24px
+		background-position: -20px -622px
+.menu-icon_tvelwe
+	&:after
+		width: 15px
+		height: 15px
+		background-position: -20px -686px
+.menu-icon_thirteen
+	&:after
+		width: 17px
+		height: 17px
+		background-position: -20px -741px
+.menu-icon_fourteen
+	&:after
+		width: 6px
+		height: 21px
+		background-position: -20px -798px
+.menu-icon_fifteen
+	&:after
+		width: 5px
+		height: 19px
+		background-position: -20px -859px
+.menu-icon_sixteen
+	&:after
+		width: 21px
+		height: 22px
+		background-position: -20px -918px
+.dropdown-submenu-content
+	display: none
+	position: absolute
+	left: 100%
+	top: 0
+	background: #fff
+.dropdown-submenu
+	padding: .6em 1em
+	min-width: 315px
+.dropdown-submenu
+	li
+		margin-bottom: 1em
+	a
+		font-size: 1rem
+		color: #535353
+		transition: color .3s
+		text-transform: capitalize
+		&:hover
+			color: #24A5D8
+.dropdown-submenu_img
+	position: absolute
+	top: 0
+	left: 100%
+	img
+		display: block
+.dropdown-submenu_img-text
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	justify-content: center
+	align-items: flex-end
+	flex-direction: column
+	position: absolute
+	top: 0
+	left: 0
+	width: 100%
+	height: 100%
+	color: #fff
+	padding: 1.2em
+	font-family: "GothamPro"
+	font-weight: 800
+	font-size: 1.625rem
+	li
+		margin-bottom: .7em
+		text-align: right
+		&:last-child
+			margin-bottom: 0
+	small
+		display: block
+		font-size: .75rem
+		font-weight: 300
+@media only screen and (min-width: 1025px)
+	.head-menu_item
+		&:hover
+			.dropdown-content
+				visibility: visible
+				transform: skew(45deg) translate(0,0)
+	.dropdown-menu_item
+		&:hover
+			.dropdown-submenu-content
+				display: block
+			>a
+				background: #073F72
+				color: #fff
+				.menu-icon
+					filter: brightness(0) invert(1)
+	.fixed-menu_catalog
+		&:hover
+			.dropdown-content
+				visibility: visible
+				transform:  translate(0,0)
+.head-cart
+	flex: 43px 0 0
+	max-width: 43px
+	position: relative
+	>
+		a
+			display: block
+	.glipf-cart
+		font-size: 2.65rem
+		font-weight: 600
+.head-cart_number
+	position: absolute
+	top: -1px
+	right: -5px
+	width: 17px
+	height: 17px
+	font-size: .75rem
+	font-family: "GothamPro"
+	line-height: 17px
+	color: #fff
+	background-color: #24a6d7
+	border-radius: 50%
+	text-align: center
+.cart-content
+	position: fixed
+	top: 0
+	left: 100%
+	width: 100%
+	height: 100%
+	background: #fff
+	height: 100vh
+	transition: left .5s
+	z-index: 150
+	&.is-open
+		left: 0
+	.container
+		position: relative
+		display: -webkit-flex
+		display: -moz-flex
+		display: -ms-flex
+		display: -o-flex
+		display: flex
+		flex-direction: column
+		justify-content: space-between
+		height: 100vh
+		padding: 2.7em 15px
+.cart-content_body
+	max-height: calc(100vh - 385px)
+	padding: 0 15px
+	margin: 0 -15px
+	margin-bottom: auto
+	overflow: auto
+	.check-icon
+		display: inline-block
+		width: 187px
+		height: 187px
+		background: url(../img/icons/check-icon.png) no-repeat center
+		background-size: contain
+		margin-bottom: 1.5em
+	.thanks-text
+		font-size: 3rem
+		font-weight: 800
+		color: #3d3c3c
+		margin-bottom: 1.6em
+		small
+			display: block
+			margin-top: 1em
+			font-size: 62%
+			font-weight: 400
+.cart-content_body-mod
+	max-height: calc(100vh - 300px)
+	.main-btn
+		height: 55px
+		font-size: 1.25rem
+		line-height: 55px
+		min-width: 251px
+.cart-content_header
+	margin-bottom: 1.875em
+.cart-content_body::-webkit-scrollbar-track
+	background-color: #E6E6E6
+.cart-content_body::-webkit-scrollbar-thumb
+	-webkit-border-radius: 2px
+	border-radius: 2px
+	background-color: #B4B4B4
+.cart-content_body::-webkit-resizer
+	width: 6px
+	height: 0px
+.cart-content_body::-webkit-scrollbar
+	width: 6px
+.cart-close
+	position: absolute
+	top: 3em
+	right: 0
+	width: 22px
+	height: 22px
+	transform: rotate(45deg)
+	cursor: pointer
+	&:hover
+		&:after,&:before
+			background: #3EBBF3
+	&:after,&:before
+		content: ''
+		display: block
+		background: #ACACAC
+		position: absolute
+		top: 0
+		right: 0
+		bottom: 0
+		left: 0
+		margin: auto
+		transition: background .3s
+	&:after
+		width: 100%
+		height: 2px
+	&:before
+		height: 100%
+		width: 2px
+.cart-content_title
+	color: #3d3c3c
+	font-weight: 800
+	font-size: 2.0625rem
+	margin-bottom: 1.4em
+.cart-steps
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+.cart-table_mobile-text
+	display: none
+.cart-step_item
+	width: 48px
+	height: 48px
+	flex: 48px 0 0
+	background-color: #073e71
+	border-radius: 50%
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	align-items: center
+	justify-content: center
+	padding: .3em
+	position: relative
+	color: #fff
+	font-size: .75rem
+	font-weight: 800
+	margin-right: 134px
+	z-index: 1
+	&:last-child
+		&:after
+			display: none
+	&.active
+		&:before
+			content: ''
+			display: block
+			width: calc(100% + 12px)
+			height: calc(100% + 12px)
+			border-radius: 50%
+			border: 3px solid #24a5d8
+			position: absolute
+			left: -6px
+			top: -6px
+			z-index: -1
+		&:after
+			left: calc(100% + 6px)
+			width: 122px
+	&:nth-child(2)
+		&.active
+			&:after
+				width: 128px
+	&.active-mod
+		&:after
+			width: 128px
+	&:after
+		content: ''
+		display: block
+		width: 134px
+		height: 5px
+		background-color: #073e71
+		position: absolute
+		top: 0
+		bottom: 0
+		left: 100%
+		margin: auto
+		z-index: -2
+	&:last-child
+		margin-right: 0
+.cart-step_item-second
+	&:after
+		left: 100%
+		width: 128px
+.cart-table
+	color: #3d3c3c
+	font-weight: 600
+	border-collapse: separate
+	border-spacing: 0 1em
+	margin-bottom: 1.5em
+	width: 100%
+	th
+		padding: 1.4em 1em
+		font-weight: 600
+		text-align: left
+		white-space: nowrap
+		&:first-child
+			padding-left: 3.5%
+	td
+		font-size: 1.375rem
+		padding: 1em
+		&:first-child
+			padding-left: 3.5%
+		&:nth-child(3),&:nth-child(6)
+			white-space: nowrap
+	tr
+		box-shadow: 0 0 16px rgba(0, 0, 0, 0.07)
+.cart-content_footer
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	.left-column
+		flex: 251px 0 0
+		max-width: 251px
+	.right-column
+		flex-basis: calc(100% - 251px)
+		max-width:  calc(100% - 251px)
+		display: -webkit-flex
+		display: -moz-flex
+		display: -ms-flex
+		display: -o-flex
+		display: flex
+		align-items: center
+		justify-content: flex-end
+.cart-total-price
+	font-size: 2.0625rem
+	font-weight: 800
+	color: #073e71
+	margin-right: 1em
+.cart-total_sum
+	color: #3d3c3c
+.checkout-btn
+	height: 55px
+	font-size: 1.25rem
+	line-height: 55px
+.back-site_btn
+	font-size: 1.25rem
+.wrapper-counter-btn
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	align-items: center
+	justify-content: space-between
+	width: 115px
+	overflow: hidden
+	.counter-back,.counter-forward
+		display: block
+		width: 20px
+		height: 20px
+		flex: 20px 0 0
+		border: none
+		border-radius: 50%
+		position: relative
+		color: #fff
+		background-color: #c4c4c4
+		transition: background .3s
+		&:after
+			content: ''
+			display: block
+			width: 8px
+			height: 2px
+			background: #fff
+			position: absolute
+			top: 0
+			right: 0
+			left: 0
+			bottom: 0
+			margin: auto
+		&:hover
+			background: #24A6D7
+	.counter-forward
+		&:before
+			content: ''
+			display: block
+			height: 8px
+			width: 2px
+			background: #fff
+			position: absolute
+			top: 0
+			right: 0
+			left: 0
+			bottom: 0
+			margin: auto
+	.counter-back
+		padding: 0 0 7px 0
+		font-size: 3rem
+	.product-count
+		width: 49px
+		height: 32px
+		flex: 49px 0 0
+		background-color: #f6f7f9
+		border-radius: 5px
+		padding: 0 .2em
+		font-size: 1.25rem
+		font-weight: 800
+		color: #1f1f1f
+		border: none
+		text-align: center
+.cart-item_delete
+	cursor: pointer
+	transition: color .3s
+	&:hover
+		color: #24A6D7
+.cart-table_textarea
+	height: 150px
+	background-color: #eee
+	outline: none
+	padding: 1em
+	resize: none
+	width: 100%
+	transition: border .3s
+	&:focus
+		border: 1px solid  #24A5D8
+	&::-webkit-input-placeholder
+		color: #9fa2a7
+		font-size: 1.25rem
+	&::-moz-placeholder
+		color: #9fa2a7
+		font-size: 1.25rem
+	&::-ms-input-placeholder
+		color: #9fa2a7
+		font-size: 1.25rem
+	&::input-placeholder
+		color: #9fa2a7
+		font-size: 1.25rem
+.cart-content_second
+	position: absolute
+	top: 0
+	left: 100%
+	width: 100%
+	height: 100%
+	background: #fff
+	transition: left .5s
+	z-index: 1
+	&.is-open
+		left: 0
+.checkout-form
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	flex-direction: column
+	justify-content: space-between
+	height: calc(100vh - 250px)
+	.cart-content_body
+		max-height: calc(100vh - 330px)
+.form-group
+	margin-bottom: 1.25em
+.form-group_last
+	margin-bottom: 0
+.form-input
+	height: 70px
+	background-color: #eee
+	width: 100%
+	padding: 0 1.5em
+	border: 1px solid transparent
+	transition: border .3s
+	&:focus
+		border: 1px solid  #24A5D8
+	&::-webkit-input-placeholder
+		color: #9fa2a7
+		font-size: 1.25rem
+	&::-moz-placeholder
+		color: #9fa2a7
+		font-size: 1.25rem
+	&::-ms-input-placeholder
+		color: #9fa2a7
+		font-size: 1.25rem
+	&::input-placeholder
+		color: #9fa2a7
+		font-size: 1.25rem
+.form-textarea
+	height: 245px
+	background-color: #eee
+	outline: none
+	resize: none
+	border: 1px solid transparent
+	width: 100%
+	padding: 1em 1.5em
+	transition: border .3s
+	&:focus
+		border: 1px solid  #24A5D8
+	&::-webkit-input-placeholder
+		color: #9fa2a7
+		font-size: 1.25rem
+	&::-moz-placeholder
+		color: #9fa2a7
+		font-size: 1.25rem
+	&::-ms-input-placeholder
+		color: #9fa2a7
+		font-size: 1.25rem
+	&::input-placeholder
+		color: #9fa2a7
+		font-size: 1.25rem
+.cart-content_third
+	position: absolute
+	top: 0
+	left: 100%
+	width: 100%
+	height: 100%
+	background: #fff
+	transition: left .5s
+	z-index: 2
+	&.is-open
+		left: 0
+.hamburger
+	display: none
+	padding: 0
+	cursor: pointer
+	width: 30px
+	flex: 30px 0 0
+	height: 20px
+	&.is-active
+		.hamburger-inner
+			background: #000
+			&:after,&:before
+				background: #000
+		.hamburger-box
+			&:after
+				opacity: 0
+			&:before
+				opacity: 0
+.hamburger-box
+	display: block
+	position: relative
+	width: 100%
+	height: 100%
+.hamburger-inner
+	background: #000
+	&:after,&:before
+		background: #000
+.hamburger.is-active:hover, .hamburger:hover
+	opacity: 1
+.hamburger-inner, .hamburger-inner:after, .hamburger-inner:before
+	width: 100%
+.hamburger-inner, .hamburger-inner:after, .hamburger-inner:before
+	height: 3px
+.hamburger--spring .hamburger-inner:before
+	top: 7px
+.hamburger--spring .hamburger-inner:after
+	top: 14px
+.tablet-hamburger
+	width: 23px
+	&.is-active
+	.hamburger-inner
+		background: #073F72
+		&:after,&:before
+			background: #073F72
+	.hamburger-box
+		&:after
+			opacity: 0
+		&:before
+			opacity: 0
+	.hamburger-inner, .hamburger-inner:after, .hamburger-inner:before
+		height: 4px
+	.hamburger--spring .hamburger-inner:before
+		top: 7px
+	.hamburger--spring .hamburger-inner:after
+		top: 14px
+.main-content
+	flex: 1 0  auto
+
+/***main-section**/
+.main-section
+	background: url(../img/bg/main-banner_bg.jpg) no-repeat center top
+	background-size: cover
+	padding: 3em 0 4em
+.main-page_title
+	color: #fff
+	font-size: 4.3125rem
+	font-weight: 800
+	line-height: 1.15
+	margin-bottom: .6em
+	text-transform: uppercase
+.main-section_catalog-btn
+	min-width: 158px
+	position: relative
+	&:before
+		content: ''
+		display: inline-block
+		background: url(../img/icons/spritesheet-2.png) no-repeat -20px -980px
+		width: 25px
+		height: 12px
+		margin-right: 1em
+.main-slider
+	.slick-dots
+		position: absolute
+		left: 0
+		right: 0
+		bottom: -2em
+		li
+			background-color: transparent
+.unified-checkbox
+	display: inline-block
+	position: relative
+	cursor: pointer
+	font-weight: 400
+	margin-bottom: 0
+	padding-left: 30px
+	input[type="checkbox"]
+		position: absolute
+		margin-left: -20px
+		display: none
+		&:checked + .checkbox-text:before
+			width: 7px
+			height: 14px
+			content: ''
+			display: block
+			border-right: 2px solid #fff
+			border-bottom: 2px solid #fff
+			position: absolute
+			top: 3px
+			left: 7px
+			transform: rotate(45deg)
+			z-index: 1
+		&:checked + .checkbox-text:after
+			background: #073E71
+			border-color: #073E71
+		+ .checkbox-text:after
+			content: ""
+			display: block
+			width: 20px
+			height: 20px
+			background: #fff
+			border: 1px solid #3D3C3C
+			position: absolute
+			top: 2px
+			left: 0
+			margin: auto
+	.checkbox-text
+		display: inline-block
+		color: #3d3c3c
+		font-size: 1rem
+.checkout-checkbox
+	padding-left: 40px
+	input[type="checkbox"]
+		&:checked + .checkbox-text:before
+			width: 12px
+			height: 24px
+			left: 10px
+		+ .checkbox-text:after
+			width: 33px
+			height: 33px
+	.checkbox-text
+		font-size: 1.25rem
+		padding-top: 5px
+.modal-callback
+	max-width: 456px
+.modal-backdrop.show
+	opacity: .8
+.modal-backdrop
+	z-index: 170
+.tablet_small-visible
+	display: none
+.mobile-visible
+	display: none
+.form-callback
+	padding: 0 .5em 1em
+	color: #363637
+	.form-label
+		display: block
+		font-weight: 300
+		margin-bottom: .2em
+	.form-input
+		background-color: #fafafa
+		border: 1px solid #b2b2b2
+		border-radius: 10px
+		height: 43px
+		&:focus
+			border: 1px solid #3ebbf3
+	.form-callback_submit
+		margin-top: .7em
+		min-width: 226px
+.form-callback_title
+	font-size: 2.25rem
+	font-weight: 700
+	margin-bottom: .7em
+	text-align: center
+	text-transform: uppercase
+	small
+		display: block
+		font-size: 50%
+		font-weight: 400
+		margin-top: .2em
+		text-transform: none
+/***category-section**/
+.category-section
+	padding: 4.5em 0
+	border-bottom: 1px solid #D1D1D1
+.category-list
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	flex-wrap: wrap
+	margin: 0 -15px
+.category-item
+	flex: 20% 0 0
+	max-width: 20%
+	margin-bottom: 3em
+	padding: 0 15px
+	>a
+		display: -webkit-flex
+		display: -moz-flex
+		display: -ms-flex
+		display: -o-flex
+		display: flex
+		font-size: 1.5rem
+		font-weight: 800
+		padding: .5em 0
+		transition: background .3s, color .3s
+		&:hover
+			background: #3EBBF3
+			color: #fff
+			.category-icon
+				filter: brightness(0) invert(1)
+.category-icon
+	display: inline-block
+	width: 50px
+	flex: 50px 0 0
+	position: relative
+	margin-right: .7em
+	top: 3px
+	text-align: right
+	transition: filter .3s
+	&:after
+		content: ''
+		display: inline-block
+		background-image: url(../img/icons/spritesheet.png)
+		background-repeat: no-repeat
+		
+.category-icon_first
+	&:after
+		width: 50px
+		height: 42px
+		background-position: -20px -20px
+.category-icon_second
+	&:after
+		width: 41px
+		height: 42px
+		background-position: -20px -102px
+.category-icon_thirst
+	&:after
+		width: 39px
+		height: 39px
+		background-position: -20px -184px
+.category-icon_fourth
+	&:after
+		width: 38px
+		height: 39px
+		background-position: -20px -263px
+.category-icon_fifth
+	&:after
+		width: 27px
+		height: 29px
+		background-position: -20px -342px
+.category-icon_six
+	&:after
+		width: 39px
+		height: 39px
+		background-position: -20px -411px
+.category-icon_seven
+	&:after
+		width: 42px
+		height: 36px
+		background-position: -20px -490px
+.category-icon_eight
+	&:after
+		width: 34px
+		height: 35px
+		background-position: -20px -566px
+.category-icon_nine
+	&:after
+		width: 34px
+		height: 35px
+		background-position: -20px -641px
+.category-icon_ten
+	&:after
+		width: 45px
+		height: 45px
+		background-position: -20px -716px
+.category-icon_eleven
+	&:after
+		width: 14px
+		height: 49px
+		background-position: -20px -801px
+.category-icon_tvelwe
+	&:after
+		width: 45px
+		height: 45px
+		background-position: -20px -890px
+.category-icon_thirteen
+	&:after
+		width: 42px
+		height: 41px
+		background-position: -20px -975px
+.category-icon_fourteen
+	&:after
+		width: 41px
+		height: 42px
+		background-position: -20px -1056px
+.category-icon_fifteen
+	&:after
+		width: 45px
+		height: 44px
+		background-position: -20px -1138px
+.category-icon_sixteen
+	&:after
+		width: 31px
+		height: 30px
+		background-position: -20px -1222px
+.category-icon_seventeen
+	&:after
+		width: 41px
+		height: 44px
+		background-position: -20px -1292px
+.category-icon_eighteen
+	&:after
+		width: 43px
+		height: 39px
+		background-position: -20px -1376px
+.category-icon_nineteen
+	&:after
+		width: 21px
+		height: 69px
+		background-position: -20px -1455px
+.category-item_mod
+	flex: 26% 0 0
+	max-width: 26%
+	font-size: 1.5rem
+	font-weight: 800
+	padding: 0 15px
+	margin-bottom: 1.8em
+	.category-icon
+		position: absolute
+		top: 1em
+		left: .3em
+	.site-link
+		font-size: .875rem
+		font-weight: 600
+		color: #3ebbf3
+		border-bottom: 1px solid #3ebbf3
+		transition: border-bottom-color .3s
+		&:hover
+			border-bottom-color: transparent
+	.text
+		display: block
+.category-item_mod-content
+	padding: .7em
+	border: 1px solid #3ebbf3
+	position: relative
+	padding-left: 3.3em
+.download-price_btn
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	align-items: center
+	max-width: 226px
+	margin: 0 auto
+	.glipf-download
+		margin-right: 1.3em
+/***services-section**/
+.services-section
+	padding: 6.5em 0 3em
+	border-bottom: 1px solid #D1D1D1
+.service-item
+	overflow: hidden
+	position: relative
+	margin-bottom: 3em
+	&:hover
+		.service-item_desc
+			&:before
+				opacity: 1
+		.service-item_desc-body
+			display: block
+	img
+		display: block
+		width: 100%
+	p
+		font-size: 1rem
+		line-height: 1.4
+		margin-bottom: .5em
+.service-item_mobile-link
+	display: none
+	position: absolute
+	top: 0
+	left: 0
+	width: 100%
+	height: 100%
+	z-index: 2
+.service-item_desc
+	position: absolute
+	width: 100%
+	height: 100%
+	top: 0
+	left: 0
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	flex-direction: column
+	justify-content: flex-end
+	align-items: flex-start
+	overflow: auto
+	font-weight: 600
+	padding: 1.8em
+	padding-bottom: 1em
+	color: #fff
+	transition: top .3s
+	z-index: 1
+	&:before
+		content: ''
+		display: block
+		width: 100%
+		height: 100%
+		position: absolute
+		top: 0
+		left: 0
+		background-image: linear-gradient(to top, #3ebbf3 0%, transparent 100%)
+		opacity: 0
+		z-index: -1
+		transition: opacity .3s
+.service-item_title
+	display: block
+	font-size: 1.5rem
+	margin-bottom: .3em
+.service-item_btn
+	font-size: .875rem
+	border-bottom: 1px solid #fff
+	transition: border-bottom-color .3s
+	&:hover
+		border-bottom-color: transparent
+.service-item_desc-body
+	display: none
+	overflow: auto
+	width: 100%
+.service-item_desc-body::-webkit-scrollbar-track
+	background-color: #E6E6E6
+.service-item_desc-body::-webkit-scrollbar-thumb
+	-webkit-border-radius: 2px
+	border-radius: 2px
+	background-color: #B4B4B4
+.service-item_desc-body::-webkit-resizer
+	width: 6px
+	height: 0px
+.service-item_desc-body::-webkit-scrollbar
+	width: 6px
+/**services-detailed***/
+.services-detailed_section
+	padding: 6em 0
+	color: #3d3c3c
+	p
+		margin-bottom: 1.7em
+		line-height: 1.5
+		&:last-child
+			margin-bottom: 0
+	ul:not([class])
+		margin-bottom: 1.7em
+		li
+			margin-bottom: 5px
+	.left-column
+		flex: 46% 0 0
+		max-width: 46%
+		padding: 0 15px
+		&.order-md-2
+			text-align: right
+	.right-column
+		flex: 54% 0 0
+		max-width: 54%
+		padding: 0 15px
+.services-detailed_img
+	img
+		max-width: 100%
+.services-detailed_box
+	padding-bottom: 4em
+.services-detailed_box-title
+	font-size: 1.875rem
+	font-weight: 700
+	margin-bottom: .9em
+.services-detailed_hide-table
+	display: inline-block
+	color: #3ebbf3
+	padding-right: 1.2em
+	position: relative
+	cursor: pointer
+	margin-bottom: 1.2em
+	margin-top: .5em
+	&.is-active
+		&:after
+			top: 4px
+			transform: rotate(135deg)
+	&:after
+		content: ''
+		display: block
+		width: 8px
+		height: 8px
+		border-top: 1px solid #3ebbf3
+		border-right: 1px solid #3ebbf3
+		position: absolute
+		right: 0
+		top: 10px
+		transform: rotate(-45deg)
+.services-detailed_table
+	width: 100%
+	border: 1px solid #E5E5E5
+	border-top: none
+	th
+		padding: 1.4em
+		color: #fff
+		font-weight: 600
+		background: #3EBBF3
+		border-right: 1px solid #38A8DA
+		width: 33.333%
+		&:last-child
+			border-right: none
+	td
+		padding: 1.4em
+		color: #000
+		line-height: 1.8
+		border-right: 1px solid #E5E5E5
+		width: 33.333%
+		vertical-align: top
+		&:nth-child(2)
+			color: #3d3c3c
+			font-size: .875rem
+		&:last-child
+			border-right: none
+.services-detailed_footer
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	justify-content: center
+	align-items: center
+	margin-top: 1em
+	.text
+		font-size: 1.875rem
+		font-weight: 700
+		margin-right: 1.5em
+	.download-price_btn
+		margin: 0
+
+
+
+/**advantages-section**/
+.advantages-section
+	padding: 5em 0 2em
+	border-bottom: 1px solid #D1D1D1
+	.right-column
+		padding-left: 4em
+		padding-right: 15px
+		flex: 56% 0 0
+		max-width: 56%
+	.left-column
+		padding: 0 15px
+		flex: 44% 0 0
+		max-width: 44%
+.advantages-slider
+	p
+		position: relative
+		padding-left: 5em
+		color: #3d3c3c
+		line-height: 1.5
+		margin-bottom: 3em
+	.quotes
+		position: absolute
+		top: 0
+		left: 0
+		font-family: "GothamPro"
+		font-size: 6.25rem
+		line-height: .8
+		font-weight: 800
+		color: #073e71
+.wrapper_advantages-slider
+	position: relative
+	padding-right: 2em
+.advantages-slide_dots
+	position: absolute
+	right: 0
+	bottom: 0
+	height: 447px
+	width: 15px
+	&:after
+		content: ''
+		display: block
+		width: 1px
+		height: 100%
+		background: #D1D1D1
+		position: absolute
+		left: 0
+		right: 0
+		bottom: 0
+		margin: auto
+	.slick-dots
+		display: inline-block
+		position: absolute
+		top: 0
+		width: 10px
+		bottom: auto
+		margin-top: 0
+		padding-bottom: 1em
+		background: #fff
+		text-align: right
+		z-index: 1
+		li
+			margin: 0
+			margin-bottom: 5px
+.advantages-slide_img
+	text-align: center
+	img
+		display: inline-block
+		max-width: 100%
+.advantages-item
+	margin-bottom: 3.5em
+	p
+		font-size: 1rem
+		color: #949494
+.advantages-item_icon
+	color: #073E71
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	align-items: center
+	font-size: 4rem
+	height: 85px
+	margin: 0 0 .15em
+	&.glipf-truck
+		font-size: 6rem
+.advantages-item_title
+	font-size: 1.5rem
+	line-height: 1.5
+	font-weight: 800
+	color: #3d3c3c
+	padding-bottom: .7em
+	margin-bottom: .7em
+	position: relative
+	&:after
+		content: ''
+		display: block
+		width: 104px
+		height: 3px
+		background-color: #073e71
+		position: absolute
+		bottom: 0
+		left: 0
+/**our-partners_section**/
+.our-partners_section
+	padding: 5em 0
+.our-partners_item
+	padding: 0 1em
+	text-align: center
+	img
+		display: inline-block
+		max-width: 100%
+.our-partners_slider
+	margin-top: 4em
+	.slick-track
+		display: -webkit-flex
+		display: -moz-flex
+		display: -ms-flex
+		display: -o-flex
+		display: flex
+		align-items: center
+.slick-dots
+	position: static
+	margin-top: 1em
+	text-align: center
+	li
+		width: 15px
+		height: 15px
+		border-radius: 0
+		margin: 0 5px
+		border: 1px solid #3ebbf3
+		&.slick-active
+			background: #3EBBF3
+/**text-section***/
+.text-section
+	padding: 5em 0
+	color: #fff
+	background: url(../img/bg/text-section_bg.jpg) no-repeat center
+	background-size: cover
+	// background-attachment: fixed
+	// overflow: hidden
+	p
+		padding-right: 15em
+		line-height: 1.55
+		&:last-child
+			margin-bottom: 0
+.map-container
+	height: 664px
+	position: relative
+	.selectric-wrapper
+		margin-bottom: 2em
+
+#map
+	height: 100%
+.map-contact_box
+	max-width: 562px
+	background-color: white
+	box-shadow: 0 0 4px 1px rgba(0, 1, 5, 0.03)
+	padding: 2.7em 2em 3em
+	position: absolute
+	top: 50%
+	left: 50%
+	width: 100%
+	transform: translate(-131%,-50%)
+	z-index: 30
+	.section-title
+		margin-bottom: 1em
+.map-contact_list
+	margin-bottom: 1.8em
+	li
+		display: -webkit-flex
+		display: -moz-flex
+		display: -ms-flex
+		display: -o-flex
+		display: flex
+		margin-bottom: .7em
+		font-size: 1.5rem
+	a
+		display: -webkit-flex
+		display: -moz-flex
+		display: -ms-flex
+		display: -o-flex
+		display: flex
+	.contact-icon
+		position: relative
+		top: 3px
+		// font-size: 1.5rem
+		margin-right: .7em
+		color: #3EBBF3
+		&.glipf-call-answer
+			font-size: 90%
+.map-contact_mail
+	transition: color .3s
+	&:hover
+		color: #3EBBF3
+.map-callback_btn
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	align-items: center
+	justify-content: center
+	padding: 0 .4em
+	max-width: 360px
+	min-width: auto
+	.glipf-call-answer
+		margin-right: .7em
+		font-size: .8rem
+.selectric
+	background-color: #fafafa
+	border: 1px solid #b2b2b2
+	border-radius: 10px
+	height: 43px
+	.label
+		line-height: 43px
+		color: #3d3c3c
+		font-size: inherit
+		font-weight: 600
+	.button
+		height: 100%
+		background-color: transparent
+		&:after
+			width: 10px
+			height: 10px
+			border: none
+			border-right: 2px solid #b2b2b2
+			border-bottom: 2px solid #b2b2b2
+			transform: rotate(45deg)
+			top: -4px
+.selectric-items li, .selectric-items ul
+	font-size: inherit
+	color: #3d3c3c
+	&:before
+		display: none!important
+.selectric-items li
+	&:hover
+		background: lighten(#3EBBF3,20%)
+		color: inherit
+.selectric-items li.highlighted
+	background: lighten(#3EBBF3,20%)
+	color: inherit
+.selectric-items ul
+	margin: 0
+	padding: .5em
+.selectric-open
+	.selectric
+		border-color: #3EBBF3
+	.button
+		transform: rotate(180deg)
+		&:after
+			border-color: #3EBBF3
+/**category-page***/
+.category-section_mod
+	padding: 5.5em 0
+.category-column
+	flex: 35% 0 0
+	max-width: 35%
+	padding: 0 15px
+	&:nth-child(3n + 2)
+		flex: 37% 0 0
+		max-width: 37%
+	&:nth-child(3n + 3)
+		flex: 28% 0 0
+		max-width: 28%
+.category-item_other
+	padding-left: 4em
+	padding-right: 1.6em
+	position: relative
+	margin-bottom: 3.8em
+	.category-icon
+		position: absolute
+		top: .5em	
+		left: 0
+		&:after
+			background-image: url(../img/icons/spritesheet-3.png)
+	.category-icon_first
+		&:after
+			width: 67px
+			height: 53px
+			background-position: -20px -20px
+	.category-icon_second
+		&:after
+			width: 55px
+			height: 56px
+			background-position: -20px -113px
+	.category-icon_third
+		&:after
+			width: 49px
+			height: 53px
+			background-position: -20px -209px
+	.category-icon_fourth
+		&:after
+			width: 55px
+			height: 53px
+			background-position: -20px -302px
+	.category-icon_fifth
+		&:after
+			width: 56px
+			height: 55px
+			background-position: -20px -395px
+	.category-icon_six
+		&:after
+			width: 48px
+			height: 49px
+			background-position: -20px -490px
+	.category-icon_seven
+		&:after
+			width: 52px
+			height: 53px
+			background-position: -20px -579px
+	.category-icon_eight
+		&:after
+			width: 52px
+			height: 54px
+			background-position: -20px -672px
+	.category-icon_nine
+		&:after
+			width: 47px
+			height: 47px
+			background-position: -20px -766px
+	.category-icon_ten
+		&:after
+			width: 51px
+			height: 46px
+			background-position: -20px -853px
+	.category-icon_eleven
+		&:after
+			width: 52px
+			height: 44px
+			background-position: -20px -939px
+	.category-icon_tvelwe
+		&:after
+			width: 45px
+			height: 47px
+			background-position: -20px -1023px
+	.category-icon_thirteen
+		&:after
+			width: 54px
+			height: 54px
+			background-position: -20px -1110px
+	.category-icon_fourteen
+		&:after
+			width: 46px
+			height: 72px
+			background-position: -20px -1204px
+	.category-icon_fifteen
+		&:after
+			width: 27px
+			height: 82px
+			background-position: -20px -1316px
+	.category-icon_sixteen
+		&:after
+			width: 51px
+			height: 53px
+			background-position: -20px -1438px
+	
+.category-item_other-title
+	font-size: 1.875rem
+	font-weight: 600
+	border-bottom: 1px solid transparent
+	transition: color .3s, border-bottom-color .3s
+	&:hover
+		color: #3EBBF3
+		border-bottom-color: #3EBBF3
+.category-item_other-list
+	margin-top: 1.1em
+	li
+		margin-bottom: .45em
+		padding-left: 10px
+		position: relative
+		&:before
+			content: ''
+			display: block
+			width: 5px
+			height: 5px
+			background-color: #24a5d8
+			border-radius: 50%
+			position: absolute
+			top: 6px
+			left: 0
+	a
+		color: #484848
+		font-size: 1.125rem
+		border-bottom: 1px solid transparent
+		transition: color .3s, border-bottom-color .3s
+		&:hover
+			color: #3EBBF3
+			border-bottom-color: #3EBBF3
+.price-list_box
+	text-align: center
+.price-list_box-content
+	position: relative
+	display: inline-block
+	img
+		display: block
+		max-width: 100%
+	.download-price_btn
+		position: absolute
+		left: 50%
+		bottom: 2em
+		transform: translate(-50%, 0)
+.category-item_mod-other
+	max-width: 100%
+	padding: 0 0 0 3.3em
+	font-size: 1.875rem
+	margin-bottom: 2.3em
+	position: relative
+	.category-icon
+		left: 0
+		top: 0.3em
+		text-align: center
+		&:after
+			background-image: url(../img/icons/spritesheet-3.png)
+	.category-icon_first
+		&:after
+			width: 54px
+			height: 57px
+			background-position: -20px -1531px
+	.category-icon_second
+		&:after
+			width: 59px
+			height: 59px
+			background-position: -20px -1628px
+	.category-icon_third
+		&:after
+			width: 60px
+			height: 60px
+			background-position: -20px -1727px
+	.site-link
+		font-size: 1.125rem
+.inner-page_title-section
+	background: url(../img/bg/inner-banner_bg.jpg) no-repeat center top
+	background-size: cover
+	min-height: 215px
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	align-items: flex-end
+	padding: 2em 0 0
+.breadcrumbs
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	flex-wrap: wrap
+	margin-bottom: 1.9em
+	li
+		display: inline-block
+		margin-right: 1.7em
+		color: #fff
+		font-size: .875rem
+		position: relative
+		&:last-child
+			&:after
+				display: none
+		&:after
+			content: ''
+			display: block
+			width: 5px
+			height: 5px
+			background-color: #24a5d8
+			border-radius: 50%
+			position: absolute
+			top: 7px
+			right: -15px
+	a
+		color: #b9b9b9
+		border-bottom: 1px solid transparent
+		transition: color .3s, border-bottom-color .3s
+		&:hover
+			color: #3EBBF3
+			border-bottom-color: #3EBBF3
+/**subcategory-section**/
+.subcategory-section
+	padding: 5.5em 0
+	.title-h3
+		margin-bottom: .8em
+	.title-h3_mod
+		margin-bottom: 1.6em
+.subcategory_main-img
+	text-align: center
+	img
+		max-width: 100%
+.subcategory_main-img_mod
+	margin-top: 1.875em
+.subcategory-column
+	margin-bottom: 2.2em
+.subcategory-item
+	height: 100%
+	min-height: 144px
+	>a
+		display: -webkit-flex
+		display: -moz-flex
+		display: -ms-flex
+		display: -o-flex
+		display: flex
+		align-items: center
+		height: 100%
+		border: 1px solid #a7a7a7
+		font-size: 1.5rem
+		font-weight: 600
+		padding: 1em
+		transition: border-color .3s
+		&:hover
+			border-color: #3EBBF3
+.subcategory-item_img
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	align-items: center
+	flex: 164px 0 0
+	width: 164px
+	height: 75px
+	text-align: center
+	img
+		max-width: 100%
+		max-height: 100%
+.subcategory-item_name
+	color: #484848
+	padding-left: 1em
+	flex-basis: calc(100% - 164px)
+	max-width: calc(100% - 164px)
+.unified-text-section
+	margin-top: 3em
+	p
+		line-height: 1.5
+		margin-bottom: 1.7em
+		&:last-child
+			margin-bottom: 0
+	h3
+		margin-bottom: 1.6em
+/**catalog-page**/
+.catalog-section
+	padding: 6em 0 4em
+.catalog_left-column
+	padding: 0 15px
+	flex: 28% 0 0
+	max-width: 28%
+.catalog_right-column
+	padding: 0 15px 0 3.5em
+	flex: 72% 0 0
+	max-width: 72%
+.sidebar-catalog_content
+	background: #fff
+	box-shadow: 0 0 16px rgba(0, 0, 0, 0.07)
+	padding: 1.2em 1.5em
+.sidebar-title
+	font-size: 1.5rem
+	font-weight: 800
+	color: #073e72
+	margin-bottom: 1.2em
+.catalog-menu_item
+	margin-bottom: 1.1em
+	&:last-child
+		margin-bottom: 0
+	.menu-icon
+		margin-right: 1em
+	>a
+		display: -webkit-flex
+		display: -moz-flex
+		display: -ms-flex
+		display: -o-flex
+		display: flex
+		align-items: center
+		position: relative
+		font-weight: 600
+		padding-right: 1.5em
+		transition: color .3s
+		&:hover
+			color: #3EBBF3
+		&.is-active
+			&:after
+				transform: rotate(-135deg)
+				top: .5em
+		&:after
+			content: ''
+			display: block
+			width: 8px
+			height: 8px
+			border-right: 2px solid #3EBBF3
+			border-bottom: 2px solid #3EBBF3
+			position: absolute
+			top: .3em
+			bottom: 0
+			right: 0
+			transform: rotate(45deg)
+.catalog-submenu
+	padding-left: 2.7em
+	display: none
+	margin-top: 8px
+	li
+		margin-bottom: .2em
+	a
+		color: #484848
+		font-size: 1rem
+		border-bottom: 1px solid transparent
+		transition: color .3s, border-bottom-color .3s
+		&:hover
+			border-bottom-color: #3EBBF3
+			color: #3EBBF3
+.sidebar-catalog
+	.price-list_box
+		margin-top: 4em
+.filter-box
+	background: #fff
+	box-shadow: 0 0 16px rgba(0, 0, 0, 0.07)
+	padding: 1.2em 1.9em
+	margin-bottom: 2em
+.filter-box_title
+	font-size: 1.5625rem
+	font-weight: 800
+	color: #073e72
+	position: relative
+	cursor: pointer
+	margin-bottom: .8em
+	transition: margin-bottom .2s
+	&.is-active
+		margin-bottom: 0
+		&:after
+			transform: rotate(45deg)
+			top: .4em
+	&:after
+		content: ''
+		display: block
+		width: 10px
+		height: 10px
+		border-right: 2px solid #3EBBF3
+		border-bottom: 2px solid #3EBBF3
+		position: absolute
+		top: .6em
+		bottom: 0
+		right: 0
+		transform: rotate(-135deg)
+.filter-box_column
+	flex: 21% 0 0
+	max-width: 21%
+	padding: 0 15px
+.filter-item_title
+	font-size: 1rem
+	font-weight: 800
+	display: block
+	margin-bottom: .8em
+.filter-item
+	margin-bottom: 1.7em
+	.selectric-items li
+		font-size: .875rem
+		padding: 5px
+	.selectric
+		border: none
+		border-radius: 0
+		background-color: transparent
+		border-bottom: 1px solid #CCCCCC
+		height: 33px
+	.label
+		font-size: .875rem
+		line-height: 33px
+		margin-right: 15px
+	.button
+		width: 12px
+		&:after
+			border-color: #3EBBF3
+			border-width: 2px
+			width: 8px
+			height: 8px
+.filter-box_footer
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	flex-wrap: wrap
+	align-items: center
+.filter_search-btn
+	margin-right: 1.2em
+	height: 45px
+	line-height: 45px
+	min-width: 180px
+.filter_reset-btn
+	font-size: .875rem
+	font-weight: 600
+	color: #5C5C5C
+	transition: color .3s
+	&:hover
+		color: #3EBBF3
+	.glipf-reset
+		font-size: .6rem
+		margin-right: 10px
+.product-table
+	margin-top: 3em
+	margin-bottom: 2em
+	width: 100%
+	th
+		background: #073E71
+		padding: 1.3em 1em .2em
+		color: #fff
+		font-size: 1rem
+		font-weight: 800
+		text-align: left
+		vertical-align: top
+		white-space: nowrap
+		&:first-child
+			padding-left: 1.8em
+			width: 31%
+	td
+		padding: 1em
+		color: #3d3c3c
+		position: relative
+		font-size: 1rem
+		&:first-child
+			cursor: pointer
+			padding-left: 1.8em
+			width: 31%
+	tr
+		position: relative
+		&:nth-child(odd)
+			background: #EEEEEE
+@media only screen and (min-width: 1025px)
+	.product-table_first-cell
+		&:hover
+			.product-availability
+				display: block
+.product-item_popup
+	display: none
+	position: absolute
+	background-color: white
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.07)
+	padding: 1em
+	padding-top: 3em
+	min-width: 286px
+	top: 15px
+	left: 1.7em
+	z-index: 20
+.product-item_popup-close
+	position: absolute
+	top: 1em
+	right: 1em
+	font-size: .75rem
+	&:active
+		color: #3EBBF3
+.product-item_popup-list
+	font-size: inherit
+	li
+		margin-bottom: 1.2em
+	strong
+		display: block
+		font-weight: 800
+		margin-bottom: 5px
+.product-item_buy-btn
+	height: 40px
+	line-height: 40px
+	width: 100%
+.product-item_cart-btn
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	align-items: center
+	justify-content: center
+	height: 30px
+	min-width: auto
+	width: 100%
+	color: #fff
+	text-align: center
+	.glipf-cart
+		font-size: 1.4rem
+.product-availability
+	display: none
+	position: absolute
+	top: 100%
+	left: 1em
+	box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15)
+	background: #fff
+	color: #3d3c3c
+	min-width: 220px
+	font-size: 1rem
+	padding: 1em
+	z-index: 2
+	&:after
+		content: ''
+		display: block
+		width: 10px
+		height: 10px
+		background: #fff
+		position: absolute
+		left: 1em
+		top: -5px
+		transform: rotate(45deg)
+.product-item_name
+	position: relative
+	display: inline-block
+	padding-left: 17px
+	&:after
+		content: ''
+		display: block
+		width: 10px
+		height: 10px
+		background-color: #00ad5d
+		position: absolute
+		top: 4px
+		left: 0
+.product-item_name-mod
+	&:after
+		background: #E4C523
+.product-table_form-search
+	padding: 1em
+	padding-top: 0
+	background: #073E71
+.product_form-search
+	max-width: 385px
+	height: 25px
+	position: relative
+	background: #fff
+	border-radius: 6px
+	margin-bottom: .4em
+	overflow: hidden
+	.wrapper_submit-btn
+		position: absolute
+		top: 0
+		right: 0
+		height: 100%
+		width: 40px
+		text-align: right
+		&:hover
+			.glipf-search
+				color: #3EBBF3
+	.glipf-search
+		position: absolute
+		top: 0
+		left: 0
+		display: -webkit-flex
+		display: -moz-flex
+		display: -ms-flex
+		display: -o-flex
+		display: flex
+		align-items: center
+		justify-content: center
+		font-size: 1rem
+		color: #B7B7B7
+		width: 100%
+		height: 100%
+		transition: color .3s
+.product_form-search_input
+	height: 100%
+	width: 100%
+	padding: 0 2.4em 0 15px
+	line-height: 25px
+	border: 1px solid transparent
+	transition: border .3s
+	&:focus
+		border: 1px solid #3EBAF2
+	&::-webkit-input-placeholder
+		font-size: 0.625rem
+		color: #a9a9a9
+	&::-moz-placeholder
+		font-size: 0.625rem
+		color: #a9a9a9
+	&::-ms-input-placeholder
+		font-size: 0.625rem
+		color: #a9a9a9
+	&::input-placeholder
+		font-size: 0.625rem
+		color: #a9a9a9
+.form-search_submit-btn
+	width: 100%
+	height: 100%
+	position: absolute
+	top: 0
+	left: 0
+	background-color: transparent
+	z-index: 2
+.product-availability_text
+	padding-left: 17px
+	position: relative
+	&:after
+		content: ''
+		display: block
+		width: 10px
+		height: 10px
+		background-color: #00ad5d
+		position: absolute
+		top: 4px
+		left: 0
+.main-pagination
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	li
+		width: 26px
+		height: 30px
+		margin: 0 .3em
+		font-size: 1rem
+		background-color: #eee
+		border-radius: 3px
+		overflow: hidden
+		&.active
+			a
+				background: #3EBBF3
+				color: #fff
+	a
+		display: block
+		width: 100%
+		height: 100%
+		line-height: 34px
+		color: #3d3c3c
+		text-align: center
+		transition: background .3s, color .3s
+		&:hover
+			background: #3EBBF3
+			color: #fff
+			&:after
+				border-color: #fff!important
+	.prev-page,.next-page
+		a
+			position: relative
+			&:after
+				content: ''
+				display: block
+				width: 8px
+				height: 8px
+				border-right: 1.5px solid #3d3c3c
+				border-top: 1.5px solid #3d3c3c
+				position: absolute
+				top: 0
+				left: 0
+				right: 5px
+				bottom: 0
+				margin: auto
+				transform: rotate(45deg)
+				transition: border-color .3s
+	.prev-page
+		margin-right: 1em
+		a
+			&:after
+				right: 0
+				left: 5px
+				transform: rotate(-135deg)
+	.next-page
+		margin-left: 1em
+.pagination-dots
+	line-height: 37px
+	text-align: center
+.sidebar_services-content
+	margin-top: 3em
+.sidebar_services-box
+	background-color: white
+	box-shadow: 0 0 16px rgba(0, 0, 0, 0.07)
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	padding: 1em
+.sidebar_services-box_img
+	width: 85px
+	flex: 85px 0 0
+	text-align: center
+	img
+		max-width: 100%
+.sidebar_services-box_desc
+	padding-left: .6em
+	flex-basis: calc(100% - 85px)
+	max-width: calc(100% - 85px)
+	p
+		font-size: .875rem
+		color: #313131
+	.more-details_btn
+		font-size: .875rem
+		font-weight: 600
+		color: #3ebbf3
+		border-bottom: 1px solid #3ebbf3
+		transition: border-bottom-color .3s
+		&:hover
+			border-bottom-color: transparent
+.sidebar_services-box_title
+	font-size: 1.25rem
+	font-weight: 600
+	color: #3d3c3c
+	margin-bottom: .6em
+/**form-content***/
+.form-content
+	background: url(../img/bg/form-bg.jpg) no-repeat center top
+	background-size: cover
+	padding: 5em 0
+	.blue-color
+		color: #3ebbf3
+	.top-small_text
+		display: block
+		margin-bottom: 1.5em
+		font-size: .875rem
+.static-form
+	img
+		max-width: 100%
+.form-content_title
+	margin-bottom: .4em
+.form-static_policy-text
+	font-size: .875rem
+	color: #b1b3b7
+.form-static_submit-btn
+	margin-bottom: 10px
+	max-width: 310px
+	width: 100%
+.static-form_right-column
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	flex-direction: column
+	justify-content: flex-end
+	align-items: flex-end
+.services-mod_section
+	padding: 6em 0
+.service-item_mod
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	background-color: white
+	box-shadow: 0 0 16px rgba(0, 0, 0, 0.07)
+	height: 100%
+.services-column
+	margin-bottom: 3.3em
+	padding-left: 50px
+	&:nth-child(odd)
+		padding-left: 15px
+		padding-right: 50px
+.service-item_mod-img
+	flex: 280px 0 0
+	max-width: 280px
+	overflow: hidden
+	&:hover
+		img
+			transform: scale(1.1)
+	img
+		display: block
+		width: 100%
+		transition: transform .3s
+.service-item_mod-desc
+	flex-basis: calc(100% - 280px)
+	max-width: calc(100% - 280px)
+	padding: .7em 1em 1em 2em
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	flex-direction: column
+	justify-content: space-between
+	align-items: flex-start
+	p
+		font-size: inherit
+		line-height: 1.35
+		color: #3d3c3c
+		margin-bottom: auto
+	.more-details_btn
+		font-size: .875rem
+		font-weight: 600
+		color: #3ebbf3
+		margin-top: .5em
+		border-bottom: 1px solid #3ebbf3
+		transition: border-bottom-color .3s
+		&:hover
+			border-bottom-color: transparent
+.service-item_mod-title
+	font-size: 1.5rem
+	font-weight: 800
+	color: #3d3c3c
+	margin-bottom: .4em
+/***news-section**/
+.news-section
+	padding: 3em 0
+.news-item
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	margin-bottom: 3.2em
+.news-item_img
+	flex: 654px 0 0
+	max-width: 654px
+	overflow: hidden
+	&:hover
+		img
+			transform: scale(1.1)
+	img
+		display: block
+		width: 100%
+		transition: transform .3s
+.news-item_desc
+	flex-basis: calc(100% - 654px)
+	max-width: calc(100% - 654px)
+	border: 1px solid #F7F7F7
+	border-left: none
+	padding: 1.6em 1em 1em 2.3em
+	p
+		line-height: 1.35
+	.more-details_btn
+		font-size: .875rem
+		font-weight: 600
+		color: #3ebbf3
+		margin-top: .5em
+		border-bottom: 1px solid #3ebbf3
+		transition: border-bottom-color .3s
+		&:hover
+			border-bottom-color: transparent
+.news-item_title
+	font-size: 1.5rem
+	font-weight: 800
+	color: #3d3c3c
+	margin-bottom: 1em
+	text-transform: none
+	a
+		border-bottom: 1px solid transparent
+		transition: color .3s, border-bottom-color .3s
+		&:hover
+			color: #3EBBF3
+			border-bottom-color: #3EBBF3
+.news-item_date
+	display: block
+	margin-bottom: 1.5em
+	font-size: .875rem
+	color: #aeaeae
+.main-pagination_center
+	justify-content: center
+/***vacancy-section***/
+.vacancy-section
+	padding: 5.5em 0 5em
+	.title-h3
+		margin-bottom: 2em
+.vacancy-section_advatages-list
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	justify-content: space-between
+	flex-wrap: wrap
+	margin: 0 -15px 3.8em
+	li
+		flex: 23% 0 0
+		max-width: 23%
+		padding: 0 15px
+	.advatages-icon
+		display: block
+		height: 65px
+		font-size: 4rem
+		margin-bottom: .3em
+		color: #073E71
+	.advatages-title
+		display: block
+		font-size: 1.5rem
+		line-height: 1.5
+		font-weight: 800
+		color: #3d3c3c
+		padding-bottom: .65em
+		margin-bottom: .65em
+		position: relative
+		&:after
+			content: ''
+			display: block
+			width: 104px
+			height: 3px
+			background-color: #073e71
+			position: absolute
+			bottom: 0
+			left: 0
+	p
+		font-size: 1rem
+		color: #949494
+		line-height: 1.5
+.wrapper-vacanvy
+	margin-bottom: 2.2em
+.vacancy-item
+	background-color: white
+	box-shadow: 0 0 16px rgba(0, 0, 0, 0.07)
+	padding: 2.3em
+	margin-bottom: 3.5em
+	ul:not([class])
+		padding-left: 3.5em
+		color: #3d3c3c
+		margin-bottom: 1.5em
+		li
+			margin-bottom: .3em
+.vacancy-item_title
+	font-size: 1.875rem
+	font-weight: 700
+	color: #073e71
+	margin-bottom: 1.3em
+.vacancy-item_list-title
+	color: #3d3c3c
+	display: block
+	margin-bottom: 1.8em
+.vacancy-item_more-details
+	display: inline-block
+	font-size: .875rem
+	color: #3ebbf3
+	border-bottom: 1px solid #3ebbf3
+	position: relative
+	cursor: pointer
+	transition: border-bottom-color .3s
+	&.is-active
+		&:after
+			top: 7px
+			transform: rotate(-45deg)
+	&:after
+		content: ''
+		display: block
+		width: 8px
+		height: 8px
+		border-right: 1px solid #3ebbf3
+		border-top: 1px solid #3ebbf3
+		position: absolute
+		top: -2px
+		right: -22px
+		bottom: 0
+		margin: auto
+		transform: rotate(135deg)
+	&:hover
+		border-bottom-color: transparent
+.vacancy-item_hidden
+	display: none
+.input-file
+	width: 220px
+	height: 28px
+	display: block
+	position: relative
+	&:hover
+		.input-file-text
+			&::-webkit-input-placeholder
+				border-bottom-color: transparent
+			&::-moz-placeholder
+				border-bottom-color: transparent
+			&::-ms-input-placeholder
+				border-bottom-color: transparent
+			&::input-placeholder
+				border-bottom-color: transparent
+	.button
+		display: block
+		position: absolute
+		top: 0
+		left: 0
+		width: 100%
+		height: 100%
+		float: none
+		margin: 0
+		background-color: transparent
+		text-align: center
+		cursor: pointer!important
+		overflow: hidden
+		&:after
+			content: ''
+			display: block
+			width: 100%
+			height: 100%
+			position: absolute
+			top: 0
+			left: 0
+			z-index: 10
+		input
+			position: absolute
+			top: 0
+			right: 0
+			padding: 0
+			font-size: 30px
+			width: 100%
+			height: 100%
+			opacity: 0
+.input-file-text
+	width: 100%
+	height: 100%
+	padding: 0 0 0 2.5em
+	background-color: transparent
+	border: none
+	color: #3ebbf3
+	position: absolute
+	top: 0
+	left: 0
+	width: 100%
+	&::-webkit-input-placeholder
+		color: #3ebbf3
+		border-bottom: 1px solid #3ebbf3
+		transition: border-bottom-color .3s
+	&::-moz-placeholder
+		color: #3ebbf3
+		border-bottom: 1px solid #3ebbf3
+		transition: border-bottom-color .3s
+	&::-ms-input-placeholder
+		color: #3ebbf3
+		border-bottom: 1px solid #3ebbf3
+		transition: border-bottom-color .3s
+	&::input-placeholder
+		color: #3ebbf3
+		border-bottom: 1px solid #3ebbf3
+		transition: border-bottom-color .3s
+.input-file_icon
+	color: #3ebbf3
+	font-size: 2rem
+.form-static_submit-btn--mod
+	max-width: 226px
+.form-static_footer
+	margin-top: 1.7em
+.vacancy-section
+	.form-resume_title
+		margin-bottom: 1em
+/**gost-section**/
+.gost-section
+	padding: 5.5em 0 2em
+.form_document-search
+	position: relative
+	height: 50px
+	.wrapper_submit-btn
+		position: absolute
+		top: 0
+		right: 0
+		width: 42px
+		height: 100%
+		&:hover
+			.glipf-search
+				color: #3EBBF3
+	.glipf-search
+		position: absolute
+		top: 0
+		left: 0
+		display: -webkit-flex
+		display: -moz-flex
+		display: -ms-flex
+		display: -o-flex
+		display: flex
+		align-items: center
+		font-size: 1.5rem
+		color: #B7B7B7
+		width: 100%
+		height: 100%
+		text-align: right
+		transition: color .3s
+.form_document-search_input
+	width: 100%
+	height: 100%
+	background-color: #fafafa
+	border: 1px solid #b2b2b2
+	padding: 0 47px 0 1em
+	line-height: 43px
+	border-radius: 10px
+	transition: border .3s
+	&:focus
+		border: 1px solid  #24A5D8
+	&::-webkit-input-placeholder
+		color: #a9a9a9
+		font-size: .75rem
+	&::-moz-placeholder
+		color: #a9a9a9
+		font-size: .75rem
+	&::-ms-input-placeholder
+		color: #a9a9a9
+		font-size: .75rem
+	&::input-placeholder
+		color: #a9a9a9
+		font-size: .75rem
+.form-static_small
+	background-color: white
+	box-shadow: 0 0 16px rgba(0, 0, 0, 0.07)
+	padding: 1.1em 1.2em .7em
+	.form-column
+		padding: 0 5px
+		flex: 37%	0 0
+		max-width: 37%
+		&:last-child
+			flex: 26% 0 0
+			max-width: 26%
+	.text
+		font-size: .875rem
+		color: #3d3c3c
+		display: block
+		margin-bottom: 1em
+	.row
+		margin: 0 -5px
+	.form-group
+		margin-bottom: 1em
+	.form-input
+		height: 43px
+		font-size: .875rem
+		background-color: #eee
+		&::-webkit-input-placeholder
+			font-size: .75rem
+			color: #b1b3b7
+		&::-moz-placeholder
+			font-size: .75rem
+			color: #b1b3b7
+		&::-ms-input-placeholder
+			font-size: .75rem
+			color: #b1b3b7
+		&::input-placeholder
+			font-size: .75rem
+			color: #b1b3b7
+.form-static_small_title
+	font-size: 1.25rem
+	font-weight: 600
+	color: #3d3c3c
+	margin-bottom: .3em
+.form-static_small-submit
+	min-width: auto
+	height: 43px
+	font-size: .875rem
+	line-height: 43px
+	width: 100%
+.gost-item
+	height: 100%
+	>a
+		background-color: white
+		box-shadow: 0 0 16px rgba(0, 0, 0, 0.07)
+		padding: 1.2em 1em
+		display: -webkit-flex
+		display: -moz-flex
+		display: -ms-flex
+		display: -o-flex
+		display: flex
+		height: 100%
+		&:hover
+			p
+				color: #3EBBF3
+				border-bottom-color: #3EBBF3
+.gost-item_icon
+	flex: 34px 0 0
+	max-width: 34px
+	color: #073e71
+	font-size: 2.4rem
+.gost-item-desc
+	flex-basis: calc(100% - 34px)
+	max-width: calc(100% - 34px)
+	padding-left: 1em
+	line-height: 1.2
+	margin-top: -5px
+	p
+		display: inline
+		color: #3d3c3c
+		font-size: .875rem
+		border-bottom: 1px solid #3d3c3c
+		transition: border-bottom-color .3s, color .3s
+.wrapper_gost-item
+	margin-top: 2.7em
+	[class^="col-"]
+		margin-bottom: 3.5em
+.gost-section_header
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	flex-wrap: wrap
+	justify-content: space-between
+	margin: 0 -15px
+	.left-column
+		flex: 51% 0 0
+		max-width: 51%
+		padding: 0 15px
+	.right-column
+		flex: 44% 0 0
+		max-width: 44%
+		padding: 0 15px
+/***delivery-section**/
+.delivery-section
+	padding: 5.5em 0 4em
+	overflow: hidden
+	.top-text
+		font-size: 1.5rem
+		font-weight: 600
+		color: #3d3c3c
+		margin-top: 1.3em
+		margin-bottom: 1.7em
+.delivery-item
+	background-color: white
+	box-shadow: 0 0 16px rgba(0, 0, 0, 0.07)
+	padding: 1.1em 1em 1.1em  1.5em
+	height: 100%
+	p
+		color: #949494
+		font-size: 1rem
+.delivery-item_icon
+	color: #073E71
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	align-items: center
+	font-size: 4.5rem
+	height: 85px
+	margin: 0 0 .3em
+	&.glipf-truck
+		font-size: 6rem
+.delivery-item_title
+	font-size: 1.25rem
+	line-height: 1.5
+	font-weight: 800
+	color: #3d3c3c
+	padding-bottom: .9em
+	margin-bottom: .9em
+	position: relative
+	&:after
+		content: ''
+		display: block
+		width: 104px
+		height: 3px
+		background-color: #073e71
+		position: absolute
+		bottom: 0
+		left: 0
+.delivery-img
+	position: relative
+	left: 1.5em
+	top: -1em
+	width: 150%
+	img
+		max-width: 100%
+.delivery-section_header
+	margin-bottom: 2.6em
+	.title-h3
+		white-space: nowrap
+.transport-column
+	margin-bottom: 2.5em
+.transport-item
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	flex-direction: column
+	justify-content: space-between
+	position: relative
+	padding: 1.4em 0 0
+	height: 100%
+	z-index: 1
+	&:hover
+		&:after
+			background: #3EBBBB
+	&:after
+		content: ''
+		display: block
+		height: 95%
+		width: 70%
+		background: #3EBBF3
+		position: absolute
+		top: 0
+		left: 1.6em
+		transform: skew(-8deg)
+		transition: background .3s
+		z-index: -1
+.transport-item_title
+	font-size: 1.5625rem
+	font-weight: 600
+	display: block
+	color: #fff
+	padding: 0 3em 0
+	margin-bottom: .3em
+.transport-item_img
+	padding-left: .7em
+	img
+		max-width: 100%
+.transport-item_img-mod
+	padding-left: 1.6em
+.recommended-transportation_footer
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	flex-wrap: wrap
+	margin: 0
+	padding: 0 4em 0 2em
+	color: #3d3c3c
+	.left-column
+		flex: 69% 0 0
+		max-width: 69%
+		line-height: 1.6
+		padding: 0 15px
+	.right-column
+		flex: 31% 0 0
+		max-width: 31%
+		padding: 0 15px
+	ul:not([class])
+		padding-left: 1.2em
+		margin-bottom: 1.3em
+		li
+			margin-bottom: 0
+	p
+		margin-bottom: 1.5em
+		line-height: inherit
+.order-transport_section
+	padding: 5.5em 0 4em
+	background: url(../img/bg/order-transport_bg.jpg) no-repeat center top
+	background-size: cover
+.order-transport_item
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	flex-direction: column
+	justify-content: space-between
+	align-items: center
+	background-color: white
+	box-shadow: 0 0 16px rgba(0, 0, 0, 0.07)
+	padding: 2.3em
+	padding-bottom: 1.5em
+	height: 100%
+	text-align: center
+.order-transport_column
+	margin-bottom: 1.5em
+.order-transport_item-img
+	margin-bottom: 1.7em
+	img
+		max-width: 100%
+.order-transport_item-title
+	display: block
+	color: #3d3c3c
+	font-size: 1.5625rem
+	font-weight: 600
+	margin-top: auto
+.order-transport_item-btn
+	margin-top: 1em
+/***contact-section**/
+.contact-section
+	padding: 5.5em 0 4.5em
+	color: #3d3c3c
+.tab
+	cursor: pointer
+.tab-item
+	height: 0
+	overflow: hidden
+	opacity: 0
+	transition: opacity .2s
+	&.is-visible
+		opacity: 1
+		overflow: visible
+		height: auto
+.tab-names
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	justify-content: space-between
+	margin-bottom: 2.4em
+	li
+		font-size: 1.5rem
+		font-weight: 700
+		margin-right: 1em
+		&:last-child
+			margin-right: 0
+		&.active
+			.tab-text
+				color: #24a6d7
+				border-bottom-color: #24a6d7
+	.tab-text
+		color: #b6b6b6
+		border-bottom: 1px solid transparent
+		transition: color .3s, border-bottom-color .3s
+.wrapper_select-office
+	margin-bottom: 2.7em
+	.selectric
+		height: 50px
+	.label
+		line-height: 50px
+		margin-right: 70px
+		margin-left: 1.5em
+	.button
+		width: 65px
+		&:after
+			width: 12px
+			height: 12px
+.contact-section_subtitle
+	font-size: 1.5rem
+	font-weight: 700
+	margin-bottom: 1em
+.contact-section_adress
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	align-items: center
+	font-size: 1.5rem
+	margin-bottom: 1.35em
+	.glipf-place-2
+		color: #3EBBF3
+		font-size: 1.7rem
+		margin-right: .3em
+.contact-section_list
+	margin-bottom: 3.2em
+	li
+		display: -webkit-flex
+		display: -moz-flex
+		display: -ms-flex
+		display: -o-flex
+		display: flex
+		align-items: center
+		margin-bottom: 12px
+	[class*="glipf-"]
+		color: #3EBBF3
+		margin-right: .9em
+	a
+		display: -webkit-flex
+		display: -moz-flex
+		display: -ms-flex
+		display: -o-flex
+		display: flex
+		align-items: center
+.contact-section_list_mod
+	margin-bottom: 1.8em
+	li
+		margin-bottom: 5px
+.contact-mail
+	transition:  color .3s
+	&:hover
+		color: #3EBBF3
+.blue-border_btn
+	display: inline-block
+	color: #3ebbf3
+	font-weight: 600
+	height: 50px
+	line-height: 50px
+	min-width: 140px
+	border: 2px solid #3ebbf3
+	text-align: center
+	transition: border-color .3s, background .3s, color .3s
+	&:hover
+		background: #3ebbf3
+		color: #fff
+	&:active
+		background: darken(#3ebbf3, 10%)
+		border-color: darken(#3ebbf3, 10%)
+.download-details_btn
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	align-items: center
+	justify-content: center
+	padding: .2em .5em
+	color: #3ebbf3
+	font-weight: 600
+	height: 50px
+	border: 2px solid #3ebbf3
+	transition: border-color .3s, background .3s, color .3s
+	&:hover
+		background: #3ebbf3
+		color: #fff
+	&:active
+		background: darken(#3ebbf3, 10%)
+		border-color: darken(#3ebbf3, 10%)
+	.glipf-pdf
+		font-size: 1.3rem
+		margin-right: .7em
+.driving-directions_btn
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	align-items: center
+	justify-content: center
+	.glipf-download
+		margin-right: .7em
+.contact-img
+	margin-top: 4.7em
+	img
+		max-width: 100%
+.contact_left-column
+	flex: 53% 0 0
+	max-width: 53%
+	padding: 0 15px
+.contact_right-column
+	flex: 47% 0 0
+	max-width: 47%
+	padding: 0 15px 0 3.3em
+.contact-section-desc
+	height: 0
+	overflow: hidden
+	opacity: 0
+	transition: opacity .2s
+	&.is-active
+		opacity: 1
+		height: auto
+		overflow: visible
+/**about-us_section**/
+.about-us_section
+	padding: 5.5em 0 4em
+	color: #3d3c3c
+	background: url(../img/bg/about-us_bg.jpg) no-repeat center top
+	background-size: cover
+	p
+		line-height: 1.5
+		margin-bottom: 1.7em
+.about-us_left-column
+	padding: 0 15px
+	flex: 56.5% 0 0
+	max-width: 56.5%
+.about-us_right-column
+	padding: 0 15px
+	flex: 43.5% 0 0
+	max-width: 43.5%
+.about-us_img
+	box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+	img
+		display: block
+		max-width: 100%
+.digit-section
+	padding: 5.5em 0
+.digit-list
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	justify-content: space-between
+	flex-wrap: wrap
+	position: relative
+	z-index: 1
+	&.off
+		&:after
+			opacity: 0
+	&:after
+		content: ''
+		display: block
+		height: 100px
+		max-width: 1130px
+		width: 100%
+		background: url(../img/bg/line-dashed.png) no-repeat center 0
+		background-size: contain
+		position: absolute
+		top: 50px
+		left: 3em
+		transition: opacity .6s
+		z-index: -1
+	li
+		flex: 1
+		padding: 0 15px
+		font-size: 1.25rem
+		text-align: center
+		transition: opacity .3s
+.digit-item_circle
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	align-items: center
+	justify-content: center
+	width: 180px
+	height: 180px
+	background-color: #3ebbf3
+	border: 30px solid #38a6d9
+	color: #fff
+	font-size: 2.25rem
+	font-weight: 600
+	border-radius: 50%
+	margin: 0 auto .7em
+	&.fade
+		opacity: 1 !important
+.fadein
+	opacity: 0
+.anim-digit
+	animation: pulse 5s .5s ease-out infinite
+
+@-webkit-keyframes pulse 
+	0% 
+		transform: scale(1)
+
+	50% 
+		transform: scale(1.1)
+
+	100% 
+		transform: scale(1)
+.history-company_section
+	padding: 1em 0 5.2em
+	color: #3d3c3c
+	.title-h3
+		margin-bottom: 1.2em
+.history-company_blue-box
+	position: relative
+	color: #fff
+	padding: 3.5em 4.5em 3.5em 3em
+	z-index: 1
+	.title
+		font-size: 1.5625rem
+		font-weight: 700
+		margin-bottom: .7em
+	&:after
+		content: ''
+		display: block
+		height: 100%
+		width: 88%
+		background: #3EBBF3
+		position: absolute
+		top: 0
+		left: 0
+		transform: skew(-7deg)
+		transition: background .3s
+		z-index: -1
+	p
+		font-size: .875rem
+		line-height: 1.7
+.history-company_slide
+	display: -webkit-flex !important
+	display: -moz-flex !important
+	display: -ms-flex !important
+	display: -o-flex !important
+	display: flex !important
+	align-items: center
+.history-company_slide-left
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	flex-direction: column
+	justify-content: space-between
+	align-items: flex-start
+	min-height: 330px
+	padding: 3.2em  2em 2em 3.5em
+	flex: 36% 0 0
+	max-width: 36%
+	position: relative
+	z-index: 1
+	&:after
+		content: ''
+		display: block
+		height: 100%
+		width: 92%
+		background-color: white
+		box-shadow: 0 0 16px rgba(0, 0, 0, 0.07)
+		position: absolute
+		bottom: .5em
+		left: 1.7em
+		transform: skew(-8deg)
+		transition: background .3s
+		z-index: -1
+.history-company_slide-year
+	display: inline-block
+	color: #3ebbf3
+	font-size: 1.25em
+	font-weight: 700
+	padding-bottom: .3em
+	position: relative
+	margin-bottom: 1.7em
+	&:after
+		content: ''
+		display: block
+		width: 100%
+		height: 4px
+		background-color: #24a6d7
+		position: absolute
+		bottom: 0
+		left: 0
+.history-company_slide-title
+	display: block
+	font-size: 1.3125rem
+	font-weight: 700
+	margin-bottom: auto
+	width: 100%
+.history-company_slide-nav
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	justify-content: space-between
+	width: 100%
+	.slide-arrow
+		font-size: .875rem
+		font-weight: 300
+		cursor: pointer
+		transition: color .3s
+		&:hover
+			color: #3ebbf3
+			font-weight: 400
+.history-company_slide-right
+	padding: 0 15px 0 3em
+	flex: 64% 0 0
+	max-width: 64%
+.year-slider
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	flex-wrap: wrap
+	position: relative
+	margin-top: 2.5em
+	&:before
+		content: ''
+		display: block
+		width: 93%
+		height: 2px
+		background: #F1F1F1
+		position: absolute
+		top: 3px
+		left: 0
+	li
+		flex: 1
+		cursor: pointer
+		position: relative
+		font-size: 1rem
+		z-index: 1
+		&.is-active
+			.year-slide_dots
+				background-color: #fff
+				border: 2px solid #3ebbf3
+				box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55)
+				transform: scale(2)
+.year-slide_dots
+	display: block
+	width: 7px
+	height: 7px
+	border-radius: 50%
+	background: #B9B9B9
+	margin-bottom: 1.2em
+	transition: transform .3s
+.advantages-mod_section
+	padding: 0 0 1.8em
+	// .advantages-item_icon.glipf-award
+	// 	font-weight: 600
+.photo-galery_section
+	background: url(../img/bg/blue-bg.jpg) no-repeat center top
+	background-size: cover
+	padding: 5.5em 0
+.photo-galery_item
+	margin-bottom: 1.875em
+	img
+		max-width: 100%
+		box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25)
+.current-vacancies_section
+	background: url(../img/bg/current-vacancies_bg.jpg) no-repeat center top
+	background-size: cover
+	.top-text
+		font-size: 1.25rem
+		font-weight: 600
+		margin-bottom: .3em
+.current-vacancies_title
+	font-size: 3.125rem
+	font-weight: 700
+	margin-bottom: .4em
+.current-vacancies_right
+	padding: 1.875em 15px
+	flex: 54% 0 0
+	max-width: 54%
+	.main-btn
+		min-width: 255px
+.current-vacancies_left
+	flex: 46% 0 0
+	max-width: 46%
+	margin-bottom: -4em
+.current-vacancies_img
+	overflow: hidden
+	padding-right: 5em
+	text-align: right
+	img
+		max-width: 100%
+/**reviews-section***/
+.reviews-section
+	padding: 5.5em 0 3em
+	border-bottom: 1px solid #D1D1D1
+.review-item
+	margin-bottom: 3em
+	img
+		max-width: 100%
+.partners-section
+	padding: 5.5em 0 3em
+.wrapper_partner-item
+	color: #3d3c3c
+	[class^="col-"]
+		margin-bottom: 2.2em
+.partner-item
+	background-color: white
+	box-shadow: 0 0 16px rgba(0, 0, 0, 0.07)
+	padding: 1.8em 2em
+	height: 100%
+	p
+		font-size: 1rem
+		line-height: 1.6
+		margin-bottom: 0
+.partner-item_logo
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	align-items: center
+	justify-content: center
+	margin: 0 0 1em
+	height: 78px
+	text-align: center 
+	img
+		max-width: 100%
+		max-height: 100%
+.form-content_mod
+	background: url(../img/bg/form2-bg.jpg) no-repeat center top
+	background-size: cover
+	overflow: hidden
+	padding: 0
+	.form-content_title
+		font-size: 2.1875rem
+	.form-static_submit-btn
+		margin-top: 1em
+	.form-group
+		margin-bottom: 1em
+.beam-img
+	float: right
+	width: 150%
+	text-align: right
+	img
+		max-width: 100%
+.form-content_mod-desc
+	padding: 4em 0 2em
+	.top-small_text
+		font-size: 1rem
+		margin-bottom: 1.9em
+	.form-input
+		height: 43px
+		&::-webkit-input-placeholder
+			font-size: .85rem
+		&::-moz-placeholder
+			font-size: .85rem
+		&::-ms-input-placeholder
+			font-size: .85rem
+		&::input-placeholder
+			font-size: .85rem
+	.form-textarea
+		height: 172px
+		&::-webkit-input-placeholder
+			font-size: .875rem
+		&::-moz-placeholder
+			font-size: .875rem
+		&::-ms-input-placeholder
+			font-size: .875rem
+		&::input-placeholder
+			font-size: .875rem
+/**news-detailed**/
+.news-detailed
+	padding: 5.5em 0 3.2em
+	p
+		line-height: 1.6
+		margin-bottom: 1.7em
+.news-detailed_title
+	margin-bottom: .8em
+.news-detailed_date
+	display: block
+	color: #aeaeae
+	font-size: 1rem
+	margin-bottom: 3em
+.news-detailed_img
+	margin: 0 0 2em
+	overflow: hidden
+	text-align: center
+	img
+		max-width: 100%
+.sidebar_news-item
+	border: 1px solid #E5E5E5
+	margin-bottom: 1.25em
+.sidebar_news-item_img
+	overflow: hidden
+	&:hover
+		img
+			transform: scale(1.1)
+	img
+		max-width: 100%
+		transition: transform .3s
+.sidebar_news-item_desc
+	padding: .7em 1.5em	
+.sidebar_news-item_title
+	font-size: 1rem
+	color: #3d3c3c
+	font-weight: 700
+	margin-bottom: 1em
+	a
+		border-bottom: 1px solid transparent
+		transition: color .3s, border-bottom-color .3s
+		&:hover
+			border-bottom-color: #24A6D7
+			color: #24A6D7
+.sidebar_news-item_date
+	color: #aeaeae
+	font-size: 0.625rem
+.all-news_btn
+	width: 100%
+.slick-arrow
+	border-color: #24A6D7
+	top: 40%
+	&:hover
+		border-color: #2456D7
+.slick-next
+	right: 0
+.slick-prev
+	left: 0
+/***main-footer***/
+.main-footer
+	flex: 0 0 auto
+	background: #083F72
+	padding: 2.6em 0 1.2em
+	color: #fff
+.footer-title
+	font-size: 1rem
+	font-weight: 800
+	margin-bottom: 1.3em
+	text-transform: uppercase
+	a
+		border-bottom: 1px solid transparent
+		transition: border-bottom-color .3s
+		&:hover
+			border-bottom-color: #fff
+.footer-menu
+	li
+		margin-bottom: 2px
+	a
+		font-size: 1rem
+		border-bottom: 1px solid transparent
+		transition: border-bottom-color .3s
+		&:hover
+			border-bottom-color: #fff
+.footer-title_box
+	margin-top: 1.6em
+.footer-contact_list
+	li
+		display: -webkit-flex
+		display: -moz-flex
+		display: -ms-flex
+		display: -o-flex
+		display: flex
+		margin-bottom: .45em
+		font-size: 1rem
+	[class^="glipf-"]
+		margin-right: .7em
+		font-size: .9rem
+	.glipf-clock
+		top: 4px
+		position: relative
+	a
+		position: relative
+		padding-left: 1.5em
+		[class^="glipf-"]
+			position: absolute
+			top: 4px
+			left: 0
+.footer-mail
+	border-bottom: 1px solid transparent
+	transition: border-bottom-color .3s
+	&:hover
+		border-bottom-color: #fff
+.footer-column
+	padding: 0 15px
+	&:nth-child(1)
+		flex: 65% 0 0
+		max-width: 65%
+	&:nth-child(2)
+		flex: 18% 0 0
+		max-width: 18%
+	&:nth-child(3)
+		flex: 17% 0 0
+		max-width: 17%
+.social-network
+	display: -webkit-flex
+	display: -moz-flex
+	display: -ms-flex
+	display: -o-flex
+	display: flex
+	justify-content: flex-end
+	margin-top: 1.5em
+	li
+		margin-left: .4em
+	a
+		color: #fff
+		font-size: 1.1rem
+		transition: color .3s
+		&:hover
+			color: #24A5D8
+
+
+.scroll-to-top
+	display: block
+	width: 50px
+	height: 50px
+	background: darken(#083F72, 10%)
+	cursor: pointer
+	position: fixed
+	right: 20px
+	bottom: 4em
+	opacity: 0
+	transform: scale(0)
+	transition: transform 0.4s, opacity 0.6s
+	z-index: 100
+	&:after
+		content: ""
+		display: block
+		height: 30%
+		width: 30%
+		border-top: 3px solid #fff
+		border-right: 3px solid #fff
+		position: absolute
+		top: 4px
+		bottom: 0
+		left: -1px
+		right: 0
+		margin: auto
+		-webkit-transform: rotate(-45deg)
+		-ms-transform: rotate(-45deg)
+		transform: rotate(-45deg)
+	&:hover
+		opacity: 0.7
+.scroll-to-top-visible
+	transform: scale(1)
+	opacity: 1
+	&.is-hidden
+		display: none
+.tablet-visible
+	display: none
+.tablet-small_visible
+	display: none
+.mobile-visible
+	display: none
+@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none)
+	.price-list_box-content img
+		width: 100%
+	.cart-step_item
+		flex: auto 0 0 
+@media only screen and (max-width: 1900px)
+	.dropdown-menu_item > a
+		font-size: .875rem
+		padding: .25em .7em
+		min-height: 35px
+	.main-page_title
+		font-size: 3.8rem
+	.cart-content .container
+		padding: 2em 15px
+	.cart-content_title
+		margin-bottom: 1em
+	.cart-content_header
+		margin-bottom: 1.5em
+	.cart-steps
+		margin-bottom: 0
+	.cart-content_body
+		max-height: calc(100vh - 300px)
+	.form-input
+		height: 60px
+	.form-textarea
+		height: 228px
+	.checkout-checkbox input[type="checkbox"] + .checkbox-text:after
+		width: 27px
+		height: 27px
+	.checkout-checkbox input[type="checkbox"]:checked + .checkbox-text:before
+		height: 18px
+		width: 9px
+	.checkout-checkbox .checkbox-text
+		font-size: 1rem
+	.cart-table th
+		padding: .8em
+	.cart-table td
+		padding: .7em
+		font-size: 1.125rem
+	.cart-table
+		margin-bottom: 1em
+	.cart-content_body .check-icon
+		width: 130px
+		height: 130px
+	.cart-content_body .thanks-text
+		font-size: 2.2rem
+	.checkout-form
+		height: calc(100vh - 225px)
+	.checkout-form .cart-content_body
+		max-height: calc(100vh - 300px)
+@media only screen and (max-width: 1390px)
+	.global-pad
+		padding-top: 143px
+	.dropdown-content
+		left: 274px
+	.dropdown-menu_item > a
+		font-size: .75rem
+		padding: .25em .5em
+		min-height: 30px
+	.main-page_title
+		font-size: 3.2rem
+	.category-item > a
+		font-size: 1.25rem
+	.category-item_mod
+		font-size: 1.25rem
+	body
+		font-size: 1rem
+	.category-item_mod-content .category-icon
+		left: .1em
+	.main-btn
+		min-width: 170px
+	.download-price_btn
+		max-width: 200px
+	.service-item_title
+		font-size: 1.25rem
+	.advantages-item_title
+		font-size: 1.25rem
+	.advantages-item_icon
+		font-size: 2.7rem
+		height: 60px
+	.advantages-item_icon.glipf-truck
+		font-size: 4.5rem
+	.advantages-item
+		margin-bottom: 1.7em
+		.min
+			display: inline
+	.map-contact_box
+		max-width: 370px
+		transform: translate(-158%, -50%)
+	.map-contact_list li
+		font-size: 1.125rem
+	.map-contact_box
+		padding: 1.7em 1.5em
+	.head-logo
+		max-width: 300px
+		flex: 300px 0 0
+	.head_phone-box
+		font-size: .875rem
+	.head_callback-btn a
+		font-size: inherit
+	.head_form-search
+		max-width: 300px
+	.head-cart .glipf-cart
+		font-size: 2.5rem
+	.cart-content_title
+		font-size: 1.5rem
+	.cart-total-price
+		font-size: 1.5rem
+	.checkout-btn
+		height: 50px
+		line-height: 50px
+	.back-site_btn
+		height: 50px
+		line-height: 50px
+	.cart-content_body
+		max-height: calc(100vh - 265px)
+	.cart-table_textarea
+		height: 120px
+	.cart-content .container
+		padding: 1.875em 15px
+	.form-input
+		height: 50px
+	.form-group
+		margin-bottom: 1.2em
+	.form-group_last
+		margin-bottom: 0
+	.form-textarea
+		height: 159px
+	.cart-content_body .check-icon
+		width: 125px
+		height: 125px
+	.cart-content_body .thanks-text small
+		margin-top: .7em
+	.cart-content_body .thanks-text
+		margin-bottom: 1.1em
+	.cart-content_body-mod
+		max-height: calc(100vh - 200px)
+	.form-input
+		&::-webkit-input-placeholder
+			font-size: inherit
+		&::-moz-placeholder
+			font-size: inherit
+		&::-ms-input-placeholder
+			font-size: inherit
+		&::input-placeholder
+			font-size: inherit
+	.form-textarea
+		&::-webkit-input-placeholder
+			font-size: inherit
+		&::-moz-placeholder
+			font-size: inherit
+		&::-ms-input-placeholder
+			font-size: inherit
+		&::input-placeholder
+			font-size: inherit
+	.footer-column
+		&:nth-child(1)
+			flex: 62% 0 0
+			max-width: 62%
+		&:nth-child(2)
+			flex: 18% 0 0
+			max-width: 18%
+		&:nth-child(3)
+			flex: 20% 0 0
+			max-width: 20%
+	.checkout-form
+		height: calc(100vh - 200px)
+	.checkout-form .cart-content_body
+		max-height: calc(100vh - 275px)
+	.category-item_other .category-icon
+		transform: scale(.8)
+		top: 0.1em
+	.category-item_mod-other .category-icon
+		transform: scale(.7)
+		top: -2px
+	.category-item_other-title
+		font-size: 1.25rem
+	.category-item_other-list a
+		font-size: inherit
+	.category-item_mod-other .site-link
+		font-size: .875rem
+	.subcategory-item_img
+		flex: 130px 0 0
+		width: 130px
+		text-align: center
+		img
+			max-width: 100%
+	.subcategory-item_name
+		flex-basis: calc(100% - 130px)
+		max-width: calc(100% - 130px)
+	.subcategory-item > a
+		font-size: 1.25rem
+	.catalog_right-column
+		padding-left: 2em
+	.product-item_cart-btn
+		min-width: auto
+	.static-form
+		.form-textarea
+			height: 172px
+	.service-item_mod-desc p
+		line-height: 1.3
+		font-size: .935rem
+	.news-item_img
+		flex: 600px 0 0
+		max-width: 600px
+	.news-item_desc
+		flex-basis: calc(100% - 600px)
+		max-width: calc(100% - 600px)
+		padding: 1em 1em 1em 1.3em
+	.vacancy-section_advatages-list li
+		flex: 25% 0 0
+		max-width: 25%
+	.vacancy-section_advatages-list .advatages-title
+		font-size: 1.25rem
+	.input-file
+		width: 196px
+	.form-static_small-submit
+		min-width: auto
+	.delivery-img
+		top: 1em
+		left: 0
+		width: 100%
+	.delivery-item_icon
+		font-size: 3rem
+		height: 55px
+	.delivery-item_icon.glipf-truck
+		font-size: 4rem
+	.delivery-item_title
+		font-size: 1rem
+		padding-bottom: .5em
+		margin-bottom: .5em
+	.delivery-item p
+		font-size: .875rem
+	.delivery-section .top-text
+		font-size: 1.2rem
+	.transport-item_title
+		font-size: 1.25rem
+	.contact_left-column
+		flex: 55% 0 0
+		max-width: 55%
+	.contact_right-column
+		flex: 45% 0 0
+		max-width: 45%
+		padding-left: 15px
+	.digit-list:after
+		max-width: 1080px
+	.digit-list li
+		font-size: 1rem
+	.history-company_slide-title
+		font-size: 1.125rem
+	.advantages-mod_section
+		.advantages-item .min
+			display: block
+	.beam-img
+		width: 100%
+		float: none
+	.services-column
+		padding-left: 25px
+		&:nth-child(odd)
+			padding-right: 25px
+	.form-callback
+		.form-label
+			margin-bottom: .5em
+		.form-callback_submit
+			margin-top: .7em
+	.download-price_btn .glipf-download
+		margin-right: .7em
+@media only screen and (max-width: 1200px)
+	.head-logo
+		max-width: 220px
+		flex: 220px 0 0
+	.head_form-search	
+		max-width: 205px
+	.head-cart
+		margin-left: .7em
+	.head_form-search .wrapper_submit-btn
+		width: 30px
+	.head_form-search_input
+		padding-right: 35px
+	.main-page_title
+		font-size: 2.25rem
+	.main-btn
+		height: 45px
+		line-height: 45px
+	.main-section_catalog-btn
+		min-width: 115px
+	.slick-dots li
+		width: 8px
+		height: 8px
+	.main-slider .slick-dots
+		bottom: -2.7em
+	.category-item
+		flex: 25% 0 0
+		max-width: 25%
+	.category-item_mod
+		flex: 33.3336%
+		max-width: 33.3336%
+	.category-item > a
+		font-size: 1.125rem
+		align-items: center
+	.download-price_btn
+		max-width: 290px
+		justify-content: center
+	.download-price_btn .glipf-download
+		margin-right: .8em
+	.service-item_title
+		font-size: 1.125rem
+	.service-item p
+		font-size: inherit
+	body
+		font-size: .935rem
+	.service-item_desc
+		padding: 1em
+	.advantages-section .right-column
+		padding-left: 15px
+	.advantages-item_title
+		font-size: 1rem
+		line-height: 1.3
+	.advantages-item p
+		font-size: inherit
+	h2, .section-title
+		font-size: 1.5rem
+	.map-contact_box
+		max-width: 355px
+		transform: translate(-131%, -50%)
+	.map-contact_list li
+		font-size: 1rem
+	.map-container
+		height: 500px
+	.category-section
+		padding: 2.25em 0
+	.services-section
+		padding: 2.25em 0 1em
+	.service-item
+		margin-bottom: 1.5em
+	.advantages-section
+		padding: 2.25em 0 .5em
+	.our-partners_section
+		padding: 2.25em 0
+	.our-partners_slider
+		margin-top: 0
+	.text-section
+		padding: 2.25em 0
+	.text-section p
+		padding-right: 0
+	.footer-column
+		&:nth-child(1)
+			flex: 60% 0 0
+			max-width: 60%
+		&:nth-child(2)
+			flex: 18% 0 0
+			max-width: 18%
+		&:nth-child(3)
+			flex: 22% 0 0
+			max-width: 22%
+	.footer-contact_list li
+		font-size: inherit
+	.fixed-panel_catalog-btn
+		padding: 1em 2em
+	.fixed-menu
+		.row
+			align-items: center
+		.head-logo
+			top: 0
+		.head_select-city
+			margin-right: 1%
+		.hamburger
+			margin-right: 3px
+	.fixed-menu .head_form-search
+		max-width: 160px
+	.dropdown-content
+		left: 267px
+	.dropdown-submenu_img
+		display: none
+	.back-site_btn
+		height: 45px
+		font-size: 1rem
+		line-height: 45px
+	.checkout-btn
+		font-size: 1rem
+	.cart-total-price
+		font-size: 1.25rem
+	.wrapper_cart-table
+		overflow: auto
+	.category-item_mod-other
+		max-width: 100%
+	.category-section_mod
+		padding: 3em 0 1em
+	.category-item_other
+		margin-bottom: 2em
+	.catalog_right-column
+		padding-left: 15px
+	.sidebar-catalog_content
+		padding: 1em
+	.catalog-menu_item > a
+		font-size: .875rem
+	.filter-box_column
+		flex: 25% 0 0
+		max-width: 25%
+	.product-table th
+		white-space: normal
+	.sidebar_services-box_img
+		width: 50px
+		flex: 50px  0 0
+	.sidebar_services-box_desc
+		flex-basis: calc(100% - 50px)
+		max-width: calc(100% - 50px)
+	.catalog-section
+		padding: 3em 0
+	.form-content
+		padding: 3em 0
+	.service-item_mod-img
+		flex: 180px 0 0
+		max-width: 180px
+	.service-item_mod-desc
+		flex-basis: calc(100% - 180px)
+		max-width: calc(100% - 180px)
+	.services-mod_section
+		padding: 3em 0
+	.services-column
+		margin-bottom: 1.875em
+	.news-item_img
+		flex: 50% 0 0
+		max-width: 50%
+	.news-item_desc
+		flex: 50% 0 0
+		max-width: 50%
+		padding-top: .6em
+	.vacancy-section_advatages-list .advatages-title
+		font-size: 1.125rem
+	.vacancy-section_advatages-list .advatages-icon
+		font-size: 3rem
+		height: 40px
+	.vacancy-section_advatages-list p
+		font-size: inherit
+	.vacancy-item_title
+		font-size: 1.35rem
+		margin-bottom: .7em
+	.vacancy-item_more-details
+		font-size: .8125rem
+	.vacancy-section
+		padding: 3em 0
+	.input-file
+		width: 184px
+	.input-file_icon
+		font-size: 1.5rem
+		position: relative
+		top: 4px
+	.gost-section_header 
+		.right-column,.left-column
+			flex: 100% 0 0
+			max-width: 100%
+	.form-static_small-submit
+		height: 43px
+		line-height: 43px
+	.form-static_small
+		margin-top: 1.25em
+	.gost-section
+		padding: 3em 0 1em
+	.wrapper_gost-item [class^="col-"]
+		margin-bottom: 2em
+	.delivery-section
+		padding: 3em 0
+	.delivery-section_header .title-h3
+		white-space: normal
+	.price-list_box-content .download-price_btn
+		min-width: 170px
+	.contact-section
+		padding: 3em 0
+	.tab-names
+		margin-bottom: 1.2em
+		li
+			font-size: 1.125rem
+	.wrapper_select-office
+		margin-bottom: 1.5em
+		.selectric
+			height: 40px
+		.label
+			line-height: 40px
+			margin-right: 43px
+			margin-left: 1em
+		.button
+			width: 40px
+			&:after
+				width: 8px
+				height: 8px
+	.contact-section_subtitle
+		font-size: 1.125rem
+		margin-bottom: .6em
+	.contact-section_adress
+		font-size: 1.125rem
+		margin-bottom: 1em
+		.glipf-place-2
+			font-size: 1.3rem
+	.contact-section_list
+		margin-bottom: 2em
+		li
+			font-size: .875rem
+	.contact-section_list_mod
+		margin-bottom: 1.5em
+	.contact_left-column
+		flex: 63% 0 0
+		max-width: 63%
+	.contact_right-column
+		flex: 37% 0 0
+		max-width: 37%
+	.download-details_btn
+		height: 45px
+		line-height: 45px
+	.digit-item_circle
+		width: 120px
+		height: 120px
+		border-width: 15px
+		font-size: 1.875rem
+	.digit-list:after
+		max-width: 835px
+		top: 20px
+	.digit-list
+		.min
+			display: inline
+	.about-us_section
+		padding: 3em 0
+	.digit-section
+		padding: 3em 0
+	.history-company_blue-box:after
+		width: 100%
+	.history-company_blue-box
+		padding: 1.5em 2em
+		margin-bottom: 1.875em
+	.history-company_slide-left
+		padding-right: 3em
+	.history-company_section
+		padding-bottom: 3em
+	.photo-galery_section
+		padding: 3em 0 1.25em
+	.current-vacancies_title
+		font-size: 2.25rem
+	.reviews-section
+		padding: 3em 0 1em
+	.partners-section
+		padding: 3em 0 1em
+	.partner-item p
+		font-size: inherit
+		line-height: 1.3
+	.form-content_mod
+		padding: 0
+	.form-content_mod-desc
+		padding: 3em 15px 2em
+	.news-detailed
+		padding: 3em 0
+	.order-transport_section
+		padding: 3em 0
+	.services-column
+		padding-left: 15px
+		&:nth-child(odd)
+			padding-right: 15px
+	.services-detailed_section
+		padding: 2.25em 0
+	.services-detailed_table td
+		line-height: 1.3
+@media only screen and (max-width: 991px)
+	.head_opening-hours
+		display: none
+	.head_select-city
+		display: none
+	body
+		font-size: .875rem
+	.head-menu_catalog-item > a:before
+		width: 100%
+	.head-menu_item:last-child > a:before
+		width: 100%
+	.head-logo
+		max-width: 214px
+		flex: 214px 0 0
+		margin-right: 1em
+		top: 0
+	.head_phone-box
+		font-size: .8125rem
+	.main-head_left-column
+		align-items: center
+	.main-head
+		padding: 1em 0
+	.head_callback-btn .glipf-call-answer
+		font-size: .6rem
+	.head_callback-btn a
+		font-size: .75rem
+	.tablet-hamburger
+		display: block
+	.main-head_right-column
+		align-items: center
+	.head-nav
+		display: none
+		position: absolute
+		left: 0
+		top: 100%
+		max-height: 100vh
+		overflow: auto
+		padding-bottom: 45px
+		width: 100%
+		z-index: 100
+		.container
+			max-width: 100%
+	.head-menu
+		display: block
+	.head-menu_item
+		border-right: none
+		border-bottom: 2px solid #fff
+		transform: none
+	.head-menu_text
+		transform: none
+	.head-menu_catalog-item
+		background: #24a6d7
+		>a
+			position: relative
+			&:after
+				content: ''
+				display: block
+				width: 10px
+				height: 10px
+				border-right: 2px solid #fff
+				border-bottom: 2px solid #fff
+				position: absolute
+				top: -5px
+				bottom: 0
+				right: 1em
+				margin: auto
+				transform: rotate(45deg)
+		&:before
+			display: none
+		&.is-active
+			>a
+				&:after
+					transform: rotate(-135deg)
+					top: 0
+			.dropdown-content
+				display: block
+				transform: none
+	.dropdown-menu_item.is-active
+		background: #073F72
+		color: #fff
+		.menu-icon
+			filter: brightness(0) invert(1)
+	.dropdown-content
+		display: none
+		position: static
+		visibility: visible
+		transform: none
+	.dropdown-submenu
+		padding-bottom: 0
+	.dropdown-submenu-content
+		position: static
+		border-bottom: 1px solid #D1D1D1
+		padding-left: 1.5em
+		margin-bottom: .5em
+	.tablet-visible
+		display: block
+	.head_select-city_mobile
+		display: block
+		color: #fff
+		padding: 1em 0
+		text-align: center
+		.select-city_btn
+			border-bottom-color: #fff
+	.global-pad
+		padding-top: 71px
+	.fixed-panel_catalog-btn
+		.head-menu_text
+			transform: skew(45deg)
+	.fixed-menu
+		.fixed-menu_hamburger
+			display: none
+	.fixed-panel_catalog-btn
+		padding: 1em 1.4em
+	.fixed-menu .head_form-search
+		max-width: 190px
+	.head_form-search
+		height: 28px
+	.head_form-search_input
+		line-height: 28px
+	.head_form-search .glipf-search
+		font-size: 1rem
+	.head_form-search
+		max-width: 243px
+	.head-cart
+		margin: 0 1em
+	.head-cart .glipf-cart
+		font-size: 2.2rem
+	.category-item
+		margin-bottom: 1.7em
+		flex: 33.3336% 0 0
+		max-width: 33.3336%
+	.category-item_mod
+		font-size: 1.125rem
+		.category-icon
+			flex: 45px 0 0
+			text-align: center
+	.service-item_desc-body
+		.min
+			display: inline
+	.service-item p
+		font-size: .8125rem
+	.service-item_btn
+		font-size: .8125rem
+	.service-item_mobile-link
+		display: block
+	.advantages-section 
+		.left-column,.right-column
+			max-width: 100%
+			flex: 100% 0 0
+	.advantages-slider
+		margin-bottom: 1.2em
+	.advantages-slider .quotes
+		font-size: 4.5rem
+		left: .2em
+	.advantages-slide_dots
+		width: 8px
+	.map-contact_box
+		transform: translate(-109%, -50%)
+	.map-container
+		height: 321px
+	.footer-menu_title-box
+		display: -webkit-flex
+		display: -moz-flex
+		display: -ms-flex
+		display: -o-flex
+		display: flex
+		justify-content: space-between
+		.footer-menu
+			width: 50%
+	.footer-title_box
+		margin-top: 0
+		padding-left: 15px
+		margin-top: -1.7em
+		width: 50%
+		.footer-title
+			margin-bottom: 4px
+	.footer-column
+		&:nth-child(1)
+			flex: 44% 0 0
+			max-width: 44%
+		&:nth-child(2)
+			flex: 28% 0 0
+			max-width: 28%
+		&:nth-child(3)
+			flex: 28% 0 0
+			max-width: 28%
+	.footer-title
+		font-size: inherit
+		margin-bottom: .5em
+	.footer-menu a
+		font-size: .8125rem
+	.footer-menu
+		margin-bottom: 1em
+	.footer-contact_list [class^="glipf-"]
+		font-size: .7rem
+	.footer-contact_list .glipf-clock
+		top: 2px
+	.footer-contact_list li
+		margin-bottom: 1em
+	.fixed-menu_catalog
+		&.is-active
+			.dropdown-content
+				display: block
+	.fixed-menu
+		.dropdown-content
+			position: absolute
+			max-height: calc(100vh - 45px)
+			overflow: auto
+			left: -150px
+	.gray-btn
+		min-width: 170px
+	.cart-content_footer 
+		.left-column
+			flex: 180px 0 0
+			max-width: 180px
+		.right-column
+			flex-basis: calc(100% - 180px)
+			max-width: calc(100% - 180px)
+	.cart-table th:first-child
+		padding-left: .7em
+	.cart-table td:first-child
+		padding-left: .7em
+	.cart-table td
+		font-size: inherit
+	.cart-table th
+		font-weight: 800
+		font-size: .875rem
+	.category-item_other .category-icon
+		transform: scale(.7)
+	.category-item_other-title
+		font-size: 1.125rem
+	.category-column
+		flex: 33.3336% 0 0
+		max-width: 33.3336%
+		&:nth-child(3n + 2)
+			flex: 33.3336% 0 0
+			max-width: 33.3336%
+		&:nth-child(3n + 3)
+			flex: 33.3336% 0 0
+			max-width: 33.3336%
+	.category-item_other
+		margin-bottom: 1.875em
+	h1
+		font-size: 1.5rem
+	.inner-page_title-section
+		background: url(../img/bg/inner-banner_tablet-bg.jpg) no-repeat center top
+		background-size: cover
+	.category-item_other .category-icon
+		top: -4px
+	.subcategory-item > a
+		font-size: 1rem
+	.subcategory-item_name
+		flex-basis: calc(100% - 100px)
+		max-width: calc(100% - 100px)
+	.subcategory-item_img
+		flex: 100px 0 0
+		max-width: 100px
+	.subcategory-section
+		padding: 1.875em 0
+	h3, .title-h3
+		font-size: 1.5rem
+		margin-bottom: 1.1em
+	.subcategory-item
+		min-height: 93px
+	.unified-text-section
+		margin-top: 1.2em
+	.catalog_left-column,.catalog_right-column
+		flex: 100% 0 0
+		max-width: 100%
+	.catalog-section
+		padding: 1.875em 0
+	.tablet-hidden
+		display: none
+	.sidebar-catalog_content
+		margin-bottom: 1.5em
+	.catalog_sidebar-title
+		position: relative
+		padding-right: 1em
+		margin-bottom: 0
+		&:after
+			content: ''
+			display: block
+			width: 10px
+			height: 10px
+			border-right: 2px solid #3EBBF3
+			border-bottom: 2px solid #3EBBF3
+			position: absolute
+			top: -5px
+			bottom: 0
+			right: 0
+			margin: auto
+			transform: rotate(45deg)
+		&.is-active
+			&:after
+				transform: rotate(-135deg)
+				top: 10px
+	.catalog-menu
+		display: none
+		margin-top: 1em
+	.filter-box_title
+		font-size: 1.25rem
+	.filter-item_title
+		font-size: .875rem
+	.filter_search-btn
+		min-width: 123px
+	.product-table th
+		&:nth-child(2),&:nth-child(3),&:nth-child(4),&:nth-child(5),
+			display: none
+	.product-table th
+		&:first-child
+			width: calc(100% - 104px)
+		&:last-child
+			width: 104px
+	.product-table td
+		&:nth-child(2),&:nth-child(3),&:nth-child(4),&:nth-child(5),
+			display: none
+	.product-table td
+		&:first-child
+			width: calc(100% - 104px)
+		&:last-child
+			width: 104px
+	.product-item_cart-btn
+		height: 30px
+	.product-item_buy-btn
+		height: 40px
+		line-height: 40px
+	.catalog-section-header
+		display: -webkit-flex
+		display: -moz-flex
+		display: -ms-flex
+		display: -o-flex
+		display: flex
+		flex-direction: column
+	.catalog-product_text-block
+		order: 1
+	.filter-box
+		order: 2
+		margin: 0
+	.product-table
+		margin-top: 1.875em
+	.form-content
+		padding: 2.25em 0
+	.form-input
+		height: 40px
+	.form-content_title
+		margin-bottom: .4em
+	.form-content .top-small_text
+		font-size: .8125rem
+	.service-item_desc-body
+		display: none!important
+	.vacancy-section .title-h3
+		margin-bottom: 1em
+	.vacancy-section_advatages-list li
+		flex: 50% 0 0
+		max-width: 50%
+		margin-bottom: 1.2em
+	.vacancy-section_advatages-list
+		margin-bottom: 0
+	.vacancy-item
+		margin-bottom: 1.875em
+		padding: 1.5em
+	.wrapper-vacanvy
+		margin-bottom: 1.5em
+	.input-file
+		width: 165px
+	.input-file-text
+		padding-left: 2em
+	.form_document-search
+		height: 40px
+	.transport-item_title
+		font-size: 1rem
+	.transport-item:after
+		width: 80%
+	.recommended-transportation_footer
+		padding: 0 1em
+		.left-column
+			flex: 65% 0 0
+			max-width: 65%
+		.right-column
+			flex: 35% 0 0
+			max-width: 35%
+	.delivery-section
+		padding-top: 1.875em
+		padding-bottom: 1em
+	.order-transport_section
+		padding: 1.875em 0 1em
+	.contact_right-column
+		flex: 100% 0 0
+		max-width: 100%
+		text-align: center
+	.contact_left-column
+		flex: 100% 0 0
+		max-width: 100%
+	.contact-img
+		margin-top: 1.5em
+	.about-us_section p
+		line-height: 1.3
+		margin-bottom: 1em
+	.about-us_section .title-h3
+		margin-bottom: 1em
+	.about-us_section
+		padding: 1.875em 0 1.25em
+	.digit-item_circle
+		width: 100px
+		height: 100px
+	.digit-list:after
+		max-width: 652px
+	.digit-list li
+		font-size: inherit
+	.history-company_slide-left
+		min-height: 260px
+	.advantages-mod_section .title-h3
+		margin-bottom: 1em
+	.advantages-mod_section
+		padding-bottom: 1.25em
+	.advantages-mod_section
+		padding: 1.875em 0 .5em
+	.current-vacancies_title
+		font-size: 1.875em
+	.review-item
+		margin-bottom: 1.875em
+	.reviews-section
+		padding-top: 1.875em
+	.partners-section
+		padding-top: 1.875em
+	.beam-img
+		display: none
+	.form-content_mod-desc
+		padding: 1.875em 15px
+	.form-content_mod
+		padding: 0
+	.form-content_mod .form-content_title
+		font-size: 1.5rem
+	.news-detailed_date
+		margin-bottom: 1.5em
+	.sidebar_news-item_title
+		font-size: inherit
+	.head-menu_item:last-child.active:before
+		display: none
+	.services-detailed_box-title
+		font-size: 1.25em
+		margin-bottom: .5em
+	.services-detailed_footer .text
+		font-size: 1.25em
+	.services-detailed_table th
+		padding: 1em
+	.services-detailed_table td
+		padding: 1em
+	.services-detailed_section p
+		line-height: 1.4em
+		margin-bottom: 1em
+	.services-detailed_section ul:not([class])
+		margin-bottom: 1em
+@media only screen and (max-width: 767px)
+	.tablet-small_hidden
+		display: none
+	.tablet-small_visible
+		display: block
+	.head_phone-box
+		padding-bottom: 1em
+		text-align: center
+	.head_phone-number
+		color: #fff
+	.category-item
+		flex: 50% 0 0
+		max-width: 50%
+	.category-item_mod
+		flex: 50% 0 0
+		max-width: 50%
+	.footer-column
+		&:nth-child(1)
+			flex: 44% 0 0
+			max-width: 44%
+		&:nth-child(2)
+			flex: 20% 0 0
+			max-width: 20%
+		&:nth-child(3)
+			flex: 32% 0 0
+			max-width: 32%
+	.map-contact_box
+		transform: none
+		top: 0
+		right: 0
+		left: 0
+	.selectric
+		height: 35px
+		.label
+			font-size: .875rem
+			line-height: 35px
+	body
+		font-size: .8125rem
+	.main-btn
+		font-size: 1rem
+	.map-callback_btn .glipf-call-answer
+		font-size: .9rem
+	.map-container .selectric-wrapper
+		margin-bottom: 1em
+		max-width: 360px
+	.map-contact_list
+		margin-bottom: 1em
+	.map-contact_list li
+		margin-bottom: .5em
+	.map-contact_box
+		padding: 1.2em
+		max-width: 100%
+		position: static
+	.map-container
+		height: auto
+	#map
+		height: 320px
+	.cart-step_item
+		width: 35px
+		height: 35px
+		flex: 35px 0 0
+		font-size: .6rem
+	.cart-content_footer
+		flex-direction: column
+		.left-column
+			flex: auto
+			max-width: 100%
+			margin-top: 1em
+			order: 2
+		.right-column
+			flex: auto
+			max-width: 100%
+			order: 1
+			justify-content: space-between
+	.checkout-btn
+		height: 35px
+		line-height: 35px
+	.back-site_btn
+		height: 35px
+		line-height: 35px
+	.cart-content_body-mod
+		max-height: calc(100vh - 150px)
+	.cart-content_body .check-icon
+		width: 80px
+		height: 80px
+	.cart-content_body .thanks-text
+		font-size: 1.5rem
+	.cart-content_body-mod .main-btn
+		height: 45px
+		font-size: 1rem
+		min-width: 170px
+		line-height: 45px
+	.cart-close
+		right: 1em
+	.form-checkout_btn
+		height: 35px
+		line-height: 35px
+	.checkout-checkbox input[type="checkbox"] + .checkbox-text:after
+		width: 20px
+		height: 20px
+	.checkout-checkbox input[type="checkbox"]:checked + .checkbox-text:before
+		height: 14px
+		width: 7px
+		left: 7px
+	.checkout-checkbox .checkbox-text
+		padding-top: 2px
+	.checkout-checkbox
+		padding-left: 30px
+	.form-input
+		height: 40px
+	.form-textarea
+		height: 100px
+	.cart-content_footer-second
+		flex-direction: row
+		.right-column
+			order: 2
+		.left-column
+			margin-top: 0
+			order: 1
+	.checkout-form
+		.cart-content_body
+			max-height: calc(100vh - 215px)
+	.cart-step_item
+		margin-right: 90px
+	.cart-step_item:after
+		width: 90px
+	.cart-step_item.active:after
+		width: 80px
+	.cart-step_item:nth-child(2).active:after
+		width: 84px
+	.cart-step_item-second:after
+		width: 84px
+	.cart-step_item.active-mod:after
+		width: 84px
+	.category-column
+		flex: 50% 0 0
+		max-width: 50%
+		&:nth-child(3n + 2)
+			flex: 50% 0 0
+			max-width: 50%
+		&:nth-child(3n + 3)
+			flex: 50% 0 0
+			max-width: 50%
+	.category-item_mod
+		max-width: 100%
+	.fixed-menu .head-menu_catalog-item
+		display: block
+	.fixed-menu .fixed-menu_catalog
+		display: none
+	.fixed-menu
+		padding: .4em 0
+	.product-availability_text
+		margin-bottom: 1em
+	.main-pagination
+		justify-content: center
+	.main-pagination a
+		font-size: .935rem
+	.unified-text-section h3
+		margin-bottom: .5em
+	.subcategory-section .title-h3
+		margin-bottom: .5em
+	.news-item_title
+		font-size: 1rem
+		margin-bottom: .5em
+	.news-item_date
+		font-size: inherit
+		margin-bottom: .6em
+	.news-item_desc p
+		margin-bottom: .7em
+	.news-item_desc .more-details_btn
+		font-size: inherit
+	.fixed-menu .dropdown-content
+		position: static
+	.filter-box_column
+		flex: 50% 0 0
+		max-width: 50%
+	.scroll-to-top
+		width: 35px
+		height: 35px
+		right: 18px
+		left: auto
+	.input-file
+		width: 152px
+	.recommended-transportation_footer
+		padding: 0 1em
+		.left-column
+			flex: 100% 0 0
+			max-width: 100%
+		.right-column
+			flex: 100% 0 0
+			max-width: 100%
+	.recommended-transportation_content .title-h3
+		margin-bottom: 1em
+	.about-us_left-column
+		flex: 100% 0 0
+		max-width: 100%
+	.about-us_right-column
+		flex: 100% 0 0
+		max-width: 100%
+	.digit-list:after
+		display: none
+	.digit-list li
+		margin-bottom: 1.25em
+	.digit-section
+		padding: 1.875em 0 .5em
+	.history-company_section .title-h3
+		margin-bottom: 1em
+	.history-company_slide-left
+		min-height: auto
+		flex: 100% 0 0 
+		max-width: 100%
+		padding-right: 4em
+	.history-company_slide-right
+		flex: 100% 0 0 
+		max-width: 100%
+	.history-company_slide-title
+		margin-bottom: 1.25em
+	.history-company_slide-year
+		margin-bottom: 1.25em
+	.year-slider li
+		font-size: inherit
+	.history-company_section
+		padding-bottom: 1.875em
+	.advantages-mod_section
+		padding-top: .5em
+	.current-vacancies_img
+		padding-right: 2em
+	.current-vacancies_section .top-text
+		font-size: inherit
+	.reviews-section .title-h3,.partners-section .title-h3
+		margin-bottom: .7em
+	.form-content_mod-desc
+		.form-static_policy-text
+			display: block
+	.news-detailed p
+		line-height: 1.3
+		margin-bottom: 1em
+	h3, .title-h3
+		margin-bottom: .7em
+	.news-detailed_date
+		margin-bottom: 1em
+	.news-detailed_img
+		margin-bottom: 1.25em
+	.news-detailed
+		padding: 1.875em 0
+	.review_mobile-slider
+		margin: 0
+		padding: 0 1em
+	.wrapper_partner-item
+		margin: 0
+		padding: 0 1em
+		.slick-slide
+			height: auto
+			>div
+				height: 100%
+		[class^="col-"]
+			height: 100%
+			flex: 100% 0 0
+			max-width: 100%
+		.slick-track
+			display: -webkit-flex !important
+			display: -moz-flex !important
+			display: -ms-flex !important
+			display: -o-flex !important
+			display: flex !important
+		.slick-list
+			padding-bottom: 10px
+	.subcategory-item_img
+		height: 65px
+	.subcategory-item_img
+		flex: 80px 0 0
+		max-width: 80%
+	.services-detailed_section 
+		.left-column
+			flex: 100% 0 0
+			max-width: 100%
+		.right-column
+			flex: 100% 0 0
+			max-width: 100%
+	.services-detailed_img
+		margin-bottom: 1em
+	.services-detailed_box
+		padding-bottom: 1.5em
+	.subcategory_main-img_mod
+		margin: 1.25em 0
+	.head-menu_catalog-item.active:before
+		width: 100%
+@media only screen and (max-width: 575px)
+	.ui-header
+		position: fixed
+		top: 0
+		left: 0
+		width: 100%
+		background: #fff
+		z-index: 150
+	.fixed-menu
+		padding: 0
+	.fixed-menu .hamburger
+		margin: 0
+	.global-wrapper
+		padding-top: 55px
+	.mobile-hidden
+		display: none
+	.head-logo
+		max-width: 100%
+		flex: 100% 0 0
+		margin-right: 0
+	.head-cart
+		margin: 0 12px 0 0
+	.head-cart_number
+		width: 14px
+		height: 14px
+		font-size: .55rem
+		line-height: 14px
+	.head_form-search
+		max-width: 100%
+	.head-cart .glipf-cart
+		font-size: 1.8rem
+	.tablet-hamburger
+		margin-right: 0
+	.head-cart
+		flex: 33px 0 0
+		max-width: 33px
+	.main-head
+		height: 55px
+		padding: 0.4em 0
+		.container
+			height: 100%
+		.row
+			height: 100%
+			align-items: center
+	.main-head_right-column
+		justify-content: flex-end
+	.head-logo
+		height: 30px
+		display: -webkit-flex
+		display: -moz-flex
+		display: -ms-flex
+		display: -o-flex
+		display: flex
+		align-items: center
+	.head-logo img
+		max-height: 100%
+	.mobile-visible
+		display: block
+	.footer-column
+		&:nth-child(1)
+			flex: 100% 0 0
+			max-width: 100%
+		&:nth-child(2)
+			flex: 100% 0 0
+			max-width: 100%
+		&:nth-child(3)
+			flex: 100% 0 0
+			max-width: 100%
+	.social-network
+		justify-content: flex-start
+	.main-page_title
+		font-size: 1.8rem
+		.min
+			display: inline
+	.category-item
+		flex: 100% 0 0
+		margin-bottom: 0
+		padding: 0
+		max-width: 100%
+		border-bottom: 1px solid #D1D1D1
+		>a
+			padding: .65em 0
+	.category-icon
+		text-align: center
+	.category-list
+		margin-left: 0
+		margin-right: 0
+	.category-item_mod
+		flex: 100% 0 0
+		margin: 1em 0 0
+		padding: 0
+		max-width: 100%
+	.category-item_mod-content
+		padding-left: 2.7em
+	.download-price_btn
+		margin-top: 1em
+	.advantages-slider .quotes
+		font-size: 2.7rem
+	.advantages-slider p
+		padding-left: 3em
+	.wrapper_advantages-slider
+		padding-right: 0
+	.advantages-slide_dots
+		position: static
+		height: auto
+		width: 100%
+		&:after
+			display: none
+	.advantages-slide_dots
+		margin-bottom: 1.5em
+		.slick-dots
+			position: static
+			padding: 0
+			margin: 0
+			width: 100%
+			text-align: center
+			li
+				margin: 0 .4em
+	.advantages-item_icon
+		height: 44px
+	.advantages-item_icon.glipf-truck
+		font-size: 3.7rem
+	h2, .section-title
+		margin-bottom: .7em
+	.text-section p
+		font-size: .875rem
+	.cart-total-price
+		font-size: .8rem
+	.cart-total_sum
+		font-size: 1rem
+	.cart-table
+		margin-bottom: .5em
+	.checkout-btn
+		font-size: .875rem
+		min-width: 130px
+	.cart-total_sum
+		display: block
+	.back-site_btn
+		font-size: .935rem
+	.cart-table_textarea
+		height: 100px
+		&::-webkit-input-placeholder
+			font-size: inherit
+		&::-moz-placeholder
+			font-size: inherit
+		&::-ms-input-placeholder
+			font-size: inherit
+		&::input-placeholder
+			font-size: inherit
+	.cart-table th
+		padding: .3em .5em
+		display: none
+	.cart-table
+		display: block
+		tbody
+			display: block
+		tr
+			display: block
+			position: relative
+			border-bottom: 1px solid #D1D1D1
+		td
+			display: block
+			padding: .2em 0
+	.cart-item_delete
+		position: absolute
+		top: .3em
+		right: .3em
+		font-size: 1rem
+	.cart-table td:first-child
+		padding-left: 0
+		padding-right: 2em
+	.cart-table_mobile-text
+		display: block
+		font-weight: 800
+		margin-bottom: 2px
+	.checkout-checkbox .checkbox-text
+		font-size: inherit
+	.cart-content_footer-second .left-column
+		margin-right: 10px
+	.fixed-menu 
+		.head_form-search
+			max-width: 100%
+			border-bottom-color: #fff
+		.head_form-search .glipf-search
+			color: #fff
+		.head_form-search_input
+			color: #fff
+	.fixed-menu .dropdown-content
+		position: static
+	.checkout-form
+		height: calc(100vh - 158px)
+	.checkout-form .cart-content_body
+		max-height: calc(100vh - 210px)
+	.fixed-menu .dropdown-submenu
+		border: none
+	.dropdown-submenu a
+		font-size: inherit
+	.dropdown-submenu
+		min-width: auto
+	.dropdown-submenu-content
+		padding-left: 0
+	.dropdown-content
+		min-width: auto
+	.global-pad
+		padding-top: 55px
+	.category-column
+		flex: 100% 0 0
+		max-width: 100%
+		&:nth-child(3n + 2)
+			flex: 100% 0 0
+			max-width: 100%
+		&:nth-child(3n + 3)
+			flex: 1000% 0 0
+			max-width: 100%
+	.category-item_mod
+		max-width: 100%
+	.category-item_other
+		padding-top: 1.1em
+		padding-bottom: 1.1em
+		border-bottom: 1px solid #D1D1D1
+		margin-bottom: 0
+	.category-item_other-list
+		display: none
+	.category-item_other
+		padding-right: 2.3em
+		&.is-active
+			&:after
+				transform: rotate(-135deg)
+				top: 1.7em
+		&:after
+			content: ''
+			display: block
+			width: 10px
+			height: 10px
+			border-right: 2px solid #3EBBF3
+			border-bottom: 2px solid #3EBBF3
+			position: absolute
+			top: 1.34em
+			bottom: 0
+			right: 1em
+			transform: rotate(45deg)
+		.category-icon
+			width: 40px
+			flex: 40px 0 0
+			transform: scale(.5)
+			top: -1px
+		.category-icon_first
+			top: 3px
+		.category-icon_eight
+			top: -1px
+		.category-icon_nine
+			top: 3px
+		.category-icon_fourth
+			top: -1px
+		.category-icon_six
+			top: .2em
+		.category-icon_ten
+			top: .4em
+		.category-icon_eleven
+			top: .2em
+		.category-icon_tvelwe
+			top: 3px
+		.category-icon_fourteen
+			top: -.8em
+			transform: scale(.4)
+		.category-icon_fifteen
+			top: -1.2em
+			transform: scale(.4)
+	.category-item_mod-other
+		border: 1px solid #3ebbf3
+		padding: 1em 1em 1em 3.3em
+	.sidebar-catalog
+		.price-list_box
+			margin-top: 1em
+	.price-list_box
+		margin-top: 1em
+	.category-section_mod
+		padding: 1.875em 0
+	.subcategory-column
+		margin-bottom: 1em
+	h3, .title-h3
+		margin-bottom: .4em
+	.wrapper_subcategory-item
+		margin-bottom: .7em
+	.subcategory-section 
+		p
+			margin-bottom: 1em
+			line-height: 1.3
+	.unified-text-section p:last-child
+		margin-bottom: 1em
+	.inner-page_title-section
+		background: url(../img/bg/inner-banner_mobile-bg.jpg) no-repeat center top
+		background-size: cover
+		min-height: 144px
+	.breadcrumbs
+		margin-bottom: 1.2em
+	p
+		line-height: 1.3
+	.filter-item_title
+		margin-bottom: 2px
+	.filter-box
+		padding: 1em
+	.filter_reset-btn
+		font-size: .8125rem
+	.filter_search-btn
+		margin-right: 1em
+	.filter_reset-btn .glipf-reset
+		margin-right: 5px
+	.product-table th:last-child
+		width: 0
+		font-size: 0
+	.product-table th:first-child
+		width: 100%
+		padding-left: 1em
+		white-space: nowrap
+	.product-table th
+		padding: .4em 0 .2em 1em
+	.product-table td
+		padding: .7em
+	.product-table td:first-child
+		padding-left: 1em
+	.product-item_popup
+		left: .7em
+		min-width: 268px
+	.product-item_popup-list li
+		margin-bottom: .7em
+	.form-input
+		height: 35px
+	.form-static_policy-text
+		font-size: .8125rem
+		text-align: center
+		.min
+			display: block
+	.form-static_submit-btn
+		margin-top: .5em
+	.form-group
+		margin-bottom: .5em
+	.service-item_mod
+		display: block
+	.service-item_mod-img
+		flex: 100% 0 0
+		max-width: 100%
+	.service-item_mod-desc
+		flex: 100% 0 0
+		max-width: 100%
+		padding: .5em
+	.service-item_mod-title
+		font-size: 1rem
+	.services-mod_section
+		padding: 1.875em 0
+		.download-price_btn
+			margin-top: 0
+	.service-item_mod-desc p
+		font-size: .8125rem
+	.news-item
+		display: block
+		margin-bottom: 1.5em
+	.news-item_img
+		flex: 100% 0 0
+		max-width: 100%
+	.news-item_desc
+		max-width: 100%
+		padding: .7em
+		border-left: 1px solid #F7F7F7
+	.news-section
+		padding: 1.875em 0
+	.category-icon
+		flex: 37px 0 0
+		width: 37px
+		transform: scale(.7)
+	.category-section
+		padding: 1em 0 1.875em
+	.advantages-item
+		.min
+			display: inline
+	.form-content
+		padding: 1.875em 0
+	.category-item_mod-other .category-icon
+		left: 5px
+		top: 7px
+		margin-right: 0
+		transform: scale(.5)
+	.download-price_btn
+		max-width: 200px
+	.subcategory-column
+		&:last-child
+			margin-bottom: 0
+	.head-nav
+		padding-bottom: 70px
+	.vacancy-section
+		padding: 1.875em 0
+	.vacancy-section_advatages-list .advatages-icon
+		font-size: 2rem
+		height: 30px
+	.vacancy-section_advatages-list .advatages-title
+		font-size: .935rem
+	.vacancy-item_title
+		font-size: 1.125rem
+		margin-bottom: .5em
+	.vacancy-item_list-title
+		margin-bottom: 1em
+	.vacancy-item ul:not([class])
+		padding-left: 1.7em
+		margin-bottom: .6em
+	.vacancy-item_more-details
+		font-size: .75rem
+	.vacancy-item
+		padding: 1em
+		margin-bottom: 1.2em
+	.wrapper-vacanvy
+		margin-bottom: .5em
+	.input-file
+		width: 159px
+		margin: 0 auto .6em
+	.static-form_right-column
+		justify-content: center
+		align-items: center
+	.form-static_footer
+		margin-top: .7em
+	.input-file-text
+		padding-left: 2.5em
+	.form-static_small
+		.form-column
+			flex: 100% 0 0!important
+			max-width: 100% !important
+	.gost-section
+		padding: 1.875em 0 .5em
+	.wrapper_gost-item [class^="col-"]
+		margin-bottom: 1.25em
+	.gost-item-desc p
+		font-size: .8125rem
+	.form-static_small .form-input
+		height: 36px
+	.form-static_small-submit
+		height: 36px
+		line-height: 36px
+	.delivery-section .top-text
+		font-size: .875rem
+	.delivery-column
+		margin-bottom: 1em
+	.transport-column
+		margin-bottom: 1em
+	.recommended-transportation_footer
+		padding: 0
+	.recommended-transportation_footer .left-column
+		line-height: 1.3
+	.recommended-transportation_footer ul:not([class]) li
+		margin-bottom: .4em
+	.recommended-transportation_footer p
+		margin-bottom: .5em
+	.order-transport_section .title-h3
+		margin-bottom: .5em
+	.delivery-section
+		padding-bottom: 1.875em
+	.order-transport_item-title
+		font-size: .935rem
+	.contact-section
+		padding: 1.875em 0
+	.tab-names
+		flex-wrap: wrap
+		margin-bottom: 1em
+		li
+			font-size: .875rem
+			margin-bottom: 5px
+	.wrapper_select-office
+		margin-bottom: 1.25em
+		.selectric
+			height: 36px
+		.label
+			line-height: 36px
+	.contact-section_subtitle
+		font-size: .935rem
+		margin-bottom: .7em
+	.contact-section_adress
+		font-size: .93rem
+		margin-bottom: .7em
+	.contact-section_adress .glipf-place-2
+		font-size: 1rem
+	.contact-section_list
+		margin-bottom: 1em
+		li
+			font-size: .8125rem
+			margin-bottom: 6px
+	.driving-directions_btn
+		margin-bottom: 1em
+	.about-us_section .title-h3
+		margin-bottom: .5em
+	.history-company_blue-box:after
+		transform: skew(-2deg)
+	.history-company_blue-box .title
+		font-size: 1rem
+	.history-company_blue-box p
+		font-size: .8125rem
+		line-height: 1.3
+		&:last-child
+			margin-bottom: 0
+	.history-company_blue-box
+		padding: 1em
+	.history-company_slide-left
+		padding: 1em
+		padding: 2.2em
+		padding-left: 1.7em
+		&:after
+			width: calc(100% - 20px)
+			left: 10px
+			transform: skew(-2deg)
+	.year-slider
+		&:before
+			display: none
+		li
+			margin-bottom: 1em
+			margin-right: 12px
+			position: relative
+			flex: auto 0 0
+			z-index: 1
+			&:last-child
+				margin-right: 0
+				&:after
+					display: none
+			&:after
+				content: ''
+				display: block
+				width: 40px
+				height: 2px
+				background: #F1F1F1
+				position: absolute
+				top: 3px
+				left: 0
+				z-index: -1
+	.history-company_section
+		padding-bottom: .5em
+	.advantages-mod_section .title-h3
+		margin-bottom: .5em
+	h3,.title-h3
+		margin-bottom: .5em
+		line-height: 1.2
+	.advantages-mod_section .advantages-item .min
+		display: inline
+	.photo-galery_item
+		margin-bottom: 1em
+	.current-vacancies_left
+		flex: 100% 0 0
+		max-width: 100%
+		padding: 1.5em 15px 0
+		margin-bottom: 0
+	.current-vacancies_right
+		flex: 100% 0 0
+		padding: 1.875em 15px
+		max-width: 100%
+	.current-vacancies_title
+		font-size: 1.5rem
+	.review-item
+		margin-bottom: 1.2em
+	.wrapper_partner-item [class^="col-"]
+		margin-bottom: 1.2em
+	.partner-item
+		padding: 1em
+	.partners-section
+		padding-bottom: 1.3em
+	.form-content_mod
+		padding: 0
+	.form-content_mod-desc .top-small_text
+		margin-bottom: 1em
+	.form-content_mod .form-static_submit-btn
+		margin-top: .7em
+	.news-detailed_date
+		font-size: .8125rem
+	.blue-border_btn
+		height: 36px
+		line-height: 33px
+	.delivery-section .top-text
+		margin-top: 0
+	.vacancy-section .title-h3
+		margin-bottom: .5em
+	.modal-content
+		padding: 1.2em
+	.form-callback_title
+		font-size: 1.5rem
+		small
+			font-size: .875rem
+		.min
+			display: inline
+	.form-callback .form-callback_submit
+		width: 100%
+	.uhified_close-btn
+		width: 25px
+		height: 25px
+		&:before
+			width: 3px
+		&:after
+			height: 3px
+	.services-detailed_section p
+		margin-bottom: .7em
+	.services-detailed_section ul:not([class])
+		margin-bottom: .7em
+	.services-detailed_table 
+		th,td
+			padding: .6em
+	.services-detailed_table td:nth-child(2)
+		font-size: .75rem
+	.services-detailed_footer
+		display: block
+		margin-top: 0
+		text-align: center
+		.text
+			display: block
+			margin: 0 0 1em
+		.download-price_btn
+			margin: 0 auto
+@media only screen and (max-width: 430px)
+	.vacancy-section_advatages-list li
+		flex: 100% 0 0
+		max-width: 100%
+		margin-bottom: .7em
+	.advatages-title
+		padding-bottom: .3em
+		.min
+			display: inline

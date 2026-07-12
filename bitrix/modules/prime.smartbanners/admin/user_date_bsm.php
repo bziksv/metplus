@@ -1,0 +1,1 @@
+<?define("prime_smartbanners_TEMPORARY_CACHE", "dzYDBnEwCVY8UyhgUGcFKwtz");?>

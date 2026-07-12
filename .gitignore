@@ -1,0 +1,39 @@
+# === Секреты и конфиги окружения (НЕ коммитить) ===
+bitrix/.settings.php
+bitrix/license_key.php
+bitrix/php_interface/dbconn.php
+bitrix/php_interface/dbconn.local.php
+.local/
+.local/**
+
+# === Медиа и кеш ===
+upload/
+upload/*
+bitrix/cache/*
+bitrix/managed_cache/*
+bitrix/stack_cache/*
+bitrix/backup/*
+bitrix/html_pages/*
+bitrix/catalog_export/*
+
+# === Дампы, архивы, бэкапы ===
+*.sql
+*.sql.gz
+*.tar
+*.tar.gz
+*.zip
+test.metplus-vrn.ru.tar.gz
+iBlockConverter.tar.gz
+iBlockConverter/
+
+# === Логи и служебное ===
+*.log
+.DS_Store
+.idea/
+.osp/
+
+# === Верификация поисковиков ===
+yandex_*
+google*
+mailru-*
+cmsmagazine*
