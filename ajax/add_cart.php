@@ -62,6 +62,13 @@ if (count($cuttingService) > 0) {
             'VALUE' => $cuttingService[0]['VALUE']
         ];
     }
+
+    // Резку включаем только по явному желанию покупателя (не автоматически)
+    $fields['PROPS'][] = [
+        'NAME' => 'Хочу порезку',
+        'CODE' => 'CUTTING_ENABLED',
+        'VALUE' => 'N'
+    ];
 }
 
 $result = Basket::addProduct($fields);

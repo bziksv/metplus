@@ -1,0 +1,46 @@
+<?
+$aMenuLinks = Array(
+	Array(
+		"каталог", 
+		"catalog/", 
+		Array(), 
+		Array(), 
+		"" 
+	),
+	Array(
+		"Прайс-лист", 
+		"prays/price_metall.xls", 
+		Array(), 
+		Array(), 
+		"" 
+	),
+	Array(
+		"услуги", 
+		"services/", 
+		Array(), 
+		Array(), 
+		"" 
+	),
+	Array(
+		"отзывы", 
+		"reviews/", 
+		Array(), 
+		Array(), 
+		"" 
+	),
+	Array(
+		"контакты", 
+		"contact", 
+		Array(), 
+		Array(), 
+		"" 
+	),
+	Array(
+		"о компании", 
+		"about/", 
+		Array(), 
+		Array(), 
+		"" 
+	)
+);
+?>

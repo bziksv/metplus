@@ -346,6 +346,7 @@ if ($isFilter)
 
         </div>
     </section>
+    <?php include $_SERVER['DOCUMENT_ROOT'] . SITE_TEMPLATE_PATH . '/include/catalog_view_switcher.php'; ?>
     <!-- end category-section -->
 
 <? if(false): ?>

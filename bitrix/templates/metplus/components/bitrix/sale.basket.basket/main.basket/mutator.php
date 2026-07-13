@@ -63,10 +63,88 @@ foreach ($this->basketItems as $row)
 			? $row[$this->arParams['BRAND_PROPERTY'].'_VALUE']
 			: '',
         'IS_CUTTING' => false,
+        'CUTTING_ENABLED' => false,
+        'CUTTING_PLAN_TEXT' => '',
+        'CUTTING_PLAN_TEXT_VIEW' => '',
+        'CUTTING_OPTIONS' => array(),
 	);
 
     if ($row['PRODUCT_ID'] > 0) {
-        $rowData['IS_CUTTING'] = count(getProductCuttingServices($row['PRODUCT_ID'])) > 0;
+        $cuttingServices = getProductCuttingServices($row['PRODUCT_ID']);
+        $rowData['IS_CUTTING'] = count($cuttingServices) > 0;
+        $rowData['BASKET_LENGTH_PER_PIECE'] = floatval(getPropVal(36, $row['PRODUCT_ID'], 'DLINA_RASCHET'));
+        $rowData['BASKET_WEIGHT_PER_METER'] = floatval(getPropVal(36, $row['PRODUCT_ID'], '_3_VESPMSAYT'));
+        $rowData['BASKET_WIDTH'] = floatval(getPropVal(36, $row['PRODUCT_ID'], 'SHIRINA_RASCHET'));
+        $qtyDisplay = getBasketItemQuantityDisplay($row['PRODUCT_ID'], $row['QUANTITY']);
+        $rowData['DISPLAY_PIECES'] = $qtyDisplay['PIECES'];
+        $rowData['DISPLAY_AREA'] = $qtyDisplay['AREA'];
+        $rowData['DISPLAY_AREA_UNIT'] = $qtyDisplay['AREA_UNIT'];
+        $rowData['DISPLAY_WEIGHT'] = $qtyDisplay['WEIGHT'];
+
+        foreach ($cuttingServices as $service) {
+            if (empty($service['CODE'])) {
+                continue;
+            }
+            $price = (float)($service['VALUE'] ?? 0);
+            $humanName = getCuttingServiceHumanName($service['CODE'], $service['NAME'] ?? '');
+            $priceLabel = $price > 0
+                ? (' — ' . number_format($price, 0, '.', ' ') . ' ₽')
+                : '';
+            $rowData['CUTTING_OPTIONS'][] = array(
+                'CODE' => (string)$service['CODE'],
+                'NAME' => $humanName,
+                'PRICE' => $price,
+                'PRICE_FORMATED' => $price > 0 ? (number_format($price, 0, '.', ' ') . ' ₽') : '',
+                'LABEL' => $humanName . $priceLabel,
+            );
+        }
+
+        if (!empty($row['PROPS']) && is_array($row['PROPS'])) {
+            foreach ($row['PROPS'] as $prop) {
+                $code = (string)($prop['CODE'] ?? '');
+                if ($code === 'CUTTING_ENABLED') {
+                    $rowData['CUTTING_ENABLED'] = (string)($prop['VALUE'] ?? '') === 'Y';
+                }
+                if ($code === 'CUTTING_PLAN_TEXT') {
+                    $rowData['CUTTING_PLAN_TEXT'] = (string)($prop['VALUE'] ?? '');
+                }
+            }
+        }
+
+        if ($rowData['CUTTING_PLAN_TEXT'] !== '') {
+            $viewLines = [];
+            foreach (preg_split('/\R+/u', $rowData['CUTTING_PLAN_TEXT']) ?: [] as $line) {
+                $line = trim((string)$line);
+                if ($line === '') {
+                    continue;
+                }
+                $chunks = array_map('trim', explode('|', $line));
+                if (count($chunks) >= 3 && preg_match('/^(\d+)\s*шт$/ui', $chunks[0], $m)) {
+                    $typeName = $chunks[3] ?? $chunks[1];
+                    $viewLines[] = $m[1] . ' шт · ' . $typeName . ' · ' . $chunks[2] . ' м';
+                    continue;
+                }
+                if (preg_match('/^(\d+)\s*шт\s*[—\-:]\s*(.+)$/ui', $line, $m)) {
+                    $viewLines[] = $m[1] . ' шт · ' . trim(preg_replace('/\s*м\s*$/ui', '', $m[2])) . ' м';
+                    continue;
+                }
+                // совсем старый мусор вида "1 - 1+1+10"
+                if (preg_match('/^(\d+)\s*[-–—]\s*(.+)$/u', $line, $m)) {
+                    $viewLines[] = $m[1] . ' шт · ' . trim($m[2]) . ' м';
+                    continue;
+                }
+                $viewLines[] = $line;
+            }
+            $rowData['CUTTING_PLAN_TEXT_VIEW'] = implode("\n", $viewLines);
+        }
+    } else {
+        $rowData['BASKET_LENGTH_PER_PIECE'] = 0;
+        $rowData['BASKET_WEIGHT_PER_METER'] = 0;
+        $rowData['BASKET_WIDTH'] = 0;
+        $rowData['DISPLAY_PIECES'] = '—';
+        $rowData['DISPLAY_AREA'] = '—';
+        $rowData['DISPLAY_AREA_UNIT'] = '';
+        $rowData['DISPLAY_WEIGHT'] = '—';
     }
 
 	// show price including ratio

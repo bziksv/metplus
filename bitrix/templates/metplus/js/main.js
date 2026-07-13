@@ -99,21 +99,38 @@ jQuery(document).ready(function($) {
   $(".product-table").on("click", ".add-to-cart-action", function() {
     let $self = $(this);
     let id = $self.attr('id');
-    let quantity = parseFloat($self.closest('tr').find('[name="meters"]').val());
+    let $row = $self.closest('tr');
+    let quantity = resolveCartQuantity($row);
+
+    if (quantity === null) {
+      if (isWeightFrom500Row($row) && getOrderMode($row) === 'bulk') {
+        alert('Минимальный вес заказа — ' + getMinBulkWeight($row) + ' кг');
+      } else if (isWeightFrom500Row($row)) {
+        alert('Укажите количество целых штук. Заказ по весу доступен от ' + getMinBulkWeight($row) + ' кг');
+      } else {
+        alert('Укажите корректное количество товара');
+      }
+      return false;
+    }
 
     $.get("/ajax/", {
       component: "add_cart",
       id : id,
       quantity : quantity,
-    }, function(data) {
+    }).done(function(data) {
+      if (!data || data.success === false) {
+        alert((data && data.error) ? data.error : 'Не удалось добавить товар в корзину');
+        return;
+      }
 
       cartFly($self);
 
       $.get("/ajax/", { component: "cart_small" }).done(function(cart) {
         $('.head-cart').html(cart);
       });
-
-    }, "json");
+    }).fail(function() {
+      alert('Не удалось добавить товар в корзину');
+    });
 
     return false;
   });
@@ -568,37 +585,425 @@ jQuery(document).ready(function($) {
 
   $("#product-table").fancyTable({
     sortColumn: 1,
-    nColumns: 8,
+    nColumns: $("#product-table thead tr:first-child th").length || 8,
     sortable: false,
     searchable: true,
     globalSearch: true,
     inputPlaceholder: "Введите название или марку стали",
   });
 
-  $('#success_msg').modal('show');
-
-  $('.product-table [name="pieces"]').on('input', function() {
-    let self = $(this);
-    let metersInOnePiece = getMetersInOnePiece(self);
-    let pieces = parseFloat(self.val());
-    let meters = Math.round(pieces * metersInOnePiece);
-
-    self.closest('tr').find('[name="meters"]').val(meters);
+  $(document).on('click', '[data-tip]', function(e) {
+    e.stopPropagation();
+    let $tip = $(this);
+    $('[data-tip].is-tip-visible').not($tip).removeClass('is-tip-visible');
+    // зелёный маркер — только показать (закрытие по mouseleave)
+    if ($tip.hasClass('product-availability-marker')) {
+      $tip.addClass('is-tip-visible');
+      return;
+    }
+    $tip.toggleClass('is-tip-visible');
   });
 
-  $('.product-table [name="meters"]').on('input', function() {
+  // Надёжный hover для зелёного маркера наличия
+  $(document).on('mouseenter focusin', '.product-availability-marker', function() {
+    $(this).addClass('is-tip-visible');
+  });
+  $(document).on('mouseleave focusout', '.product-availability-marker', function() {
+    $(this).removeClass('is-tip-visible');
+  });
+
+  $(document).on('click', function(e) {
+    if (!$(e.target).closest('[data-tip]').length) {
+      $('[data-tip].is-tip-visible').removeClass('is-tip-visible');
+    }
+  });
+
+  $('#success_msg').modal('show');
+
+  function isOnlyPiecesRow($row) {
+    return $row.data('only-pieces') == 1;
+  }
+
+  function isWeightEditableRow($row) {
+    return $row.data('weight-editable') == 1;
+  }
+
+  function isWeightFrom500Row($row) {
+    return $row.data('weight-from-500') == 1;
+  }
+
+  function getMinBulkWeight($row) {
+    return parseFloat($row.data('min-bulk-weight')) || 500;
+  }
+
+  function getOrderMode($row) {
+    return $row.data('order-mode') || 'pieces';
+  }
+
+  function setOrderMode($row, mode) {
+    $row.data('order-mode', mode);
+    $row.attr('data-order-mode', mode);
+    applyOrderModeUi($row, mode);
+  }
+
+  function updateWeightFieldTip($row, mode) {
+    let $weight = $row.find('[name="weight_kg"]');
+    let piecesTip = $weight.data('tip-pieces');
+    let bulkTip = $weight.data('tip-bulk');
+
+    if (!piecesTip && !bulkTip) {
+      return;
+    }
+
+    $weight.attr('data-tip', mode === 'bulk' ? (bulkTip || piecesTip) : (piecesTip || bulkTip));
+  }
+
+  function getWeightPerPiece($row) {
+    let weightPerPiece = parseFloat($row.data('weight-per-piece'));
+
+    if (!isNaN(weightPerPiece) && weightPerPiece > 0) {
+      return weightPerPiece;
+    }
+
+    return getWeightPerMeter($row) * (parseFloat($row.data('length')) || getMetersInOnePiece($row.find('[name="pieces"]')));
+  }
+
+  function setFieldRestricted($input, restricted) {
+    let $field = $input.closest('.product-table_field');
+    if (!$field.length) {
+      return;
+    }
+
+    let $lock = $field.children('.product-hint__icon--lock');
+
+    if (restricted) {
+      $field.addClass('product-table_field--restricted');
+      $input.prop('readonly', true).addClass('is-readonly');
+      if (!$lock.length) {
+        $field.prepend('<span class="product-hint__icon--lock" aria-hidden="true"></span>');
+      }
+      return;
+    }
+
+    $field.removeClass('product-table_field--restricted');
+    $input.prop('readonly', false).removeClass('is-readonly');
+    $lock.remove();
+  }
+
+  function applyOrderModeUi($row, mode) {
+    if (!isWeightFrom500Row($row)) {
+      return;
+    }
+
+    let $weight = $row.find('[name="weight_kg"]');
+    let $meters = $row.find('[name="meters"]');
+    let $pieces = $row.find('[name="pieces"]');
+    let minBulk = getMinBulkWeight($row);
+
+    if (mode === 'bulk') {
+      $weight.prop('readonly', false).attr({min: minBulk, step: '0.001'}).removeClass('is-readonly is-synced');
+      $weight.closest('.product-table_field').removeClass('product-table_field--restricted product-table_field--synced');
+      setFieldRestricted($meters, true);
+      setFieldRestricted($pieces, true);
+      $pieces.attr({min: 1, step: '1'});
+      $row.find('.product-table_cell-weight').removeClass('product-table_cell--locked');
+      $row.find('[name="meters"]').closest('td').addClass('product-table_cell--locked');
+      $row.find('[name="pieces"]').closest('td').addClass('product-table_cell--locked');
+      updateWeightFieldTip($row, mode);
+      return;
+    }
+
+    $weight.prop('readonly', false).attr({min: 0.01, step: '0.001'}).removeClass('is-readonly').addClass('is-synced');
+    $weight.closest('.product-table_field').addClass('product-table_field--synced').removeClass('product-table_field--restricted');
+    setFieldRestricted($meters, true);
+    setFieldRestricted($pieces, false);
+    $pieces.attr({min: 1, step: '1'});
+    $row.find('.product-table_cell-weight').removeClass('product-table_cell--locked');
+    $row.find('[name="meters"]').closest('td').addClass('product-table_cell--locked');
+    $row.find('[name="pieces"]').closest('td').removeClass('product-table_cell--locked');
+    updateWeightFieldTip($row, mode);
+  }
+
+  function isWeightFieldEditing($row) {
+    let $weight = $row.find('[name="weight_kg"]');
+    return $weight.is(':focus') || $weight.data('is-editing') === 1;
+  }
+
+  function syncFromPiecesMode($row) {
+    let pieces = normalizePiecesValue($row.find('[name="pieces"]'));
+    let metersInOnePiece = parseFloat($row.data('length')) || getMetersInOnePiece($row.find('[name="pieces"]'));
+    let weightPerMeter = getWeightPerMeter($row);
+    let meters = pieces * metersInOnePiece;
+    let kg = meters * weightPerMeter;
+
+    $row.find('[name="meters"]').val(formatQty(meters, 2));
+
+    if (!isWeightFieldEditing($row)) {
+      $row.find('[name="weight_kg"]').val(formatQty(kg, 3));
+    }
+
+    if (kg >= getMinBulkWeight($row)) {
+      setOrderMode($row, 'bulk');
+      return;
+    }
+
+    setOrderMode($row, 'pieces');
+  }
+
+  function syncFromBulkMode($row) {
+    let kg = parseFloat($row.find('[name="weight_kg"]').val()) || 0;
+    let minBulk = getMinBulkWeight($row);
+    let weightPerMeter = getWeightPerMeter($row);
+    let metersInOnePiece = parseFloat($row.data('length')) || getMetersInOnePiece($row.find('[name="pieces"]'));
+
+    if (kg < minBulk) {
+      let pieces = Math.max(1, Math.round(kg / getWeightPerPiece($row)));
+      $row.find('[name="pieces"]').val(pieces);
+      syncFromPiecesMode($row);
+      return;
+    }
+
+    let meters = kg / weightPerMeter;
+    let pieces = meters / metersInOnePiece;
+
+    $row.find('[name="meters"]').val(formatQty(meters, 2));
+    $row.find('[name="pieces"]').val(formatQty(pieces, 3));
+    setOrderMode($row, 'bulk');
+  }
+
+  function resolveCartQuantity($row) {
+    let metersInOnePiece = parseFloat($row.data('length')) || getMetersInOnePiece($row.find('[name="pieces"]'));
+
+    if ($row.data('only-pieces') == 1) {
+      let pieces = parseInt($row.find('[name="pieces"]').val(), 10) || 1;
+      return pieces * metersInOnePiece;
+    }
+
+    if (isWeightFrom500Row($row)) {
+      if (getOrderMode($row) === 'bulk') {
+        let kg = parseFloat($row.find('[name="weight_kg"]').val());
+        let weightPerMeter = getWeightPerMeter($row);
+
+        if (isNaN(kg) || kg < getMinBulkWeight($row) || !weightPerMeter) {
+          return null;
+        }
+
+        return kg / weightPerMeter;
+      }
+
+      let pieces = parseInt($row.find('[name="pieces"]').val(), 10);
+
+      if (isNaN(pieces) || pieces < 1) {
+        return null;
+      }
+
+      return pieces * metersInOnePiece;
+    }
+
+    return parseFloat($row.find('[name="meters"]').val());
+  }
+
+  function getWeightPerMeter($row) {
+    let weightPerMeter = parseFloat($row.data('weight-per-meter'));
+
+    if (isNaN(weightPerMeter) || weightPerMeter <= 0) {
+      weightPerMeter = parseFloat($row.find('[name="weight_kg"]').data('weight-per-meter'));
+    }
+
+    return weightPerMeter > 0 ? weightPerMeter : 0;
+  }
+
+  function getMetersInOnePiece($obj) {
+    return parseFloat($obj.attr("data-meters-in-one-piece"));
+  }
+
+  function formatQty(value, decimals) {
+    if (isNaN(value)) {
+      return '';
+    }
+
+    return parseFloat(value.toFixed(decimals));
+  }
+
+  function syncRowQuantities($row, source) {
+    if (!isWeightEditableRow($row)) {
+      return;
+    }
+
+    if (isWeightFrom500Row($row)) {
+      if (source === 'weight') {
+        syncFromBulkMode($row);
+      } else if (source === 'pieces') {
+        syncFromPiecesMode($row);
+      }
+      return;
+    }
+
+    let weightPerMeter = getWeightPerMeter($row);
+    let metersInOnePiece = parseFloat($row.data('length')) || getMetersInOnePiece($row.find('[name="pieces"]'));
+
+    if (!weightPerMeter || !metersInOnePiece) {
+      return;
+    }
+
+    let $meters = $row.find('[name="meters"]');
+    let $pieces = $row.find('[name="pieces"]');
+    let $weight = $row.find('[name="weight_kg"]');
+
+    if (source === 'weight') {
+      let kg = parseFloat($weight.val()) || 0;
+      let meters = kg / weightPerMeter;
+      let pieces = meters / metersInOnePiece;
+      $meters.val(formatQty(meters, 2));
+      $pieces.val(formatQty(pieces, 2));
+      return;
+    }
+
+    if (source === 'meters') {
+      let meters = parseFloat($meters.val()) || 0;
+      let pieces = meters / metersInOnePiece;
+      let kg = meters * weightPerMeter;
+      $pieces.val(formatQty(pieces, 2));
+      $weight.val(formatQty(kg, 2));
+      return;
+    }
+
+    if (source === 'pieces') {
+      let pieces = parseFloat($pieces.val()) || 0;
+      let meters = pieces * metersInOnePiece;
+      let kg = meters * weightPerMeter;
+      $meters.val(formatQty(meters, 2));
+      $weight.val(formatQty(kg, 2));
+    }
+  }
+
+  function normalizePiecesValue($input) {
+    let pieces = parseInt($input.val(), 10);
+
+    if (isNaN(pieces) || pieces < 1) {
+      pieces = 1;
+    }
+
+    $input.val(pieces);
+    return pieces;
+  }
+
+  $('.product-table').on('focus', '[name="weight_kg"]', function() {
+    let $row = $(this).closest('tr');
+    let $input = $(this);
+
+    $input.data('is-editing', 1);
+
+    if (isWeightFrom500Row($row) && getOrderMode($row) === 'pieces') {
+      $input.removeClass('is-synced');
+      $input.closest('.product-table_field').removeClass('product-table_field--synced');
+
+      if (this.value && typeof this.select === 'function') {
+        this.select();
+      }
+    }
+  });
+
+  $('.product-table').on('input', '[name="weight_kg"]', function() {
+    let $row = $(this).closest('tr');
+    let $input = $(this);
+
+    if (isWeightFrom500Row($row)) {
+      let kg = parseFloat($input.val());
+
+      if (!isNaN(kg) && kg >= getMinBulkWeight($row)) {
+        syncFromBulkMode($row);
+      }
+
+      return;
+    }
+
+    let minWeight = parseFloat($input.attr('min')) || 0.01;
+    let kg = parseFloat($input.val());
+
+    if (isNaN(kg) || kg < minWeight) {
+      return;
+    }
+
+    syncRowQuantities($row, 'weight');
+  });
+
+  $('.product-table').on('blur', '[name="weight_kg"]', function() {
+    let $row = $(this).closest('tr');
+    let $input = $(this);
+
+    $input.data('is-editing', 0);
+
+    if (isWeightFrom500Row($row)) {
+      syncFromBulkMode($row);
+      return;
+    }
+
+    let minWeight = parseFloat($input.attr('min')) || 0.01;
+    let kg = parseFloat($input.val());
+
+    if (isNaN(kg) || kg < minWeight) {
+      kg = minWeight;
+      $input.val(kg);
+    }
+
+    syncRowQuantities($row, 'weight');
+  });
+
+  $('.product-table').on('input blur', '[name="pieces"]', function() {
     let self = $(this);
+    let $row = self.closest('tr');
+    let metersInOnePiece = getMetersInOnePiece(self);
+
+    if (isOnlyPiecesRow($row) || isWeightFrom500Row($row)) {
+      normalizePiecesValue(self);
+    }
+
+    if (isWeightFrom500Row($row)) {
+      syncFromPiecesMode($row);
+      return;
+    }
+
+    if (isWeightEditableRow($row)) {
+      syncRowQuantities($row, 'pieces');
+      return;
+    }
+
+    let pieces = parseFloat(self.val());
+    let meters = pieces * metersInOnePiece;
+    $row.find('[name="meters"]').val(meters);
+  });
+
+  $('.product-table').on('input', '[name="meters"]', function() {
+    let self = $(this);
+    let $row = self.closest('tr');
+
+    if (isOnlyPiecesRow($row) || isWeightFrom500Row($row)) {
+      return;
+    }
+
+    if (isWeightEditableRow($row)) {
+      syncRowQuantities($row, 'meters');
+      return;
+    }
+
     let metersInOnePiece = getMetersInOnePiece(self);
     let meters = parseFloat(self.val());
     let pieces = (meters / metersInOnePiece).toFixed(1);
 
-    self.closest('tr').find('[name="pieces"]').val(pieces);
+    $row.find('[name="pieces"]').val(pieces);
   });
 
-  function getMetersInOnePiece($obj)
-  {
-    return parseFloat($obj.attr("data-meters-in-one-piece"))
-  }
+  $('.product-table tr[data-weight-from-500="1"]').each(function() {
+    syncFromPiecesMode($(this));
+  });
+
+  $('.product-table').on('input', '[name="width"]', function() {
+    let $input = $(this);
+    if (isOnlyPiecesRow($input.closest('tr'))) {
+      $input.val($input.data('width-default'));
+    }
+  });
 });
 
 if ($('.map-container').length) {

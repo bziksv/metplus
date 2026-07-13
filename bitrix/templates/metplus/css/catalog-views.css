@@ -1,0 +1,456 @@
+/* Catalog view switcher (dev preview) */
+.catalog-view-switcher {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 1200;
+  font-family: inherit;
+}
+
+.catalog-view-switcher__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  min-height: 42px;
+  padding: 0.55em 1.1em;
+  border: 1px solid #073e71;
+  border-radius: 999px;
+  background: #073e71;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(7, 62, 113, 0.28);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.catalog-view-switcher__toggle:hover,
+.catalog-view-switcher.is-open .catalog-view-switcher__toggle {
+  background: #0a4f8f;
+  box-shadow: 0 14px 32px rgba(7, 62, 113, 0.34);
+}
+
+.catalog-view-switcher__panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  width: 240px;
+  padding: 0.9em;
+  border: 1px solid #d7e3ef;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 18px 40px rgba(15, 35, 58, 0.18);
+}
+
+.catalog-view-switcher__title {
+  margin-bottom: 0.65em;
+  color: #073e71;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.catalog-view-switcher__buttons {
+  display: grid;
+  gap: 0.45em;
+}
+
+.catalog-view-switcher__btn {
+  display: block;
+  width: 100%;
+  padding: 0.65em 0.8em;
+  border: 1px solid #dbe6f0;
+  border-radius: 8px;
+  background: #f7fafc;
+  color: #2f4052;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.catalog-view-switcher__btn:hover {
+  border-color: #3ebbf3;
+  background: #eef8fe;
+  color: #073e71;
+}
+
+.catalog-view-switcher__btn.is-active {
+  border-color: #073e71;
+  background: #073e71;
+  color: #fff;
+}
+
+/* Concept 1 — «Мастерская»: плотная таблица, сайдбар слева как в оригинале */
+html[data-catalog-view="concept1"] .subcategory-section {
+  padding-top: 4.5em;
+  background: linear-gradient(180deg, #f3f7fb 0%, #fff 220px);
+}
+
+html[data-catalog-view="concept1"] .sidebar-catalog_content {
+  box-shadow: none;
+  border: 1px solid #d5e0ea;
+  border-radius: 10px;
+  padding: 1.2em 1.5em;
+  background: #fff;
+}
+
+html[data-catalog-view="concept1"] .catalog-menu_item > a:hover {
+  color: #073e71;
+}
+
+html[data-catalog-view="concept1"] .subcategory-section .title-h3,
+html[data-catalog-view="concept1"] .subcategory-section .title-h3_mod {
+  margin-bottom: 0.8em;
+  padding-bottom: 0.35em;
+  border-bottom: 3px solid #3ebbf3;
+  color: #073e71;
+  font-size: 1.75rem;
+}
+
+html[data-catalog-view="concept1"] .subcategory-column {
+  margin-bottom: 1em;
+}
+
+html[data-catalog-view="concept1"] .subcategory-item > a {
+  min-height: 108px;
+  border-radius: 8px;
+  border-color: #c9d7e4;
+  background: #fff;
+  font-size: 1.125rem;
+}
+
+html[data-catalog-view="concept1"] .subcategory-item_img {
+  flex: 96px 0 0;
+  width: 96px;
+  height: 56px;
+}
+
+html[data-catalog-view="concept1"] .catalog-section-header {
+  margin-top: 1.2em;
+  padding: 0.85em 1em;
+  border: 1px solid #d5e0ea;
+  border-radius: 10px;
+  background: #f8fbfd;
+}
+
+html[data-catalog-view="concept1"] .filter-box_title {
+  color: #073e71;
+}
+
+html[data-catalog-view="concept1"] .product-table {
+  margin-top: 1.5em;
+  border: 1px solid #c5d4e3;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(7, 62, 113, 0.08);
+}
+
+html[data-catalog-view="concept1"] .product-table thead tr:first-child th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #073e71;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+html[data-catalog-view="concept1"] .product-table tbody tr {
+  background: #fff;
+  border-bottom: 1px solid #e3ebf2;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+html[data-catalog-view="concept1"] .product-table tbody tr:nth-child(odd) {
+  background: #fafcfe;
+}
+
+html[data-catalog-view="concept1"] .product-table tbody tr:hover {
+  background: #eef7fd;
+  box-shadow: inset 4px 0 0 #3ebbf3;
+}
+
+html[data-catalog-view="concept1"] .product-table td {
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-catalog-view="concept1"] .product-table_cell-qty .product-table-input,
+html[data-catalog-view="concept1"] .product-table_cell-weight .product-table-input {
+  border-radius: 6px;
+  border-color: #b7c9d8;
+  background: #fff;
+}
+
+html[data-catalog-view="concept1"] .product-item_cart-btn {
+  border-radius: 8px;
+}
+
+html[data-catalog-view="concept1"] .product-hint-legend {
+  border-radius: 8px;
+}
+
+/* Concept 2 — «Витрина»: карточки и воздушная сетка */
+html[data-catalog-view="concept2"] .subcategory-section {
+  padding-top: 4.5em;
+  background: #f4f6f8;
+}
+
+html[data-catalog-view="concept2"] .subcategory-section > .container > .row {
+  align-items: flex-start;
+}
+
+html[data-catalog-view="concept2"] .sidebar-catalog_content {
+  border-radius: 14px;
+  padding: 1em 0.9em;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15, 35, 58, 0.08);
+}
+
+html[data-catalog-view="concept2"] .catalog_sidebar-title {
+  font-size: 1.125rem;
+  text-align: center;
+}
+
+html[data-catalog-view="concept2"] .catalog-menu_item > a {
+  padding: 0.45em 0.35em;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+html[data-catalog-view="concept2"] .catalog-menu_item > a:hover {
+  background: #eef8fe;
+}
+
+html[data-catalog-view="concept2"] .sidebar-catalog .price-list_box {
+  margin-top: 1em;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+html[data-catalog-view="concept2"] .subcategory-section .title-h3,
+html[data-catalog-view="concept2"] .subcategory-section .title-h3_mod {
+  margin-bottom: 1em;
+  color: #073e71;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+html[data-catalog-view="concept2"] .subcategory-section .row:has(.subcategory-column) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1em;
+  width: 100%;
+  margin: 0;
+}
+
+html[data-catalog-view="concept2"] .subcategory-column {
+  width: 100%;
+  max-width: 100%;
+  flex: none;
+  margin: 0;
+  padding: 0;
+}
+
+html[data-catalog-view="concept2"] .subcategory-item {
+  min-height: 0;
+}
+
+html[data-catalog-view="concept2"] .subcategory-item > a {
+  flex-direction: column;
+  align-items: stretch;
+  min-height: 220px;
+  padding: 0;
+  overflow: hidden;
+  border: none;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(15, 35, 58, 0.08);
+}
+
+html[data-catalog-view="concept2"] .subcategory-item > a:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 36px rgba(62, 187, 243, 0.18);
+}
+
+html[data-catalog-view="concept2"] .subcategory-item_img {
+  flex: none;
+  width: 100%;
+  height: 140px;
+  padding: 1em;
+  background: linear-gradient(180deg, #fff 0%, #f7fafc 100%);
+}
+
+html[data-catalog-view="concept2"] .subcategory-item_name {
+  padding: 1em 1.1em 1.2em;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+html[data-catalog-view="concept2"] .catalog-section-header {
+  margin-top: 1.5em;
+}
+
+html[data-catalog-view="concept2"] .filter-box {
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15, 35, 58, 0.06);
+}
+
+html[data-catalog-view="concept2"] .product-table {
+  display: block;
+  margin-top: 1.5em;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: transparent;
+}
+
+html[data-catalog-view="concept2"] .product-table thead,
+html[data-catalog-view="concept2"] .product-table tbody {
+  display: block;
+  width: 100%;
+}
+
+html[data-catalog-view="concept2"] .product-table thead tr:first-child {
+  display: none;
+}
+
+html[data-catalog-view="concept2"] .product-table thead tr.product-table_search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  margin-bottom: 1em;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+html[data-catalog-view="concept2"] .product-table thead tr.product-table_search-row th {
+  display: block;
+  width: 100% !important;
+  padding: 0.75em;
+  border-radius: 12px;
+  background: #073e71;
+}
+
+html[data-catalog-view="concept2"] .product-table thead tr.product-table_search-row th.product-table_head-spacer {
+  display: none;
+}
+
+html[data-catalog-view="concept2"] .product-table tbody {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1em;
+}
+
+html[data-catalog-view="concept2"] .product-table tbody tr {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75em;
+  padding: 1em;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(15, 35, 58, 0.08);
+  white-space: normal;
+}
+
+html[data-catalog-view="concept2"] .product-table tbody tr:nth-child(odd) {
+  background: #fff;
+}
+
+html[data-catalog-view="concept2"] .product-table tbody td {
+  display: block;
+  width: 100% !important;
+  padding: 0;
+  white-space: normal;
+}
+
+html[data-catalog-view="concept2"] .product-table_first-cell {
+  cursor: default;
+  padding: 0;
+}
+
+html[data-catalog-view="concept2"] .product-item_name {
+  display: block;
+  color: #073e71;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+html[data-catalog-view="concept2"] .product-availability,
+html[data-catalog-view="concept2"] .product-item_popup {
+  display: none !important;
+}
+
+html[data-catalog-view="concept2"] .product-table tbody td:not(:first-child):not(:last-child) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75em;
+  padding: 0.55em 0.75em;
+  border-radius: 10px;
+  background: #f7fafc;
+}
+
+html[data-catalog-view="concept2"] .product-table tbody td:not(:first-child):not(:last-child)::before {
+  color: #6d7f92;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+html[data-catalog-view="concept2"] .product-table tbody td:not(.product-table_first-cell):not(.product-table_cell-qty):not(.product-table_cell-weight):not(:last-child)::before {
+  content: "Цена";
+}
+
+html[data-catalog-view="concept2"] .product-table tbody td.product-table_cell-weight::before {
+  content: "Вес";
+}
+
+html[data-catalog-view="concept2"] .product-table tbody td.product-table_cell-qty:has([name="meters"])::before {
+  content: "Метры";
+}
+
+html[data-catalog-view="concept2"] .product-table tbody td.product-table_cell-qty:has([name="width"])::before {
+  content: "Ширина";
+}
+
+html[data-catalog-view="concept2"] .product-table tbody td.product-table_cell-qty:has([name="pieces"])::before {
+  content: "Штуки";
+}
+
+html[data-catalog-view="concept2"] .product-table tbody td:last-child {
+  margin-top: auto;
+  text-align: center;
+}
+
+html[data-catalog-view="concept2"] .product-item_cart-btn {
+  width: 100%;
+  min-width: 0;
+  border-radius: 10px;
+}
+
+html[data-catalog-view="concept2"] .product-table_field,
+html[data-catalog-view="concept2"] .product-table_cell-qty .product-table-input,
+html[data-catalog-view="concept2"] .product-table_cell-weight .product-table-input {
+  width: 100%;
+  max-width: 140px;
+  margin-left: auto;
+}
+
+html[data-catalog-view="concept2"] .product-hint-legend {
+  border-radius: 10px;
+  background: #fff;
+}
+
+@media only screen and (max-width: 1024px) {
+  html[data-catalog-view="concept2"] .subcategory-section .row:has(.subcategory-column) {
+    grid-template-columns: 1fr;
+  }
+
+  html[data-catalog-view="concept2"] .product-table tbody {
+    grid-template-columns: 1fr;
+  }
+}

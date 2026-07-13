@@ -13,7 +13,16 @@ use Bitrix\Main\Localization\Loc;
     </div>
     <div class="right-column">
         <div class="cart-total-price">
-            Итоговая стоимость: <span class="cart-total_sum" data-entity="basket-total-price">{{{PRICE_FORMATED}}}</span>
+            <span class="cart-total-price__label">Итоговая стоимость:</span>
+            <span class="cart-total_sum" data-entity="basket-total-price">{{{PRICE_FORMATED}}}</span>
+        </div>
+        <div class="cart-total-price cart-total-price--cutting" style="display:none;">
+            <span class="cart-total-price__label">Резка:</span>
+            <span class="cart-total_sum" data-entity="basket-total-cutting">0 ₽</span>
+        </div>
+        <div class="cart-total-price cart-total-price--with-cutting" style="display:none;">
+            <span class="cart-total-price__label">Итого с резкой:</span>
+            <span class="cart-total_sum" data-entity="basket-total-with-cutting">0 ₽</span>
         </div>
         <a href="" class="main-btn checkout-btn js-checkout"><?=Loc::getMessage('SBB_ORDER')?></a>
     </div>

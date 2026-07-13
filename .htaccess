@@ -1,0 +1,181 @@
+<RequireAll>
+    Require all granted
+
+    Require not ip 49.13.193.0/24
+    Require not ip 5.139.230.0/24
+    Require not ip 5.139.253.0/24
+    Require not ip 31.181.248.0/24
+    Require not ip 37.18.38.0/24
+    Require not ip 37.77.111.0/24
+    Require not ip 45.140.18.0/24
+    Require not ip 62.183.46.0/24
+    Require not ip 77.110.108.0/24
+    Require not ip 83.239.97.0/24
+    Require not ip 85.172.109.0/24
+    Require not ip 85.174.205.0/24
+    Require not ip 85.175.197.0/24
+    Require not ip 85.175.217.0/24
+    Require not ip 91.233.43.0/24
+    Require not ip 95.153.163.0/24
+    Require not ip 95.153.177.0/24
+    Require not ip 95.153.178.0/24
+    Require not ip 95.153.180.0/24
+    Require not ip 95.25.184.0/24
+    Require not ip 178.176.211.0/24
+    Require not ip 185.10.173.0/24
+    Require not ip 188.162.140.0/24
+    Require not ip 188.162.143.0/24
+    Require not ip 188.170.169.0/24
+    Require not ip 217.78.231.0/24
+</RequireAll>
+
+
+Options -Indexes 
+ErrorDocument 404 /404.php
+
+<IfModule mod_php5.c>
+  php_flag session.use_trans_sid off
+  #php_flag default_charset UTF-8
+  #php_value display_errors 1
+</IfModule>
+
+
+<IfModule mod_php7.c>
+  php_flag session.use_trans_sid off
+  #php_flag default_charset UTF-8
+  #php_value display_errors 1
+</IfModule>
+
+<IfModule mod_rewrite.c>
+  Options +FollowSymLinks
+  RewriteEngine On
+RewriteCond %{HTTPS} =off
+RewriteCond %{REQUEST_URI} !^/bitrix/admin/1c_exchange.php
+RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [QSA,L]
+
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -l [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteCond %{REQUEST_FILENAME} [\xC2-\xDF][\x80-\xBF] [OR]
+RewriteCond %{REQUEST_FILENAME} \xE0[\xA0-\xBF][\x80-\xBF] [OR]
+RewriteCond %{REQUEST_FILENAME} [\xE1-\xEC\xEE\xEF][\x80-\xBF]{2} [OR]
+RewriteCond %{REQUEST_FILENAME} \xED[\x80-\x9F][\x80-\xBF] [OR]
+RewriteCond %{REQUEST_FILENAME} \xF0[\x90-\xBF][\x80-\xBF]{2} [OR]
+RewriteCond %{REQUEST_FILENAME} [\xF1-\xF3][\x80-\xBF]{3} [OR]
+RewriteCond %{REQUEST_FILENAME} \xF4[\x80-\x8F][\x80-\xBF]{2}
+RewriteCond %{REQUEST_FILENAME} !/bitrix/virtual_file_system.php$
+RewriteRule ^(.*)$ /bitrix/virtual_file_system.php [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-l
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME} !/bitrix/urlrewrite.php$
+  RewriteRule ^(.*)$ /bitrix/urlrewrite.php [L]
+  RewriteRule .* - [E=REMOTE_USER:%{HTTP:Authorization}]
+</IfModule>
+
+
+
+Redirect 301 /services/dostavka/ /delivery/
+Redirect 301	/catalog/metalloprokat/balka-dvutavrovaya/	 /catalog/balka-dvutavrovaya/
+Redirect 301	/catalog/metalloprokat/kvadrat/	 /catalog/kvadrat/
+Redirect 301	/catalog/metalloprokat/list-otsinkovannyy/	 /catalog/list-otsinkovannyy/
+Redirect 301	/catalog/metalloprokat/list-prosechno-vytyazhnoy/	 /catalog/prosechno-vytyazhnoy-list/
+Redirect 301	/catalog/metalloprokat/list-kh-k/	 /catalog/list-kholodnokatanyy/
+Redirect 301	/catalog/metalloprokat/polosa/	 /catalog/polosa-stalnaya/
+Redirect 301	/catalog/metalloprokat/stal-armaturnaya/	 /catalog/armatura/
+Redirect 301	/catalog/metalloprokat/stal-kruglaya/	 /catalog/krug-stalnoy/
+Redirect 301	/catalog/metalloprokat/stal-uglovaya/	 /catalog/ugolok-stalnoy/
+Redirect 301	/catalog/metalloprokat/shveller/	 /catalog/shveller/
+Redirect 301	/catalog/metalloprokat/shestigrannik/	 /catalog/shestigrannik-stalnoy/
+Redirect 301    /catalog/metalloprokat/  /		
+		
+		
+Redirect 301	/catalog/nerzhaveyka/zapornaya-i-soedinitelnaya-armatura/	 /catalog/zapornaya-i-soedinitelnaya-armatura/
+Redirect 301	/catalog/nerzhaveyka/krug-kalibrovannyy/	 /catalog/nerzhaveyushchiy-krug/
+Redirect 301	/catalog/nerzhaveyka/list-nerzhaveyushchiy/	 /catalog/list-nerzhaveyushchiy/
+Redirect 301	/catalog/nerzhaveyka/nerzhaveyushchie-fitingi/	 /catalog/nerzhaveyushchie-fitingi/
+Redirect 301	/catalog/nerzhaveyka/truba-kruglaya/	 /catalog/truba-kruglaya-nerzhaveyushchaya/
+Redirect 301	/catalog/nerzhaveyka/truba-profilnaya-ner/	 /catalog/truba-profilnaya-nerzhaveyushchaya/
+Redirect 301    /catalog/nerzhaveyka/  /catalog/nerzhaveyushchaya-stal/		
+		
+Redirect 301	/catalog/setka-provoloka/provoloka/	 /catalog/provoloka/
+Redirect 301	/catalog/setka-provoloka/setka/	 /catalog/setka/
+Redirect 301    /catalog/setka-provoloka/ /catalog/setka/		
+		
+		
+Redirect 301	/catalog/truby-stalnye/otvody/	 /catalog/otvody/
+Redirect 301	/catalog/truby-stalnye/truba-besshovnaya/	 /catalog/besshovnaya-truba/
+Redirect 301	/catalog/truby-stalnye/truba-vodogazoprovodnaya/	 /catalog/vodogazoprovodnaya-truba-vgp/
+Redirect 301	/catalog/truby-stalnye/truba-otsinkovannaya/	 /catalog/otsinkovannaya-truba/
+Redirect 301	/catalog/truby-stalnye/truba-profilnaya/	 /catalog/truba-profilnaya/
+Redirect 301	/catalog/truby-stalnye/truba-elektrosvarnaya/	 /catalog/elektrosvarnaya-truba/
+Redirect 301	/catalog/truby-stalnye/ /catalog/truba-kruglaya/	
+			
+		
+Redirect 301	/catalog/elektrody/elektrody1/	 /catalog/elektrody/
+Redirect 301	/publications/gnutyy-shveller/	 /catalog/shveller-gnutyy/
+Redirect 301	/publications/svarnaya-setka/	 /catalog/svarnaya-setka/
+Redirect 301	/publications/setka-rabitsa/	 /catalog/setka-rabitsa/
+Redirect 301	/publications/kladochnaya-setka/	 /catalog/setka-kladochnaya/
+Redirect 301	/publications/truby-iz-nerzhaveyushchey-stali-vidy-sfery-primeneniya/	 /catalog/truba-kruglaya-nerzhaveyushchaya/
+Redirect 301	/publications/nerzhaveyushchaya-stal-aisi/	 /articles/nerzhaveyushchaya-stal-aisi/
+Redirect 301	/publications/kriterii-vybora-i-preimushchestva-ugolka-iz-nerzhaveyushchey-stali/	 /catalog/ugolok-nerzhaveyushchiy/
+Redirect 301	/publications/vyazalnaya-provoloka-v-assortimente/	 /catalog/provoloka-vyazalnaya/
+Redirect 301    /catalog/metalloprokat/list-g-k/  /catalog/list-goryachekatanyy/		
+
+
+Redirect 301     /service/ /services/
+Redirect 301     /contacts/ /contact/
+Redirect 301     /documentation/gosty-i-tu/ /gost/
+Redirect 301     /publications/ /articles/
+Redirect 301     /career/jobs/ /vacancy/
+
+Redirect 301 /catalog/svarnaya-setka/ /catalog/svarnaya-i-kladochnaya-setka/
+Redirect 301 /catalog/setka-kladochnaya/ /catalog/svarnaya-i-kladochnaya-setka/
+
+Redirect 301 /catalog/tsvetnye-metally/ /
+Redirect 301 /catalog/alyuminievyy-list-cm/ /
+Redirect 301 /catalog/alyuminievaya-truba-cm/ /
+Redirect 301 /catalog/alyuminievyy-list-kvintet-cm/ /
+Redirect 301 /catalog/alyuminievaya-plita-cm/ /
+Redirect 301 /catalog/alyuminievyy-prutok-cm/ /
+Redirect 301 /catalog/alyuminievyy-ugolok-cm/ /
+Redirect 301 /catalog/alyuminievaya-lenta-cm/ /
+Redirect 301 /catalog/alyuminievaya-provoloka-cm/ /
+Redirect 301 /catalog/alyuminievaya-shina-cm/ /
+Redirect 301 /catalog/med-cm/ /
+Redirect 301 /catalog/latun-cm/ /
+Redirect 301 /catalog/bronza-cm/ /
+Redirect 301 /catalog/alyuminievyy-krug/ /
+Redirect 301 /catalog/mednyy-prutok-krug/ /
+Redirect 301 /catalog/truba-kruglaya-alyuminievaya-cm/ /
+Redirect 301 /catalog/truba-alyuminievaya-profilnaya-cm/ /
+Redirect 301 /catalog/mednyy-list-cm/ /
+Redirect 301 /catalog/mednaya-provoloka-cm/ /
+Redirect 301 /catalog/mednaya-truba-cm/ /
+Redirect 301 /catalog/mednaya-truba-dlya-konditsionerov-cm/ /
+Redirect 301 /catalog/mednaya-shina-cm/ /
+Redirect 301 /catalog/latunnyy-list-cm/ /
+Redirect 301 /catalog/latunnyy-kvadrat-cm/ /
+Redirect 301 /catalog/latunnaya-provoloka-cm/ /
+Redirect 301 /catalog/latunnyy-prutok-krug-cm/ /
+Redirect 301 /catalog/latunnaya-truba-cm/ /
+Redirect 301 /catalog/bronzovaya-lenta-cm/ /
+Redirect 301 /catalog/bronzovyy-prutok-krug-cm/ /
+Redirect 301 /catalog/bronzovyy-shestigrannik-cm/ /
+Redirect 301 /catalog/latunnyy-shestigrannik/ /
+Redirect 301 /catalog/tsvetmet-shtuchnyy/ /
+
+
+<IfModule mod_dir.c>
+  DirectoryIndex index.php index.html
+</IfModule>
+
+<IfModule mod_expires.c>
+  ExpiresActive on
+  ExpiresByType image/jpeg "access plus 3 day"
+  ExpiresByType image/gif "access plus 3 day"
+  ExpiresByType image/png "access plus 3 day"
+  ExpiresByType text/css "access plus 3 day"
+  ExpiresByType application/javascript "access plus 3 day"  
+</IfModule>

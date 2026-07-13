@@ -26,7 +26,7 @@ function customBasketPriceTypeHandler($productId, $quantity = 1, $arUserGroups =
     $length = getLengthProduct($ID_BLOCK, $productId);
     $half = $length / 2;
 
-    if ($quantity % $half != 0) {
+    if ($half > 0 && abs(fmod($quantity, $half)) > 0.0001) {
         $PriceTypeId = $pricePerMeterPlus20Id;
     }
 

@@ -81,7 +81,7 @@
 		this.reinit = function(elm){
 			$(this).each(function(){
 				$(this).find("th a").contents().unwrap();
-				$(this).find("tr.product-table_form-search").remove();
+				$(this).find("tr.product-table_search-row, tr.product-table_form-search").remove();
 			});
 			$(this).fancyTable(this.settings);
 		};
@@ -169,10 +169,12 @@
 				});
 			}
 			if(settings.searchable){
-				var searchHeader = $("<tr>");
+				var searchHeader = $("<tr>").addClass("product-table_search-row");
 				if(settings.globalSearch){
 					var searchField = $("<input>",{
+						"type": "search",
 						"placeholder": settings.inputPlaceholder,
+						"aria-label": settings.inputPlaceholder,
 						style:"width:100%;"+settings.inputStyle
 					}).addClass('product_form-search_input')
 						.bind("change paste keyup",function(){
@@ -180,13 +182,17 @@
 						elm.fancyTable.page = 1;
 						instance.tableUpdate(elm);
 					});
-					var form = $("<form>").addClass('product_form-search');
-					var th = $("<td>").attr("colspan",elm.fancyTable.nColumns).addClass("product-table_form-search");
-					var btn = $("<div>").addClass('wrapper_submit-btn').append($("<span>").addClass('glipf-search')).append($("<input>").addClass('form-search_submit-btn'));
+					var form = $("<form>").addClass('product_form-search').attr("role", "search");
+					var btn = $("<div>").addClass('wrapper_submit-btn').append($("<span>").addClass('glipf-search').attr("aria-hidden", "true")).append($("<input>").addClass('form-search_submit-btn').attr({"type": "submit", "tabindex": "-1", "aria-hidden": "true"}));
+					var firstTh = $("<th>").addClass("product-table_form-search");
+					var columnCount = $(elm).find("thead tr:first-child th").length;
 					$(searchField).appendTo($(form));
 					$(btn).appendTo($(form));
-					$(form).appendTo($(th));
-					$(th).appendTo($(searchHeader));
+					$(form).appendTo($(firstTh));
+					$(firstTh).appendTo($(searchHeader));
+					for (var columnIndex = 1; columnIndex < columnCount; columnIndex++) {
+						$("<th>").addClass("product-table_head-spacer").appendTo($(searchHeader));
+					}
 				} else {
 					var n=0;
 					$(elm).find("td").first().parent().find("td").each(function() {

@@ -18,6 +18,39 @@
 
   <script type="text/javascript" src="https://incut.prime-ltd.su/incut/incut.js" async></script>
     <link rel="stylesheet" href="https://incut.prime-ltd.su/incut/incut.css">
+<?php if (strpos($APPLICATION->GetCurPage(), '/catalog/') === 0): ?>
+    <script>
+    (function () {
+        var key = 'metplus_catalog_view';
+        var allowed = { original: 1, concept1: 1, concept2: 1 };
+        var params = new URLSearchParams(window.location.search);
+        var fromUrl = params.get('catalog_view');
+        var view = 'original';
+
+        if (fromUrl && allowed[fromUrl]) {
+            view = fromUrl;
+            try { localStorage.setItem(key, view); } catch (e) {}
+        } else {
+            try {
+                var stored = localStorage.getItem(key);
+                if (stored && allowed[stored]) {
+                    view = stored;
+                }
+            } catch (e) {}
+        }
+
+        document.documentElement.setAttribute('data-catalog-view', view);
+
+        var labels = { original: 'Оригинал', concept1: 'Мастерская', concept2: 'Витрина' };
+        document.addEventListener('DOMContentLoaded', function () {
+            var toggle = document.getElementById('catalog-view-switcher-toggle');
+            if (toggle) {
+                toggle.textContent = 'Каталог: ' + (labels[view] || labels.original);
+            }
+        });
+    })();
+    </script>
+<?php endif; ?>
 </head>
 <body>
 <div id="panel"><? $APPLICATION->ShowPanel(); ?></div>
@@ -38,7 +71,7 @@
                 <div class="row">
                     <div class="col-lg-5 col-md-6 col-sm-5 col-8 main-head_left-column">
                         <div class="head-logo">
-                            <a href="/"><img data-src="<?=SITE_TEMPLATE_PATH?>/img/static/logo.png" alt="alt"></a>
+                            <a href="/"><img data-src="<?=SITE_TEMPLATE_PATH?>/img/static/logo.webp" alt="Металл Инвест"></a>
                         </div>
                         <div class="head_phone-box tablet-small_hidden">
                             <a href="tel:+74732075555" class="head_phone-number">+7 (473) 207-55-55 </a>

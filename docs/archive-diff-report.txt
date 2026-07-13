@@ -1,0 +1,48 @@
+СРАВНЕНИЕ: test/ (архив) vs корень проекта
+Исключено из сравнения: test/, .git, кеш, .local, дампы, архив
+
+Файлов в архиве (test/): 137414
+Файлов в корне:          137419
+Только в архиве:         8
+Только в корне:          13
+Общих:                   137406
+Из общих совпадают:      137401
+Из общих отличаются:     5
+
+============================================================
+ТОЛЬКО В АРХИВЕ (нет в корне)
+============================================================
+.bottom.menu.php	339 B
+.bottom_useful.menu.php	179 B
+.htaccess	7983 B
+.personal.menu.php	897 B
+.section.php	116 B
+upload/ПОРЕЗКА ПРАЙС.pdf	58837 B
+upload/ПОРУБКА ПРАЙС.pdf	62641 B
+upload/ПРАЙС ДОСТАВКИ.pdf	63333 B
+
+============================================================
+ТОЛЬКО В КОРНЕ (нет в архиве)
+============================================================
+.cursorignore	1040 B
+.left.menu.php	29 B
+bitrix/.settings.example.php	1279 B
+bitrix/php_interface/dbconn.example.php	945 B
+bitrix/php_interface/dbconn.local.php	843 B
+docs/PROJECT.md	4225 B
+scripts/apply-local-db-config.sh	2548 B
+scripts/setup-local-db.sh	2324 B
+scripts/start-dev.sh	2080 B
+scripts/stop-dev.sh	379 B
+upload/ПОРЕЗКА ПРАЙС.pdf	58837 B
+upload/ПОРУБКА ПРАЙС.pdf	62641 B
+upload/ПРАЙС ДОСТАВКИ.pdf	63333 B
+
+============================================================
+ОТЛИЧАЮТСЯ (есть в обоих)
+============================================================
+[size] .access.php	arch=184	root=27
+[size] .gitignore	arch=359	root=800
+[size] bitrix/.settings.php	arch=1364	root=1379
+[size] bitrix/php_interface/dbconn.php	arch=851	root=959
+[size] bitrix/site_checker_72435f5e9b444efec0763cf350d9edc6.log	arch=345	root=391

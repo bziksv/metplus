@@ -16,8 +16,12 @@ $options = getProductCuttingServices($productId);
 
     <select id="cutting-type" style="width: 100%;padding: 5px 10px;margin-bottom:15px;">
         <?php foreach ($options as $option): ?>
-            <option value="<?=$option['CODE']?>">
-                <?=$option['NAME']?> <?=$option['VALUE'] ? ' - ' . $option['VALUE'] : ''?>
+            <?php
+                $humanName = getCuttingServiceHumanName($option['CODE'] ?? '', $option['NAME'] ?? '');
+                $price = (float)($option['VALUE'] ?? 0);
+            ?>
+            <option value="<?=htmlspecialcharsbx($option['CODE'])?>">
+                <?=htmlspecialcharsbx($humanName)?><?=$price > 0 ? ' — ' . number_format($price, 0, '.', ' ') . ' ₽' : ''?>
             </option>
         <?php endforeach; ?>
     </select>
