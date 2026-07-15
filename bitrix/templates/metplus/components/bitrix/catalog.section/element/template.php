@@ -31,15 +31,19 @@ if(count($arResult['ITEMS'])) :
     <thead>
         <tr>
             <th>Наименование товара</th>
+            <th class="product-table_col-steel">Марка стали</th>
             <?php foreach ($arResult['CATALOG_PRICE'] as $price): ?>
                 <th class="product-table_col-price"><?=$price['NAME_HTML'] ?? htmlspecialcharsbx($price['NAME'])?></th>
             <?php endforeach; ?>
             <?php if (!empty($arResult['SHOW_WEIGHT_COLUMN'])): ?>
             <th class="product-table_col-qty"<?=!empty($arResult['EDITABLE_WEIGHT_COLUMN']) ? ' data-tip="Укажите вес заказа в кг — метры и штуки пересчитаются автоматически"' : ' data-tip="Вес погонного метра, кг"'?>><?=!empty($arResult['EDITABLE_WEIGHT_COLUMN']) ? 'Вес, кг' : 'Вес'?></th>
             <?php endif; ?>
-            <th class="product-table_col-qty">Метры</th>
+            <th class="product-table_col-qty">Длина (метры)</th>
             <?php if (!empty($arResult['SHOW_WIDTH_COLUMN'])): ?>
-            <th class="product-table_col-qty">Ширина</th>
+            <th class="product-table_col-qty">Ширина (метры)</th>
+            <?php endif; ?>
+            <?php if (!empty($arResult['HAS_BASIC_SHEET_ROWS'])): ?>
+            <th class="product-table_col-qty" data-tip="Кратно 1 м ширины листа">м²</th>
             <?php endif; ?>
             <th class="product-table_col-qty">Штуки</th>
             <th>Купить</th>
@@ -49,15 +53,31 @@ if(count($arResult['ITEMS'])) :
     <tbody>
         <?php foreach ($arResult['ITEMS'] as $arItem):
             $onlyPieces = !empty($arItem['ONLY_PIECES']);
+            $halfPieces = !empty($arItem['HALF_PIECES']);
+            $isSheet = !empty($arItem['IS_SHEET']);
+            $basicSheet = !empty($arItem['BASIC_SHEET']);
             $metersInPiece = $arItem['PROPERTIES']['DLINA_RASCHET']['VALUE'];
             $widthValue = $arItem['PROPERTIES']['SHIRINA_RASCHET']['VALUE'];
             $weightValue = $arItem['PROPERTIES']['_3_VESPMSAYT']['VALUE'] ?? '';
             $weightPerMeter = floatval($weightValue);
             $weightPerPiece = $weightPerMeter * floatval($metersInPiece);
             $initialWeightKg = $weightPerPiece > 0 ? round($weightPerPiece, 2) : '';
-            $piecesStep = $onlyPieces ? '1' : '0.1';
-            $piecesMin = $onlyPieces ? '1' : '0.1';
+            $piecesStep = $onlyPieces || $basicSheet ? '1' : ($halfPieces ? '0.5' : '0.1');
+            $piecesMin = $onlyPieces || $basicSheet ? '1' : ($halfPieces ? '0.5' : '0.1');
             $lockedTitle = 'Продажа только целыми штуками. Метры и ширина заданы производителем.';
+            $basicSheetTip = getBasicSheetCuttingTipText();
+            $basicSheetDimensionsTip = getBasicSheetDimensionsTipText();
+            $sheetAreaPerPiece = ($basicSheet && $metersInPiece && $widthValue)
+                ? round(floatval($metersInPiece) * floatval($widthValue), 3)
+                : 0;
+            $basicSheetSteps = ($basicSheet && $metersInPiece && $widthValue)
+                ? getBasicSheetWidthMeterSteps($metersInPiece, $widthValue)
+                : null;
+            if ($basicSheetSteps) {
+                $piecesStep = $basicSheetSteps['PIECE_STEP'];
+                $piecesMin = $basicSheetSteps['PIECE_STEP'];
+            }
+            $halfPiecesCuttingTip = $isSheet ? getSheetCuttingTipText() : getFreeCuttingTipText();
             $weightEditable = !empty($arResult['EDITABLE_WEIGHT_COLUMN']) && $weightPerMeter > 0;
             $weightFrom500 = !empty($arItem['WEIGHT_FROM_500']);
             $minBulkWeight = getMinBulkWeightKg();
@@ -67,7 +87,7 @@ if(count($arResult['ITEMS'])) :
                 $piecesMin = '1';
             }
         ?>
-        <tr data-price="<?=$arItem['RETAIL_PRICE']?>" data-length="<?=$metersInPiece?>" data-width="<?=$widthValue?>" data-only-pieces="<?=$onlyPieces ? '1' : '0'?>"<?=$onlyPieces ? ' class="product-table_row--only-pieces"' : ''?><?=$weightEditable ? ' data-weight-editable="1" data-weight-per-meter="' . htmlspecialcharsbx($weightPerMeter) . '"' : ''?><?=$weightFrom500 ? ' data-weight-from-500="1" data-min-bulk-weight="' . $minBulkWeight . '" data-weight-per-piece="' . htmlspecialcharsbx($weightPerPiece) . '" data-order-mode="pieces"' : ''?>>
+        <tr data-price="<?=$arItem['RETAIL_PRICE']?>" data-length="<?=$metersInPiece?>" data-width="<?=$widthValue?>" data-only-pieces="<?=$onlyPieces ? '1' : '0'?>" data-half-pieces="<?=$halfPieces ? '1' : '0'?>" data-basic-sheet="<?=$basicSheet ? '1' : '0'?>"<?=$onlyPieces ? ' class="product-table_row--only-pieces"' : ''?><?=$weightEditable ? ' data-weight-editable="1" data-weight-per-meter="' . htmlspecialcharsbx($weightPerMeter) . '"' : ''?><?=$weightFrom500 ? ' data-weight-from-500="1" data-min-bulk-weight="' . $minBulkWeight . '" data-weight-per-piece="' . htmlspecialcharsbx($weightPerPiece) . '" data-order-mode="pieces"' : ''?>>
             <td class="product-table_first-cell">
                 <button type="button" class="product-availability-marker" title="В наличии на складе." aria-label="В наличии на складе.">
                     <span class="product-availability-marker__tip" aria-hidden="true">В наличии на складе.</span>
@@ -81,6 +101,14 @@ if(count($arResult['ITEMS'])) :
                 <button type="button" class="product-hint product-hint--bulk" data-tip="<?=$weightFrom500Tip?>" aria-label="<?=$weightFrom500Tip?>">
                     <span class="product-hint__label">500+</span>
                 </button>
+                <?php elseif ($basicSheet): ?>
+                <button type="button" class="product-hint product-hint--cut-paid" data-tip="<?=$basicSheetTip?>" aria-label="<?=$basicSheetTip?>">
+                    <span class="product-hint__label">1м</span>
+                </button>
+                <?php elseif ($halfPieces): ?>
+                <button type="button" class="product-hint product-hint--cut-free" data-tip="<?=$halfPiecesCuttingTip?>" aria-label="<?=$halfPiecesCuttingTip?>">
+                    <span class="product-hint__label">1м</span>
+                </button>
                 <?php endif; ?>
                 <span class="product-availability">В наличии на складе.</span>
                 <div class="product-item_popup">
@@ -90,10 +118,17 @@ if(count($arResult['ITEMS'])) :
                             <strong>Наименование товара</strong>
                             <span class="product-item_name"><?=$arItem["NAME"];?></span>
                         </li>
+                        <?php if (!empty($arItem['STEEL_GRADE'])): ?>
+                        <li>
+                            <strong>Марка стали</strong>
+                            <span><?=htmlspecialcharsbx($arItem['STEEL_GRADE'])?></span>
+                        </li>
+                        <?php endif; ?>
                     </ul>
                     <a href="javascript:void(0)" class="main-btn product-item_buy-btn">Купить</a>
                 </div>
             </td>
+            <td class="product-table_cell-steel"><?=htmlspecialcharsbx($arItem['STEEL_GRADE'] ?? '')?></td>
             <?php foreach ($arResult['CATALOG_PRICE'] as $price): ?>
                 <td><?=$arItem["ITEM_ALL_PRICES"][0]["PRICES"][$price['CATALOG_GROUP_ID']]['PRINT_PRICE'] ?? 0?></td>
             <?php endforeach; ?>
@@ -108,24 +143,28 @@ if(count($arResult['ITEMS'])) :
                 <?php endif; ?>
             </td>
             <?php endif; ?>
-            <td class="product-table_cell-qty<?=$onlyPieces ? ' product-table_cell--locked' : ''?>">
-                <?php if ($onlyPieces): ?>
-                <div class="product-table_field product-table_field--restricted" data-tip="<?=$lockedTitle?>">
+            <td class="product-table_cell-qty<?=($onlyPieces || $basicSheet) ? ' product-table_cell--locked' : ''?>">
+                <?php if ($onlyPieces || $basicSheet): ?>
+                <div class="product-table_field product-table_field--restricted" data-tip="<?=$basicSheet ? $basicSheetDimensionsTip : $lockedTitle?>">
+                    <?php if ($onlyPieces): ?>
                     <span class="product-hint__icon--lock" aria-hidden="true"></span>
+                    <?php endif; ?>
                     <span class="product-table_field-value"><?=$metersInPiece?></span>
                     <input type="hidden" name="meters" value="<?=$metersInPiece?>" data-meters-in-one-piece="<?=$metersInPiece?>">
                 </div>
                 <?php else: ?>
                 <div class="product-table_field">
-                    <input type="number" class="product-table-input" min="1" placeholder="0.0" name="meters" value="<?=$metersInPiece?>" data-meters-in-one-piece="<?=$metersInPiece?>">
+                    <input type="number" class="product-table-input" min="1" step="<?=$isSheet ? '0.1' : '1'?>" placeholder="0" name="meters" value="<?=$metersInPiece?>" data-meters-in-one-piece="<?=$metersInPiece?>">
                 </div>
                 <?php endif; ?>
             </td>
             <?php if (!empty($arResult['SHOW_WIDTH_COLUMN'])): ?>
-            <td class="product-table_cell-qty<?=$onlyPieces ? ' product-table_cell--locked' : ''?>">
-                <?php if ($onlyPieces): ?>
-                <div class="product-table_field product-table_field--restricted" data-tip="<?=$lockedTitle?>">
+            <td class="product-table_cell-qty<?=($onlyPieces || $basicSheet) ? ' product-table_cell--locked' : ''?>">
+                <?php if ($onlyPieces || $basicSheet): ?>
+                <div class="product-table_field product-table_field--restricted" data-tip="<?=$basicSheet ? $basicSheetDimensionsTip : $lockedTitle?>">
+                    <?php if ($onlyPieces): ?>
                     <span class="product-hint__icon--lock" aria-hidden="true"></span>
+                    <?php endif; ?>
                     <span class="product-table_field-value"><?=$widthValue?></span>
                     <input type="hidden" name="width" value="<?=$widthValue?>" data-width-default="<?=$widthValue?>">
                 </div>
@@ -136,9 +175,20 @@ if(count($arResult['ITEMS'])) :
                 <?php endif; ?>
             </td>
             <?php endif; ?>
+            <?php if (!empty($arResult['HAS_BASIC_SHEET_ROWS'])): ?>
+            <td class="product-table_cell-qty<?=$basicSheet ? '' : ' product-table_cell--locked'?>">
+                <?php if ($basicSheet && $basicSheetSteps): ?>
+                <div class="product-table_field" data-tip="<?=htmlspecialcharsbx(getBasicSheetPiecesTipText())?>">
+                    <input type="number" class="product-table-input product-table-input_area" min="<?=$basicSheetSteps['AREA_STEP']?>" step="<?=$basicSheetSteps['AREA_STEP']?>" placeholder="0" name="area_m2" value="<?=$basicSheetSteps['AREA_STEP']?>" data-area-step="<?=$basicSheetSteps['AREA_STEP']?>" data-full-area="<?=$basicSheetSteps['FULL_AREA']?>">
+                </div>
+                <?php else: ?>
+                <span class="product-table_field-value">—</span>
+                <?php endif; ?>
+            </td>
+            <?php endif; ?>
             <td class="product-table_cell-qty">
                 <div class="product-table_field">
-                    <input type="number" class="product-table-input" min="<?=$piecesMin?>" step="<?=$piecesStep?>" placeholder="0" name="pieces" value="1" data-meters-in-one-piece="<?=$metersInPiece?>">
+                    <input type="number" class="product-table-input" min="<?=$piecesMin?>" step="<?=$piecesStep?>" placeholder="0" name="pieces" value="<?=$basicSheetSteps ? $basicSheetSteps['PIECE_STEP'] : 1?>" data-meters-in-one-piece="<?=$metersInPiece?>">
                 </div>
             </td>
             <td>
@@ -168,6 +218,24 @@ if(count($arResult['ITEMS'])) :
         <div class="product-hint-legend product-hint-legend--badge product-hint-legend--lock" data-tip="Продажа только целыми штуками. Метры и ширина заданы производителем.">
             <span class="product-hint-legend__badge product-hint product-hint--lock" aria-hidden="true"><span class="product-hint__icon--lock"></span></span>
             <span class="product-hint-legend__text">Только целыми штуками</span>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($arResult['HAS_BASIC_SHEET_ROWS'])): ?>
+        <div class="product-hint-legend product-hint-legend--badge product-hint-legend--cut-paid" data-tip="<?=htmlspecialcharsbx(getBasicSheetCuttingTipText())?>">
+            <span class="product-hint-legend__badge product-hint product-hint--cut-paid" aria-hidden="true"><span class="product-hint__label">1шт</span></span>
+            <span class="product-hint-legend__text">Заказ в шт или м² · кратно 1 м ширины</span>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($arResult['HAS_HALF_PIECES_SHEET_ROWS'])): ?>
+        <div class="product-hint-legend product-hint-legend--badge product-hint-legend--cut-free" data-tip="<?=htmlspecialcharsbx(getSheetCuttingTipText())?>">
+            <span class="product-hint-legend__badge product-hint product-hint--cut-free" aria-hidden="true"><span class="product-hint__label">1м</span></span>
+            <span class="product-hint-legend__text"><?=htmlspecialcharsbx(getHalfPiecesCuttingLegendText(true))?></span>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($arResult['HAS_HALF_PIECES_FREE_ROWS'])): ?>
+        <div class="product-hint-legend product-hint-legend--badge product-hint-legend--cut-free" data-tip="<?=htmlspecialcharsbx(getFreeCuttingTipText())?>">
+            <span class="product-hint-legend__badge product-hint product-hint--cut-free" aria-hidden="true"><span class="product-hint__label">1м</span></span>
+            <span class="product-hint-legend__text"><?=htmlspecialcharsbx(getHalfPiecesCuttingLegendText(false))?></span>
         </div>
         <?php endif; ?>
     </div>

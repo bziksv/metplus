@@ -25,6 +25,12 @@ if ($productId <= 0 || $quantity <= 0) {
     die();
 }
 
+ensureCatalogProductOrderable($productId);
+
+if (isCustomPrice(36, $productId)) {
+    PriceUpdater::syncProductPrices($productId);
+}
+
 $fields = [
     'PRODUCT_ID' => $productId,
     'QUANTITY'   => $quantity,

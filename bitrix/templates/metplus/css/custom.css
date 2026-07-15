@@ -31,6 +31,7 @@
 }
 
 .product-table thead tr:first-child th.product-table_col-qty,
+.product-table thead tr:first-child th.product-table_col-steel,
 .product-table thead tr:first-child th.product-table_col-price,
 .product-table thead tr:first-child th:last-child {
     padding-bottom: 0.55em;
@@ -311,6 +312,20 @@ button.product-hint {
     --hint-text: #2a6b8a;
 }
 
+.product-hint--cut-free {
+    --hint-accent: #2d8a5e;
+    --hint-bg: #e8f6ef;
+    --hint-border: #9ed4b8;
+    --hint-text: #2a7a52;
+}
+
+.product-hint--cut-paid {
+    --hint-accent: #b86b1f;
+    --hint-bg: #fdf3e8;
+    --hint-border: #e8c9a0;
+    --hint-text: #9a5a18;
+}
+
 .product-hint__label {
     font-size: 0.62rem;
     font-weight: 700;
@@ -378,7 +393,9 @@ button.product-hint {
 }
 
 .product-hint-legend--bulk::before,
-.product-hint-legend--lock::before {
+.product-hint-legend--lock::before,
+.product-hint-legend--cut-free::before,
+.product-hint-legend--cut-paid::before {
     content: none;
 }
 
@@ -625,6 +642,13 @@ button.product-hint {
     transform: translateX(-10%) translateY(0);
 }
 
+.product-table th.product-table_col-steel,
+.product-table td.product-table_cell-steel {
+    min-width: 5em;
+    text-align: center;
+    white-space: nowrap;
+}
+
 .product-table th.product-table_col-price {
     min-width: 6.5em;
     text-align: center;
@@ -658,7 +682,13 @@ button.product-hint {
     display: unset;
 }
 
-.cart-table th:nth-child(n+2):nth-child(-n+6),
+.cart-table td.cart-table_col-steel {
+    white-space: nowrap;
+    min-width: 4.5em;
+}
+
+.cart-table th:nth-child(n+2):nth-child(-n+7),
+.cart-table td.cart-table_col-steel,
 .cart-table td.cart-table_col-price,
 .cart-table td.cart-table_col-pieces,
 .cart-table td.cart-table_col-area,
@@ -679,6 +709,7 @@ button.product-hint {
 }
 
 .cart-table td.cart-table_col-name,
+.cart-table td.cart-table_col-steel,
 .cart-table td.cart-table_col-price,
 .cart-table td.cart-table_col-pieces,
 .cart-table td.cart-table_col-area,
@@ -758,6 +789,7 @@ button.product-hint {
     margin: 0;
 }
 
+.cart-table td.cart-table_col-steel,
 .cart-table td.cart-table_col-pieces,
 .cart-table td.cart-table_col-area,
 .cart-table td.cart-table_col-weight,
@@ -790,6 +822,31 @@ button.product-hint {
     align-items: flex-start;
     gap: 6px;
     margin-top: 8px;
+}
+
+.cutting-plan-notice {
+    display: inline-block;
+    max-width: 100%;
+    padding: 5px 10px;
+    border-radius: 8px;
+    background: #f4f6f8;
+    border: 1px solid #e2e8f0;
+    color: #5c6b7a;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.cutting-plan-notice--free {
+    background: #e8f6ef;
+    border-color: #9ed4b8;
+    color: #2a7a52;
+}
+
+.cutting-plan-notice--half-cut {
+    background: #fdf3e8;
+    border-color: #e8c9a0;
+    color: #9a5a18;
 }
 
 .cutting-plan-toggle {

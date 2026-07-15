@@ -624,6 +624,85 @@ jQuery(document).ready(function($) {
     return $row.data('only-pieces') == 1;
   }
 
+  function isHalfPiecesRow($row) {
+    return $row.data('half-pieces') == 1;
+  }
+
+  function isBasicSheetRow($row) {
+    return $row.data('basic-sheet') == 1;
+  }
+
+  function getBasicSheetWidthStepsFromRow($row) {
+    let length = parseFloat($row.data('length')) || 0;
+    let width = parseFloat($row.data('width')) || 0;
+    if (length <= 0 || width <= 0) {
+      return null;
+    }
+
+    let widthMeters = Math.max(1, Math.round(width));
+
+    return {
+      widthMeters: widthMeters,
+      piecesStep: 1 / widthMeters,
+      areaStep: length,
+      metersStep: length / widthMeters,
+      fullArea: length * width
+    };
+  }
+
+  function snapBasicSheetPiecesValue($row, pieces) {
+    let steps = getBasicSheetWidthStepsFromRow($row);
+    if (!steps) {
+      return pieces;
+    }
+
+    let widthUnits = Math.max(1, Math.round(pieces / steps.piecesStep));
+    return parseFloat((widthUnits * steps.piecesStep).toFixed(6));
+  }
+
+  function snapBasicSheetAreaValue($row, area) {
+    let steps = getBasicSheetWidthStepsFromRow($row);
+    if (!steps) {
+      return area;
+    }
+
+    let widthUnits = Math.max(1, Math.round(area / steps.areaStep));
+    return parseFloat((widthUnits * steps.areaStep).toFixed(3));
+  }
+
+  function getBasicSheetAreaPerPiece($row) {
+    let steps = getBasicSheetWidthStepsFromRow($row);
+    return steps ? steps.fullArea : 0;
+  }
+
+  function syncBasicSheetFromPieces($row) {
+    let steps = getBasicSheetWidthStepsFromRow($row);
+    if (!steps) {
+      return;
+    }
+
+    let pieces = snapBasicSheetPiecesValue($row, parseFloat(String($row.find('[name="pieces"]').val()).replace(',', '.')) || steps.piecesStep);
+    $row.find('[name="pieces"]').val(formatQty(pieces, 3));
+    $row.find('[name="area_m2"]').val(formatQty(pieces * steps.fullArea, 3));
+  }
+
+  function syncBasicSheetFromArea($row, options) {
+    options = options || {};
+    let steps = getBasicSheetWidthStepsFromRow($row);
+    if (!steps) {
+      return;
+    }
+
+    let $area = $row.find('[name="area_m2"]');
+    let area = snapBasicSheetAreaValue($row, parseFloat(String($area.val()).replace(',', '.')) || steps.areaStep);
+    let pieces = snapBasicSheetPiecesValue($row, area / steps.fullArea);
+
+    $row.find('[name="pieces"]').val(formatQty(pieces, 3));
+    if (options.force || document.activeElement !== $area[0]) {
+      $area.val(formatQty(area, 3));
+    }
+  }
+
   function isWeightEditableRow($row) {
     return $row.data('weight-editable') == 1;
   }
@@ -774,6 +853,11 @@ jQuery(document).ready(function($) {
   function resolveCartQuantity($row) {
     let metersInOnePiece = parseFloat($row.data('length')) || getMetersInOnePiece($row.find('[name="pieces"]'));
 
+    if (isBasicSheetRow($row)) {
+      let pieces = snapBasicSheetPiecesValue($row, parseFloat(String($row.find('[name="pieces"]').val()).replace(',', '.')) || 0);
+      return pieces * metersInOnePiece;
+    }
+
     if ($row.data('only-pieces') == 1) {
       let pieces = parseInt($row.find('[name="pieces"]').val(), 10) || 1;
       return pieces * metersInOnePiece;
@@ -888,6 +972,18 @@ jQuery(document).ready(function($) {
     return pieces;
   }
 
+  function normalizeHalfPiecesValue($input) {
+    let pieces = parseFloat(String($input.val()).replace(',', '.'));
+
+    if (isNaN(pieces) || pieces < 0.5) {
+      pieces = 0.5;
+    }
+
+    pieces = Math.round(pieces * 2) / 2;
+    $input.val(pieces % 1 === 0 ? String(Math.round(pieces)) : pieces.toFixed(1));
+    return pieces;
+  }
+
   $('.product-table').on('focus', '[name="weight_kg"]', function() {
     let $row = $(this).closest('tr');
     let $input = $(this);
@@ -955,8 +1051,15 @@ jQuery(document).ready(function($) {
     let $row = self.closest('tr');
     let metersInOnePiece = getMetersInOnePiece(self);
 
+    if (isBasicSheetRow($row)) {
+      syncBasicSheetFromPieces($row);
+      return;
+    }
+
     if (isOnlyPiecesRow($row) || isWeightFrom500Row($row)) {
       normalizePiecesValue(self);
+    } else if (isHalfPiecesRow($row)) {
+      normalizeHalfPiecesValue(self);
     }
 
     if (isWeightFrom500Row($row)) {
@@ -978,7 +1081,7 @@ jQuery(document).ready(function($) {
     let self = $(this);
     let $row = self.closest('tr');
 
-    if (isOnlyPiecesRow($row) || isWeightFrom500Row($row)) {
+    if (isOnlyPiecesRow($row) || isWeightFrom500Row($row) || isBasicSheetRow($row)) {
       return;
     }
 
@@ -989,9 +1092,53 @@ jQuery(document).ready(function($) {
 
     let metersInOnePiece = getMetersInOnePiece(self);
     let meters = parseFloat(self.val());
-    let pieces = (meters / metersInOnePiece).toFixed(1);
+    let pieces = isBasicSheetRow($row)
+      ? Math.max(1, Math.round(meters / metersInOnePiece))
+      : (meters / metersInOnePiece).toFixed(2);
 
     $row.find('[name="pieces"]').val(pieces);
+  });
+
+  $('.product-table').on('input blur change', '[name="area_m2"]', function() {
+    let $row = $(this).closest('tr');
+    if (!isBasicSheetRow($row)) {
+      return;
+    }
+
+    syncBasicSheetFromArea($row, { force: true });
+  });
+
+  $('.product-table').on('blur change', '[name="meters"]', function() {
+    let self = $(this);
+    let $row = self.closest('tr');
+
+    if (isOnlyPiecesRow($row) || isWeightFrom500Row($row) || isBasicSheetRow($row)) {
+      return;
+    }
+
+    // трубы/прутки — метры только целыми
+    if ($row.data('width') > 0) {
+      return;
+    }
+
+    let meters = parseFloat(String(self.val()).replace(',', '.'));
+    if (isNaN(meters) || meters < 1) {
+      meters = 1;
+    } else {
+      meters = Math.round(meters);
+    }
+
+    self.val(meters);
+    let metersInOnePiece = getMetersInOnePiece(self) || parseFloat($row.data('length')) || 1;
+    $row.find('[name="pieces"]').val((meters / metersInOnePiece).toFixed(2));
+
+    if (isWeightEditableRow($row)) {
+      syncRowQuantities($row, 'meters');
+    }
+  });
+
+  $('.product-table tr[data-basic-sheet="1"]').each(function() {
+    syncBasicSheetFromArea($(this), { force: true });
   });
 
   $('.product-table tr[data-weight-from-500="1"]').each(function() {

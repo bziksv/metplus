@@ -28,19 +28,30 @@ class PriceUpdater {
         );
 
         while ($element = $elements->Fetch()) {
-            $productId = $element['ID'];
-
-            $propValues = self::getPropertyValues($productId, self::$iblockId);
-
-            $calculatePerMeterPrice = self::calculatePerMeterPrice($productId, $propValues);
-
-            if ($calculatePerMeterPrice > 0) {
-                self::updateMeasure($productId, self::$meterMeasureId, self::$ratioValue);
-
-                self::updatePrice($productId, self::$pricePerMeterId, $calculatePerMeterPrice);
-                self::updatePrice($productId, self::$pricePerMeterPlus20Id, self::calculatePerMeterPlus20Price($productId, $propValues));
-            }
+            self::syncProductPrices((int)$element['ID']);
         }
+    }
+
+    public static function syncProductPrices($productId)
+    {
+        $productId = (int)$productId;
+
+        if ($productId <= 0 || !CModule::IncludeModule("catalog") || !CModule::IncludeModule("iblock")) {
+            return false;
+        }
+
+        $propValues = self::getPropertyValues($productId, self::$iblockId);
+        $calculatePerMeterPrice = self::calculatePerMeterPrice($productId, $propValues);
+
+        if ($calculatePerMeterPrice <= 0) {
+            return false;
+        }
+
+        self::updateMeasure($productId, self::$meterMeasureId, self::$ratioValue);
+        self::updatePrice($productId, self::$pricePerMeterId, $calculatePerMeterPrice);
+        self::updatePrice($productId, self::$pricePerMeterPlus20Id, self::calculatePerMeterPlus20Price($productId, $propValues));
+
+        return true;
     }
 
     private static function calculatePerMeterPrice($productId, $propValues)

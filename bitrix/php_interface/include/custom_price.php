@@ -1,21 +1,80 @@
 <?php
 
+function quantityNeedsMeterSurcharge($quantity, $stepMeters)
+{
+    $step = (float)$stepMeters;
+    $qty = (float)$quantity;
+
+    if ($step <= 0 || $qty <= 0) {
+        return false;
+    }
+
+    $ratio = $qty / $step;
+
+    return abs($ratio - round($ratio)) > 0.0001;
+}
+
+function fetchCatalogPriceRow($productId, $priceTypeId)
+{
+    $row = \Bitrix\Catalog\PriceTable::getList([
+        'filter' => [
+            '=PRODUCT_ID' => (int)$productId,
+            '=CATALOG_GROUP_ID' => (int)$priceTypeId,
+        ],
+        'select' => ['ID', 'CATALOG_GROUP_ID', 'PRICE', 'CURRENCY'],
+        'limit' => 1,
+    ])->fetch();
+
+    return $row ?: null;
+}
+
+function buildCustomOptimalPriceResult(array $arItemPrice, $priceValue, $notes)
+{
+    $priceValue = round((float)$priceValue, 2);
+
+    return [
+        'PRICE' => [
+            'ID' => $arItemPrice['ID'],
+            'CATALOG_GROUP_ID' => $arItemPrice['CATALOG_GROUP_ID'],
+            'PRICE' => $priceValue,
+            'CURRENCY' => $arItemPrice['CURRENCY'],
+            'VAT_INCLUDED' => 'Y',
+            'NOTES' => $notes,
+        ],
+        'DISCOUNT' => [],
+        'RESULT_PRICE' => [
+            'BASE_PRICE' => $priceValue,
+            'DISCOUNT_PRICE' => $priceValue,
+            'CURRENCY' => $arItemPrice['CURRENCY'],
+            'VAT_INCLUDED' => 'Y',
+        ],
+    ];
+}
+
 function customBasketPriceTypeHandler($productId, $quantity = 1, $arUserGroups = [], $renewal = 'N', $arPrices = [], $siteId = false, $arDiscountCoupons = false)
 {
-    // Защита от бесконечной рекурсии
     static $running = false;
     if ($running) {
         return true;
     }
 
-    if (!\Bitrix\Main\Loader::includeModule('catalog')) {
+    // D7-вызов с Event — берём аргументы из события
+    if (is_object($productId) && method_exists($productId, 'getParameter')) {
+        $event = $productId;
+        $productId = $event->getParameter('PRODUCT_ID') ?? $event->getParameter('productId');
+        $quantity = $event->getParameter('QUANTITY') ?? $event->getParameter('quantity') ?? 1;
+    }
+
+    $productId = (int)$productId;
+    $quantity = (float)$quantity;
+
+    if ($productId <= 0 || !\Bitrix\Main\Loader::includeModule('catalog')) {
         return true;
     }
 
     $ID_BLOCK = 36;
     $pricePerMeterId = 17;
     $pricePerMeterPlus20Id = 18;
-    $PriceTypeId = $pricePerMeterId;
 
     if (!isCustomPrice($ID_BLOCK, $productId)) {
         return true;
@@ -23,52 +82,79 @@ function customBasketPriceTypeHandler($productId, $quantity = 1, $arUserGroups =
 
     $running = true;
 
-    $length = getLengthProduct($ID_BLOCK, $productId);
-    $half = $length / 2;
+    try {
+        $length = getLengthProduct($ID_BLOCK, $productId);
+        $half = $length / 2;
+        $isBasicSheet = isBasicSheetProduct($productId, $ID_BLOCK);
 
-    if ($half > 0 && abs(fmod($quantity, $half)) > 0.0001) {
-        $PriceTypeId = $pricePerMeterPlus20Id;
-    }
+        $applyPlus10 = false;
+        $applyPlus20 = false;
 
-    // Получаем цену товара через штатное D7 ORM каталога
-    $arItemPrice = \Bitrix\Catalog\PriceTable::getList([
-        'filter' => [
-            '=PRODUCT_ID' => $productId,
-            '=CATALOG_GROUP_ID' => $PriceTypeId
-        ],
-        'select' => ['ID', 'CATALOG_GROUP_ID', 'PRICE', 'CURRENCY', 'CATALOG_GROUP_NAME' => 'CATALOG_GROUP.NAME'],
-        'limit' => 1
-    ])->fetch();
+        $allowsFreeMeterCutting = productAllowsFreeMeterCutting($productId, $ID_BLOCK);
 
-    $running = false;
+        if ($isBasicSheet) {
+            if (basicSheetQuantityNeedsPlus10($productId, $quantity, $ID_BLOCK)) {
+                $applyPlus10 = true;
+            }
 
-    // Если у товара успешно найдена цена выбранного типа
-    if ($arItemPrice) {
-
-        $priceName = $arItemPrice['CATALOG_GROUP_NAME'];
-
-        if ($PriceTypeId == $pricePerMeterPlus20Id) {
-            $priceName = $arItemPrice['CATALOG_GROUP_NAME'] . " рассчитан коэффициент +20%";
+            if (
+                !$applyPlus10
+                && getBasketItemPropForPrice($productId, $quantity, 'CUTTING_SURCHARGE_10') === 'Y'
+            ) {
+                $applyPlus10 = true;
+            }
+        } elseif (
+            !$allowsFreeMeterCutting
+            && quantityNeedsMeterSurcharge($quantity, $half)
+        ) {
+            // не кратно 0,5 шт (= половине длины) → +20%
+            $applyPlus20 = true;
         }
 
-        return array(
-            'PRICE' => array(
-                "ID" => $arItemPrice["ID"],
-                "CATALOG_GROUP_ID" => $arItemPrice["CATALOG_GROUP_ID"],
-                "PRICE" => $arItemPrice["PRICE"],
-                "CURRENCY" => $arItemPrice["CURRENCY"],
-                "VAT_INCLUDED" => "Y",
-                "NOTES" => $priceName,
-            ),
-            'DISCOUNT' => array(),
-            'RESULT_PRICE' => array(
-                'BASE_PRICE' => $arItemPrice["PRICE"],
-                'DISCOUNT_PRICE' => $arItemPrice["PRICE"],
-                'CURRENCY' => $arItemPrice["CURRENCY"],
-                'VAT_INCLUDED' => "Y",
-            )
-        );
-    }
+        $basePrice = fetchCatalogPriceRow($productId, $pricePerMeterId);
+        if (!$basePrice) {
+            $fallbackPrice = fetchCatalogPriceRow($productId, 16);
+            $coefficient = getCoefficientProduct($ID_BLOCK, $productId);
 
-    return true;
+            if ($fallbackPrice && $coefficient > 0) {
+                $basePrice = $fallbackPrice;
+                $basePrice['PRICE'] = round((float)$fallbackPrice['PRICE'] * $coefficient, 2);
+            } else {
+                return true;
+            }
+        }
+
+        if ($applyPlus10) {
+            $percent = getBasicSheetSurchargePercent();
+            $price = (float)$basePrice['PRICE'] * (1 + $percent / 100);
+
+            return buildCustomOptimalPriceResult(
+                $basePrice,
+                $price,
+                'Цена за метр +' . $percent . '%'
+            );
+        }
+
+        if ($applyPlus20) {
+            $plus20 = fetchCatalogPriceRow($productId, $pricePerMeterPlus20Id);
+            $price = $plus20
+                ? (float)$plus20['PRICE']
+                : (float)$basePrice['PRICE'] * 1.2;
+            $source = $plus20 ?: $basePrice;
+
+            return buildCustomOptimalPriceResult(
+                $source,
+                $price,
+                'Цена за метр +20%'
+            );
+        }
+
+        return buildCustomOptimalPriceResult(
+            $basePrice,
+            $basePrice['PRICE'],
+            'Цена за метр'
+        );
+    } finally {
+        $running = false;
+    }
 }

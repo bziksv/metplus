@@ -35,6 +35,46 @@ function isCustomPrice($ID_BLOCK, $ID)
 }
 
 /**
+ * Разрешает заказ товара каталога при нулевом остатке (B2B: заказ под поставку).
+ */
+function ensureCatalogProductOrderable($productId, $iblockId = 36)
+{
+    $productId = (int)$productId;
+    $iblockId = (int)$iblockId;
+
+    if ($productId <= 0 || !CModule::IncludeModule('catalog') || !CModule::IncludeModule('iblock')) {
+        return false;
+    }
+
+    $element = CIBlockElement::GetList(
+        [],
+        ['ID' => $productId, 'IBLOCK_ID' => $iblockId, 'ACTIVE' => 'Y'],
+        false,
+        false,
+        ['ID']
+    )->Fetch();
+
+    if (!$element) {
+        return false;
+    }
+
+    $product = CCatalogProduct::GetByID($productId);
+    if (!$product) {
+        return false;
+    }
+
+    if (($product['AVAILABLE'] ?? 'N') === 'Y') {
+        return true;
+    }
+
+    return (bool)CCatalogProduct::Update($productId, [
+        'QUANTITY_TRACE' => 'N',
+        'CAN_BUY_ZERO' => 'Y',
+        'AVAILABLE' => 'Y',
+    ]);
+}
+
+/**
  * @param $ID
  * @return array
  */
@@ -111,6 +151,404 @@ function isOnlyPiecesProduct($value)
     return in_array($normalized, ['да', 'y', 'yes', '1', 'true'], true);
 }
 
+function isHalfPiecesProduct($value)
+{
+    return isOnlyPiecesProduct($value);
+}
+
+function productAllowsFreeMeterCutting($productId, $iblockId = 36)
+{
+    if (isSheetProduct(getPropVal($iblockId, $productId, 'SHIRINA_RASCHET'))) {
+        return false;
+    }
+
+    return isHalfPiecesProduct(getPropVal($iblockId, $productId, 'TOLKO_SHT_I_0_5_SHT'));
+}
+
+function getIncompletePieceFraction($quantity, $lengthPerPiece)
+{
+    $lengthPerPiece = (float)$lengthPerPiece;
+    if ($lengthPerPiece <= 0) {
+        return 0;
+    }
+
+    $piecesExact = (float)$quantity / $lengthPerPiece;
+
+    return max(0, $piecesExact - floor($piecesExact + 1e-9));
+}
+
+function hasIncompletePieceCut($quantity, $lengthPerPiece)
+{
+    return getIncompletePieceFraction($quantity, $lengthPerPiece) > 0.0001;
+}
+
+function formatIncompletePieceFraction($fraction)
+{
+    $fraction = (float)$fraction;
+    if ($fraction <= 0) {
+        return '0';
+    }
+
+    if (abs($fraction - round($fraction)) < 0.01) {
+        return (string)(int)round($fraction);
+    }
+
+    return formatBasketQtyNumber($fraction, 2);
+}
+
+function getIncompletePieceCutNotice($fraction, $cutPrice = 0)
+{
+    $fracText = formatIncompletePieceFraction($fraction);
+    if ((float)$cutPrice > 0) {
+        return 'Неполная ' . $fracText . ' шт — 1 рез ('
+            . number_format((float)$cutPrice, 0, '.', ' ') . ' ₽)';
+    }
+
+    return 'Неполная ' . $fracText . ' шт — 1 рез';
+}
+
+function getFreeCuttingTipText()
+{
+    return 'Товар режется кратно 1 метру без наценки. Длины кусков — кратно 1 метру. Заказ поштучно: целые или 0,5 шт.';
+}
+
+function isSheetProduct($width)
+{
+    return floatval($width) > 0;
+}
+
+function isBasicSheetProduct($productId, $iblockId = 36)
+{
+    if (!isSheetProduct(getPropVal($iblockId, $productId, 'SHIRINA_RASCHET'))) {
+        return false;
+    }
+
+    if (isOnlyPiecesProduct(getPropVal($iblockId, $productId, 'TOLKO_SHT'))) {
+        return false;
+    }
+
+    if (isHalfPiecesProduct(getPropVal($iblockId, $productId, 'TOLKO_SHT_I_0_5_SHT'))) {
+        return false;
+    }
+
+    return true;
+}
+
+function getBasicSheetSurchargePercent()
+{
+    return 10;
+}
+
+function getBasicSheetWidthMeterSteps($lengthPerPiece, $width)
+{
+    $length = (float)$lengthPerPiece;
+    $width = (float)$width;
+
+    if ($length <= 0 || $width <= 0) {
+        return null;
+    }
+
+    $widthMeters = max(1, (int)round($width));
+
+    return [
+        'WIDTH_METERS' => $widthMeters,
+        'PIECE_STEP' => 1 / $widthMeters,
+        'AREA_STEP' => $length,
+        'METER_STEP' => $length / $widthMeters,
+        'FULL_AREA' => $length * $width,
+    ];
+}
+
+function snapBasicSheetPiecesByWidthMeter($pieces, $lengthPerPiece, $width)
+{
+    $steps = getBasicSheetWidthMeterSteps($lengthPerPiece, $width);
+    if (!$steps) {
+        return max(1, (int)round($pieces));
+    }
+
+    $pieceStep = $steps['PIECE_STEP'];
+    $widthUnits = max(1, (int)round(((float)$pieces) / $pieceStep));
+
+    return round($widthUnits * $pieceStep, 6);
+}
+
+function snapBasicSheetMetersByWidthMeter($metersQty, $lengthPerPiece, $width)
+{
+    $steps = getBasicSheetWidthMeterSteps($lengthPerPiece, $width);
+    if (!$steps) {
+        return (float)$metersQty;
+    }
+
+    $meterStep = $steps['METER_STEP'];
+    $widthUnits = max(1, (int)round(((float)$metersQty) / $meterStep));
+
+    return round($widthUnits * $meterStep, 5);
+}
+
+function getBasicSheetCuttingTipText()
+{
+    return 'Заказ в шт или м² кратно 1 м ширины листа. Резка по ширине — кратно 1 м. Рез пополам — стоимость одного реза. Больше резов — +10% к цене за м².';
+}
+
+function getBasicSheetPiecesTipText()
+{
+    return 'Штуки или м² — кратно 1 м ширины листа (например, 1,5 м² = 1 м ширины).';
+}
+
+function getBasicSheetDimensionsTipText()
+{
+    return 'Длина и ширина листа заданы производителем. Количество — в штуках или м², кратно 1 м ширины.';
+}
+
+function parseCutLengthsFromPlanSegment($segment)
+{
+    $segment = trim((string)$segment);
+    if ($segment === '') {
+        return [];
+    }
+
+    $lengths = [];
+    foreach (preg_split('/\s*\+\s*/u', $segment) ?: [] as $part) {
+        $part = trim($part);
+        if (preg_match('/^(\d+)/', $part, $matches)) {
+            $value = (int)$matches[1];
+            if ($value > 0) {
+                $lengths[] = $value;
+            }
+        }
+    }
+
+    return $lengths;
+}
+
+function getCutCountFromLengths(array $lengths)
+{
+    $count = count($lengths);
+
+    return $count <= 1 ? 0 : $count - 1;
+}
+
+function analyzeBasicSheetCuttingPlan($planText)
+{
+    $result = [
+        'hasComplexCut' => false,
+        'hasHalfCut' => false,
+    ];
+
+    foreach (preg_split('/\R+/u', trim((string)$planText)) ?: [] as $line) {
+        $line = trim((string)$line);
+        if ($line === '') {
+            continue;
+        }
+
+        $cutsSegment = '';
+        if (preg_match('/^(\d+)\s*шт\s*\|\s*[^|]+\|\s*([^|]+)\s*\|/ui', $line, $matches)) {
+            $cutsSegment = $matches[2];
+        } elseif (preg_match('/^(\d+)\s*шт\s*[—\-:]\s*(.+)$/ui', $line, $matches)) {
+            $cutsSegment = preg_replace('/\s*м\s*$/ui', '', trim($matches[2]));
+        } elseif (preg_match('/^(\d+)\s*[-–—]\s*(.+)$/u', $line, $matches)) {
+            $cutsSegment = trim($matches[2]);
+        }
+
+        $cutCount = getCutCountFromLengths(parseCutLengthsFromPlanSegment($cutsSegment));
+        if ($cutCount >= 2) {
+            $result['hasComplexCut'] = true;
+        } elseif ($cutCount === 1) {
+            $result['hasHalfCut'] = true;
+        }
+    }
+
+    return $result;
+}
+
+function getBasketItemPropForPrice($productId, $quantity, $propCode)
+{
+    if (!\Bitrix\Main\Loader::includeModule('sale')) {
+        return null;
+    }
+
+    $basket = \Bitrix\Sale\Basket::loadItemsForFUser(
+        \Bitrix\Sale\Fuser::getId(),
+        \Bitrix\Main\Context::getCurrent()->getSite()
+    );
+
+    $candidates = [];
+
+    foreach ($basket as $basketItem) {
+        if ((int)$basketItem->getProductId() !== (int)$productId) {
+            continue;
+        }
+
+        foreach ($basketItem->getPropertyCollection() as $property) {
+            if ((string)$property->getField('CODE') !== (string)$propCode) {
+                continue;
+            }
+
+            $candidates[] = [
+                'quantity' => (float)$basketItem->getQuantity(),
+                'value' => $property->getField('VALUE'),
+            ];
+            break;
+        }
+    }
+
+    if (!$candidates) {
+        return null;
+    }
+
+    foreach ($candidates as $candidate) {
+        if (abs($candidate['quantity'] - (float)$quantity) <= 0.0001) {
+            return $candidate['value'];
+        }
+    }
+
+    return count($candidates) === 1 ? $candidates[0]['value'] : null;
+}
+
+function refreshBasketItemCustomPrice(\Bitrix\Sale\BasketItem $basketItem)
+{
+    global $USER;
+
+    if (!\Bitrix\Main\Loader::includeModule('catalog')) {
+        return false;
+    }
+
+    $productId = (int)$basketItem->getProductId();
+    $quantity = (float)$basketItem->getQuantity();
+
+    if ($productId <= 0 || $quantity <= 0) {
+        return false;
+    }
+
+    $optimal = \CCatalogProduct::GetOptimalPrice(
+        $productId,
+        $quantity,
+        is_object($USER) ? $USER->GetUserGroupArray() : [],
+        'N'
+    );
+
+    if (empty($optimal['RESULT_PRICE']['DISCOUNT_PRICE'])) {
+        return false;
+    }
+
+    $basePrice = (float)$optimal['RESULT_PRICE']['BASE_PRICE'];
+    $discountPrice = (float)$optimal['RESULT_PRICE']['DISCOUNT_PRICE'];
+
+    $fields = [
+        'PRICE' => $discountPrice,
+        'BASE_PRICE' => $basePrice,
+        'DISCOUNT_PRICE' => max(0, $basePrice - $discountPrice),
+        'CUSTOM_PRICE' => 'N',
+    ];
+
+    if (!empty($optimal['PRICE']['NOTES'])) {
+        $fields['NOTES'] = (string)$optimal['PRICE']['NOTES'];
+    }
+
+    $basketItem->setFields($fields);
+
+    return true;
+}
+
+function formatBasketPriceNoteLabel($surchargePercent = null)
+{
+    $label = 'Цена за метр';
+
+    if ($surchargePercent !== null && $surchargePercent > 0) {
+        return $label . ' +' . (int)$surchargePercent . '%';
+    }
+
+    return $label;
+}
+
+function basicSheetQuantityNeedsPlus10($productId, $quantity, $iblockId = 36)
+{
+    if (!isBasicSheetProduct($productId, $iblockId)) {
+        return false;
+    }
+
+    $length = getLengthProduct($iblockId, $productId);
+
+    return quantityNeedsMeterSurcharge($quantity, $length);
+}
+
+function resolveBasketSurchargePercent(array $rowData)
+{
+    if (!empty($rowData['CUTTING_SURCHARGE_10'])) {
+        return getBasicSheetSurchargePercent();
+    }
+
+    $productId = (int)($rowData['PRODUCT_ID'] ?? 0);
+    $quantity = (float)($rowData['QUANTITY'] ?? 0);
+    if ($productId > 0 && basicSheetQuantityNeedsPlus10($productId, $quantity)) {
+        return getBasicSheetSurchargePercent();
+    }
+
+    $notes = (string)($rowData['NOTES'] ?? '');
+    if (preg_match('/\+(\d+)%/u', $notes, $matches)) {
+        return (int)$matches[1];
+    }
+
+    return null;
+}
+
+function applyBasketCustomPriceDisplay(array &$rowData)
+{
+    $productId = (int)($rowData['PRODUCT_ID'] ?? 0);
+    if ($productId <= 0 || !isCustomPrice(36, $productId)) {
+        return;
+    }
+
+    $surchargePercent = resolveBasketSurchargePercent($rowData);
+    $rowData['NOTES'] = formatBasketPriceNoteLabel($surchargePercent);
+
+    if ($surchargePercent === null) {
+        return;
+    }
+
+    if (!\Bitrix\Main\Loader::includeModule('catalog')) {
+        return;
+    }
+
+    $basePrice = fetchCatalogPriceRow($productId, 17);
+    if (!$basePrice) {
+        return;
+    }
+
+    if ($surchargePercent === 20) {
+        $plus20 = fetchCatalogPriceRow($productId, 18);
+        $price = $plus20
+            ? (float)$plus20['PRICE']
+            : (float)$basePrice['PRICE'] * 1.2;
+    } else {
+        $price = round((float)$basePrice['PRICE'] * (1 + $surchargePercent / 100), 2);
+    }
+
+    $quantity = (float)$rowData['QUANTITY'];
+    $currency = (string)$rowData['CURRENCY'];
+
+    $rowData['PRICE'] = $price;
+    $rowData['PRICE_FORMATED'] = CCurrencyLang::CurrencyFormat($price, $currency, true);
+    $rowData['FULL_PRICE'] = $price;
+    $rowData['FULL_PRICE_FORMATED'] = $rowData['PRICE_FORMATED'];
+    $rowData['DISCOUNT_PRICE'] = 0;
+    $rowData['SHOW_DISCOUNT_PRICE'] = false;
+
+    $sum = \Bitrix\Sale\PriceMaths::roundPrecision($price * $quantity);
+    $rowData['SUM_PRICE'] = $sum;
+    $rowData['SUM_PRICE_FORMATED'] = CCurrencyLang::CurrencyFormat($sum, $currency, true);
+}
+
+function getSheetCuttingTipText()
+{
+    return 'Товар режется кратно 1 метру. Заказ поштучно: целые или 0,5 шт.';
+}
+
+function getHalfPiecesCuttingLegendText($isSheet = false)
+{
+    return $isSheet ? 'Режется кратно 1 метру' : 'Режется кратно 1 метру без наценки';
+}
+
 function isWeightFrom500Product($value)
 {
     return isOnlyPiecesProduct($value);
@@ -174,9 +612,27 @@ function getBasketItemQuantityDisplay($productId, $metersQuantity)
 
     $piecesFormatted = '';
     if ($pieces !== null) {
-        $piecesFormatted = abs($pieces - round($pieces)) < 0.01
-            ? (string)(int)round($pieces)
-            : formatBasketQtyNumber($pieces, 2);
+        $halfPieces = isHalfPiecesProduct(getPropVal($iblockId, $productId, 'TOLKO_SHT_I_0_5_SHT'));
+        $isSheet = isSheetProduct($width);
+        $basicSheet = isBasicSheetProduct($productId, $iblockId);
+        $wholeSheetPieces = $isSheet && !$halfPieces && !$basicSheet;
+
+        if ($basicSheet && $width > 0 && $lengthPerPiece > 0) {
+            $piecesFormatted = formatBasketQtyNumber(
+                snapBasicSheetPiecesByWidthMeter($pieces, $lengthPerPiece, $width),
+                3
+            );
+        } elseif ($wholeSheetPieces) {
+            $piecesFormatted = (string)max(1, (int)round($pieces));
+        } elseif ($halfPieces) {
+            $piecesFormatted = abs($pieces - round($pieces)) < 0.01
+                ? (string)(int)round($pieces)
+                : formatBasketQtyNumber($pieces, 1);
+        } else {
+            $piecesFormatted = abs($pieces - round($pieces)) < 0.01
+                ? (string)(int)round($pieces)
+                : formatBasketQtyNumber($pieces, 2);
+        }
     }
 
     return [

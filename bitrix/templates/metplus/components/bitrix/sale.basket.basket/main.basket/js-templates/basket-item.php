@@ -10,7 +10,7 @@ use Bitrix\Main\Localization\Loc;
 ?>
 <script id="basket-item-template" type="text/html">
 
-	<tr class="basket-items-list-item-container{{#IS_CUTTING}} basket-items-list-item-container--cutting{{/IS_CUTTING}}" id="basket-item-{{ID}}" data-entity="basket-item" data-id="{{ID}}" data-length-per-piece="{{BASKET_LENGTH_PER_PIECE}}" data-display-pieces="{{DISPLAY_PIECES}}">
+	<tr class="basket-items-list-item-container{{#IS_CUTTING}} basket-items-list-item-container--cutting{{/IS_CUTTING}}" id="basket-item-{{ID}}" data-entity="basket-item" data-id="{{ID}}" data-length-per-piece="{{BASKET_LENGTH_PER_PIECE}}" data-basket-width="{{BASKET_WIDTH}}" data-cutting-stock="{{BASKET_CUTTING_STOCK}}" data-display-pieces="{{DISPLAY_PIECES}}" data-is-sheet="{{#IS_SHEET}}1{{/IS_SHEET}}{{^IS_SHEET}}0{{/IS_SHEET}}" data-half-pieces="{{#HALF_PIECES}}1{{/HALF_PIECES}}{{^HALF_PIECES}}0{{/HALF_PIECES}}" data-basic-sheet="{{#BASIC_SHEET}}1{{/BASIC_SHEET}}{{^BASIC_SHEET}}0{{/BASIC_SHEET}}" data-whole-sheet-pieces="{{#WHOLE_SHEET_PIECES}}1{{/WHOLE_SHEET_PIECES}}{{^WHOLE_SHEET_PIECES}}0{{/WHOLE_SHEET_PIECES}}" data-free-cutting="{{#FREE_CUTTING_1M}}1{{/FREE_CUTTING_1M}}{{^FREE_CUTTING_1M}}0{{/FREE_CUTTING_1M}}" data-half-piece-cut="{{#HALF_PIECE_CUT}}1{{/HALF_PIECE_CUT}}{{^HALF_PIECE_CUT}}0{{/HALF_PIECE_CUT}}" data-default-cut-price="{{DEFAULT_CUT_PRICE}}">
 
 		{{^SHOW_RESTORE}}
 
@@ -18,13 +18,44 @@ use Bitrix\Main\Localization\Loc;
                 <span class="cart-table_mobile-text">Название товара</span>
                 <div class="basket-item-name">{{NAME}}</div>
 
+                {{#ONLY_PIECES}}
+                <div class="basket-item-cutting-actions">
+                    <span class="cutting-plan-notice">Данный товар не режется, отпускается поштучно</span>
+                </div>
+                {{/ONLY_PIECES}}
                 {{#IS_CUTTING}}
                 <div class="basket-item-cutting-actions">
+                    {{#BASIC_SHEET}}
+                    <span class="cutting-plan-notice">Заказ в шт или м² кратно 1 м ширины. Резка по ширине — кратно 1 м. Рез пополам — 1 рез, больше — +10% к цене</span>
+                    {{/BASIC_SHEET}}
+                    {{#IS_SHEET}}
+                    {{^BASIC_SHEET}}
+                    <span class="cutting-plan-notice">Режется кратно 1 метру</span>
+                    {{/BASIC_SHEET}}
+                    {{/IS_SHEET}}
+                    {{#FREE_CUTTING_1M}}
+                    <span class="cutting-plan-notice cutting-plan-notice--free">Режется кратно 1 метру без наценки</span>
+                    {{/FREE_CUTTING_1M}}
+                    {{^IS_SHEET}}
+                    {{^FREE_CUTTING_1M}}
+                    <span class="cutting-plan-notice">Неполная штука — 1 рез; иначе цена за метр +20%</span>
+                    {{/FREE_CUTTING_1M}}
+                    {{/IS_SHEET}}
+                    {{#HALF_PIECE_CUT}}
+                    <span class="cutting-plan-notice cutting-plan-notice--half-cut">{{HALF_PIECE_CUT_NOTICE}}</span>
+                    {{/HALF_PIECE_CUT}}
                     <button type="button" class="cutting-plan-toggle{{#CUTTING_ENABLED}} is-active{{/CUTTING_ENABLED}}" data-entity="cutting-plan-toggle" data-id="{{ID}}" aria-expanded="{{#CUTTING_ENABLED}}true{{/CUTTING_ENABLED}}{{^CUTTING_ENABLED}}false{{/CUTTING_ENABLED}}">
                         Хочу порезку
                     </button>
                 </div>
                 {{/IS_CUTTING}}
+            </td>
+
+            <td class="cart-table_col-steel">
+                <span class="cart-table_mobile-text">Марка стали</span>
+                <div class="basket-item-cell-inner">
+                    <span>{{STEEL_GRADE}}</span>
+                </div>
             </td>
 
             <td class="cart-table_col-price">
@@ -44,10 +75,11 @@ use Bitrix\Main\Localization\Loc;
                 <div class="basket-item-cell-inner">
                     <div class="wrapper-counter-btn" data-entity="basket-item-pieces-block">
                         <button type="button" class="counter-back" data-entity="basket-item-pieces-minus" aria-label="Уменьшить количество, шт"></button>
-                        <input type="number" class="cart-table_qty-input" min="0" step="any" inputmode="decimal"
+                        <input type="text" class="cart-table_qty-input" inputmode="decimal"
                             value="{{DISPLAY_PIECES}}"
                             data-entity="basket-item-pieces-{{ID}}"
                             aria-label="Количество, шт"
+                            autocomplete="off"
                             {{#NOT_AVAILABLE}} disabled="disabled"{{/NOT_AVAILABLE}}>
                         <button type="button" class="counter-forward" data-entity="basket-item-pieces-plus" aria-label="Увеличить количество, шт"></button>
                     </div>
@@ -62,7 +94,9 @@ use Bitrix\Main\Localization\Loc;
                             <button type="button" class="counter-back" data-entity="basket-item-quantity-minus"></button>
                             <input type="hidden" value="{{QUANTITY}}" data-value="{{QUANTITY}}" data-entity="basket-item-quantity-field"
                             id="basket-item-quantity-{{ID}}" {{#NOT_AVAILABLE}} disabled="disabled"{{/NOT_AVAILABLE}}>
-                            <input type="number" class="cart-table_qty-input" min="0" step="0.01" inputmode="decimal"
+                            <input type="number" class="cart-table_qty-input" min="0"
+                                {{#IS_SHEET}}step="0.01" inputmode="decimal"{{/IS_SHEET}}
+                                {{^IS_SHEET}}step="1" inputmode="numeric" min="1"{{/IS_SHEET}}
                                 value="{{DISPLAY_AREA}}"
                                 data-entity="basket-item-area-{{ID}}"
                                 aria-label="Количество, м или м²"
@@ -109,7 +143,7 @@ use Bitrix\Main\Localization\Loc;
 
     {{#IS_CUTTING}}
     <tr class="cutting-plan-row{{#CUTTING_ENABLED}} is-open{{/CUTTING_ENABLED}}" id="basket-item-{{ID}}-cutting" data-entity="cutting-plan-row" data-id="{{ID}}"{{^CUTTING_ENABLED}} hidden{{/CUTTING_ENABLED}}>
-        <td colspan="7" class="cutting-plan-cell">
+        <td colspan="8" class="cutting-plan-cell">
                 <div class="cutting-plan" data-entity="cutting-plan" data-id="{{ID}}" data-enabled="{{#CUTTING_ENABLED}}Y{{/CUTTING_ENABLED}}{{^CUTTING_ENABLED}}N{{/CUTTING_ENABLED}}">
                 <div class="cutting-plan__head">
                     <div class="cutting-plan__title">Резка этого товара</div>
@@ -130,7 +164,7 @@ use Bitrix\Main\Localization\Loc;
                         <strong data-entity="cutting-summary-rest">—</strong>
                     </div>
                     <div class="cutting-plan__summary-item">
-                        <span>Длина прутка</span>
+                        <span>{{#IS_SHEET}}Ширина{{/IS_SHEET}}{{^IS_SHEET}}Длина{{/IS_SHEET}}</span>
                         <strong data-entity="cutting-summary-stock">—</strong>
                     </div>
                     <div class="cutting-plan__summary-item cutting-plan__summary-item--price">
@@ -140,7 +174,26 @@ use Bitrix\Main\Localization\Loc;
                 </div>
 
                 <div class="cutting-plan__hint">
+                    {{#BASIC_SHEET}}
+                    Заказ в шт или м² кратно 1 м ширины. Резка по ширине — кратно 1 м. Рез пополам (2 куска) — стоимость одного реза. Больше резов — +10% к цене за м², без доплаты за резы.
+                    {{/BASIC_SHEET}}
+                    {{#FREE_CUTTING_1M}}
+                    {{^BASIC_SHEET}}
+                    Резка кратно 1 м — без +20% к цене. Неполная штука — стоимость одного реза. У каждой партии свой тип резки.
+                    {{/BASIC_SHEET}}
+                    {{/FREE_CUTTING_1M}}
+                    {{#IS_SHEET}}
+                    {{^FREE_CUTTING_1M}}
+                    {{^BASIC_SHEET}}
+                    Режется кратно 1 метру. Длины кусков — только целые метры (кратно 1 м). У каждой партии свой тип резки.
+                    {{/BASIC_SHEET}}
+                    {{/FREE_CUTTING_1M}}
+                    {{/IS_SHEET}}
+                    {{^FREE_CUTTING_1M}}
+                    {{^IS_SHEET}}
                     У каждой партии свой тип резки: сколько штук, чем резать и на какие длины. Остаток штук останется без резки.
+                    {{/IS_SHEET}}
+                    {{/FREE_CUTTING_1M}}
                 </div>
 
                 <div class="cutting-plan__parts" data-entity="cutting-parts" data-id="{{ID}}" data-plan="{{CUTTING_PLAN_TEXT}}">
@@ -159,8 +212,8 @@ use Bitrix\Main\Localization\Loc;
                                 </select>
                             </label>
                             <label class="cutting-part__field cutting-part__field--wide">
-                                <span class="cutting-part__label">Длины кусков, м</span>
-                                <input class="cutting-part__input" type="text" placeholder="например: 2.3 + 3.1" data-entity="cutting-part-cuts">
+                                <span class="cutting-part__label">Куски, м</span>
+                                <input class="cutting-part__input" type="text" placeholder="например: 2 + 3 + 10" data-entity="cutting-part-cuts">
                             </label>
                             <button type="button" class="cutting-part__remove" data-entity="cutting-part-remove" aria-label="Удалить партию">×</button>
                         </div>

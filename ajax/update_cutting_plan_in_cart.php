@@ -31,11 +31,36 @@ if (!$basketItem) {
     die();
 }
 
+$productId = (int)$basketItem->getProductId();
+$cuttingSurcharge10 = 'N';
+$needPriceRefresh = false;
+$oldSurcharge10 = 'N';
+
+foreach ($basketItem->getPropertyCollection() as $property) {
+    if ((string)$property->getField('CODE') === 'CUTTING_SURCHARGE_10') {
+        $oldSurcharge10 = (string)$property->getField('VALUE') === 'Y' ? 'Y' : 'N';
+        break;
+    }
+}
+
+if ($enabled === 'Y' && isBasicSheetProduct($productId)) {
+    $analysis = analyzeBasicSheetCuttingPlan($planText);
+    if ($analysis['hasComplexCut']) {
+        $cuttingSurcharge10 = 'Y';
+    }
+} elseif ($enabled !== 'Y' && $oldSurcharge10 === 'Y') {
+    $needPriceRefresh = true;
+}
+
+if ($cuttingSurcharge10 !== $oldSurcharge10) {
+    $needPriceRefresh = true;
+}
+
 // redefine() перезаписывает коллекцию, поэтому сохраняем остальные свойства
 $existingProps = [];
 foreach ($basketItem->getPropertyCollection() as $p) {
     $code = (string)$p->getField('CODE');
-    if ($code === 'CUTTING_ENABLED' || $code === 'CUTTING_PLAN_TEXT') {
+    if (in_array($code, ['CUTTING_ENABLED', 'CUTTING_PLAN_TEXT', 'CUTTING_SURCHARGE_10'], true)) {
         continue;
     }
     $existingProps[] = [
@@ -56,12 +81,26 @@ $props = array_merge($existingProps, [
         'CODE' => 'CUTTING_PLAN_TEXT',
         'VALUE' => $planText,
     ],
+    [
+        'NAME' => 'Наценка +10% за сложную резку',
+        'CODE' => 'CUTTING_SURCHARGE_10',
+        'VALUE' => $cuttingSurcharge10,
+    ],
 ]);
 
 $basketItem->getPropertyCollection()->redefine($props);
 $basketItem->getPropertyCollection()->save();
+
+if (isBasicSheetProduct($productId)) {
+    refreshBasketItemCustomPrice($basketItem);
+    $needPriceRefresh = true;
+}
+
 $basket->save();
 
-echo json_encode(['success' => true]);
+echo json_encode([
+    'success' => true,
+    'needPriceRefresh' => $needPriceRefresh,
+    'cuttingSurcharge10' => $cuttingSurcharge10 === 'Y',
+]);
 die();
-

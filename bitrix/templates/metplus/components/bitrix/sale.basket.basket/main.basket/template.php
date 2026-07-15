@@ -198,13 +198,116 @@ if (empty($arResult['ERROR_MESSAGE']))
                 return false;
             });
 
-            function parseCutLengths(raw) {
+            function parseCutLengthTokens(raw) {
                 return String(raw || '')
                     .replace(/,/g, ' ')
                     .replace(/\+/g, ' ')
                     .split(/\s+/)
-                    .map(function(v) { return parseFloat(String(v).replace(',', '.')); })
-                    .filter(function(v) { return !isNaN(v) && v > 0; });
+                    .map(function(v) { return v.trim(); })
+                    .filter(Boolean);
+            }
+
+            function validateCutLengths(raw) {
+                var tokens = parseCutLengthTokens(raw);
+                var lengths = [];
+                var hasFraction = false;
+                var hasInvalid = false;
+
+                tokens.forEach(function(token) {
+                    if (/^\d+$/.test(token)) {
+                        var n = parseInt(token, 10);
+                        if (n > 0) {
+                            lengths.push(n);
+                        } else {
+                            hasInvalid = true;
+                        }
+                        return;
+                    }
+                    if (/^\d+[.,]\d+$/.test(token)) {
+                        hasFraction = true;
+                        return;
+                    }
+                    hasInvalid = true;
+                });
+
+                return {
+                    lengths: lengths,
+                    hasFraction: hasFraction,
+                    hasInvalid: hasInvalid
+                };
+            }
+
+            function parseCutLengths(raw) {
+                return validateCutLengths(raw).lengths;
+            }
+
+            // Мягкая очистка во время ввода: не пересобираем «1 + 2»,
+            // иначе курсор/черновик (пробел, «+» перед цифрой) сбрасываются.
+            function sanitizeCutLengthsInput(raw) {
+                return String(raw || '')
+                    .replace(/,/g, ' ')
+                    .replace(/[^\d\s+]/g, '');
+            }
+
+            function setInputValuePreserveCaret($input, nextValue) {
+                var el = $input.get(0);
+                if (!el) {
+                    $input.val(nextValue);
+                    return;
+                }
+
+                var prev = String($input.val() || '');
+                if (prev === nextValue) {
+                    return;
+                }
+
+                var start = typeof el.selectionStart === 'number' ? el.selectionStart : prev.length;
+                var end = typeof el.selectionEnd === 'number' ? el.selectionEnd : start;
+                var removedBefore = 0;
+                var i = 0;
+                var j = 0;
+
+                while (i < start && j < nextValue.length) {
+                    if (prev.charAt(i) === nextValue.charAt(j)) {
+                        i++;
+                        j++;
+                        continue;
+                    }
+                    if (/[^\d\s+]/.test(prev.charAt(i)) || prev.charAt(i) === ',') {
+                        removedBefore++;
+                        i++;
+                        continue;
+                    }
+                    break;
+                }
+                if (i < start) {
+                    removedBefore += start - i;
+                }
+
+                $input.val(nextValue);
+                var caret = Math.max(0, Math.min(nextValue.length, start - removedBefore));
+                try {
+                    el.setSelectionRange(caret, Math.max(0, Math.min(nextValue.length, end - removedBefore)));
+                } catch (e) {}
+            }
+
+            function normalizeCutLengthsText(raw) {
+                var tokens = parseCutLengthTokens(raw);
+                if (!tokens.length) {
+                    return '';
+                }
+
+                return tokens.map(function(token) {
+                    var n = parseFloat(String(token).replace(',', '.'));
+                    if (isNaN(n) || n <= 0) {
+                        return null;
+                    }
+                    return String(Math.round(n));
+                }).filter(function(v) { return v !== null; }).join(' + ');
+            }
+
+            function formatCutLength(value) {
+                return String(Math.round(value));
             }
 
             function formatMeters(value) {
@@ -247,6 +350,11 @@ if (empty($arResult['ERROR_MESSAGE']))
             }
 
             function getStockLength($item) {
+                var stock = parseFloat($item.attr('data-cutting-stock') || '0');
+                if (!isNaN(stock) && stock > 0) {
+                    return stock;
+                }
+
                 var len = parseFloat($item.attr('data-length-per-piece') || '0');
                 return isNaN(len) ? 0 : len;
             }
@@ -260,7 +368,7 @@ if (empty($arResult['ERROR_MESSAGE']))
                     var typeName = String($type.find('option:selected').data('name') || $type.find('option:selected').text() || typeCode);
                     var lengths = parseCutLengths($(this).find('[data-entity="cutting-part-cuts"]').val());
                     if (qty > 0 && lengths.length && typeCode) {
-                        lines.push(qty + ' шт | ' + typeCode + ' | ' + lengths.map(formatMeters).join(' + ') + ' | ' + typeName);
+                        lines.push(qty + ' шт | ' + typeCode + ' | ' + lengths.map(formatCutLength).join(' + ') + ' | ' + typeName);
                     }
                 });
                 return lines.join('\n');
@@ -291,27 +399,27 @@ if (empty($arResult['ERROR_MESSAGE']))
                     if (parts.length >= 3 && /^\d+\s*шт$/i.test(parts[0])) {
                         $part.find('[data-entity="cutting-part-qty"]').val(parseInt(parts[0], 10) || 1);
                         $part.find('[data-entity="cutting-part-type"]').val(parts[1]);
-                        $part.find('[data-entity="cutting-part-cuts"]').val(parts[2].replace(/\s*м\s*$/i, '').trim());
+                        $part.find('[data-entity="cutting-part-cuts"]').val(normalizeCutLengthsText(parts[2]));
                         return;
                     }
 
-                    // old format fallback: 1 шт — 2.3 + 3.1 м  OR  1 - 1+1+10
+                    // old format fallback: 1 шт — 2 + 3 м  OR  1 - 1+1+10
                     var m = line.match(/^(\d+)\s*шт\s*[—\-:]?\s*(.+)$/i);
                     if (m) {
                         $part.find('[data-entity="cutting-part-qty"]').val(m[1]);
-                        $part.find('[data-entity="cutting-part-cuts"]').val(m[2].replace(/\s*м\s*$/i, '').trim());
+                        $part.find('[data-entity="cutting-part-cuts"]').val(normalizeCutLengthsText(m[2].replace(/\s*м\s*$/i, '').trim()));
                         return;
                     }
 
                     m = line.match(/^(\d+)\s*[-–—]\s*(.+)$/);
                     if (m) {
                         $part.find('[data-entity="cutting-part-qty"]').val(m[1]);
-                        $part.find('[data-entity="cutting-part-cuts"]').val(m[2].trim());
+                        $part.find('[data-entity="cutting-part-cuts"]').val(normalizeCutLengthsText(m[2].trim()));
                         return;
                     }
 
                     $part.find('[data-entity="cutting-part-qty"]').val('1');
-                    $part.find('[data-entity="cutting-part-cuts"]').val(line);
+                    $part.find('[data-entity="cutting-part-cuts"]').val(normalizeCutLengthsText(line));
                 });
             }
 
@@ -321,8 +429,11 @@ if (empty($arResult['ERROR_MESSAGE']))
             }
 
             function getCutCount(lengths) {
-                // 1+1+10 → 3 куска / 3 реза (как ожидает пользователь)
-                return Array.isArray(lengths) ? lengths.length : 0;
+                // 1+5 → 2 куска, 1 рез; 1+1+10 → 3 куска, 2 реза
+                if (!Array.isArray(lengths) || lengths.length <= 1) {
+                    return 0;
+                }
+                return lengths.length - 1;
             }
 
             function parseMoneyFromText(text) {
@@ -334,11 +445,42 @@ if (empty($arResult['ERROR_MESSAGE']))
                 return isNaN(num) ? 0 : num;
             }
 
+            function getAutoHalfCutInfo($item) {
+                var isSheet = String($item.attr('data-is-sheet') || '0') === '1';
+                if (isSheet) {
+                    return { cuts: 0, cost: 0, fraction: 0 };
+                }
+
+                var availableInfo = getAvailablePieces($item);
+                if (availableInfo.fraction <= 0.0001) {
+                    return { cuts: 0, cost: 0, fraction: 0 };
+                }
+
+                var price = parseFloat($item.attr('data-default-cut-price') || '0') || 0;
+                return { cuts: 1, cost: price, fraction: availableInfo.fraction };
+            }
+
             function updateBasketTotalWithCutting() {
                 var cuttingTotal = 0;
+                var countedHalfCutIds = {};
+
                 $('[data-entity="cutting-plan"][data-enabled="Y"]').each(function() {
+                    var id = String($(this).attr('data-id') || $(this).data('id') || '');
                     var $cost = $(this).find('[data-entity="cutting-summary-cost"]');
                     cuttingTotal += parseMoneyFromText($cost.text());
+                    if (id) {
+                        countedHalfCutIds[id] = true;
+                    }
+                });
+
+                // неполная штука = 1 рез даже без открытого плана резки
+                $('[data-entity="basket-item"][data-half-piece-cut="1"]').each(function() {
+                    var id = String($(this).attr('data-id') || $(this).data('id') || '');
+                    if (id && countedHalfCutIds[id]) {
+                        return;
+                    }
+                    var auto = getAutoHalfCutInfo($(this));
+                    cuttingTotal += auto.cost;
                 });
 
                 var $base = $('[data-entity="basket-total-price"]').first();
@@ -368,25 +510,32 @@ if (empty($arResult['ERROR_MESSAGE']))
                     return { ok: true };
                 }
 
+                var basicSheet = String($item.attr('data-basic-sheet') || '0') === '1';
                 var availableInfo = getAvailablePieces($item);
                 var availableFull = availableInfo.full;
                 var stock = getStockLength($item);
                 var used = 0;
                 var totalCost = 0;
                 var totalCuts = 0;
+                var totalComplexCuts = 0;
+                var hasComplexCutSummary = false;
                 var errors = [];
                 var hasInvalidPart = false;
                 var needRecalc = false;
+                var autoHalfCut = getAutoHalfCutInfo($item);
 
                 // Визуализация: 11.92 => 11 целых + неполная 0.92 шт
                 if (availableInfo.fraction > 0.0001) {
-                    $plan.find('[data-entity="cutting-summary-total"]').text(
-                        availableFull + ' шт + неполная ' + formatMeters(availableInfo.fraction) + ' шт'
-                    );
+                    var totalText = availableFull + ' шт + неполная ' + formatMeters(availableInfo.fraction) + ' шт';
+                    if (autoHalfCut.cuts > 0) {
+                        totalText += ' → 1 рез';
+                    }
+                    $plan.find('[data-entity="cutting-summary-total"]').text(totalText);
                 } else {
                     $plan.find('[data-entity="cutting-summary-total"]').text(availableFull + ' шт');
                 }
                 $plan.find('[data-entity="cutting-summary-stock"]').text(stock > 0 ? (formatMeters(stock) + ' м') : '—');
+                $item.attr('data-half-piece-cut', autoHalfCut.cuts > 0 ? '1' : '0');
 
                 $plan.find('[data-entity="cutting-part"]').each(function(index) {
                     var $part = $(this);
@@ -399,11 +548,13 @@ if (empty($arResult['ERROR_MESSAGE']))
                     var $opt = $type.find('option:selected');
                     var typeName = String($opt.data('name') || $opt.text() || 'тип не выбран');
                     var pricePerCut = parseFloat($opt.data('price')) || 0;
-                    var lengths = parseCutLengths($cuts.val());
+                    var cutsState = validateCutLengths($cuts.val());
+                    var lengths = cutsState.lengths;
                     var sum = lengths.reduce(function(acc, v) { return acc + v; }, 0);
                     var pieceError = false;
                     var lengthError = false;
                     var typeError = false;
+                    var fractionError = false;
 
                     if (qty < 0) {
                         qty = 0;
@@ -421,19 +572,25 @@ if (empty($arResult['ERROR_MESSAGE']))
                     if (lengths.length && stock > 0 && sum - stock > 0.0001) {
                         lengthError = true;
                         hasInvalidPart = true;
-                        errors.push('Партия ' + (index + 1) + ': сумма кусков ' + formatMeters(sum) + ' м больше длины прутка ' + formatMeters(stock) + ' м');
+                        errors.push('Партия ' + (index + 1) + ': сумма кусков ' + formatMeters(sum) + ' м больше длины ' + formatMeters(stock) + ' м');
+                    }
+
+                    if (cutsState.hasFraction) {
+                        fractionError = true;
+                        hasInvalidPart = true;
+                        errors.push('Партия ' + (index + 1) + ': длины кусков — только целые метры');
                     }
 
                     if (qty > 0 && !lengths.length && String($cuts.val() || '').trim() !== '') {
                         pieceError = true;
                         hasInvalidPart = true;
-                        errors.push('Партия ' + (index + 1) + ': укажите длины кусков числом');
+                        errors.push('Партия ' + (index + 1) + ': укажите длины кусков целыми числами');
                     }
 
-                    $part.toggleClass('is-invalid', lengthError || pieceError || typeError);
+                    $part.toggleClass('is-invalid', lengthError || pieceError || typeError || fractionError);
                     $qty.toggleClass('is-invalid', false);
                     $type.toggleClass('is-invalid', typeError);
-                    $cuts.toggleClass('is-invalid', lengthError || pieceError);
+                    $cuts.toggleClass('is-invalid', lengthError || pieceError || fractionError);
 
                     if (!lengths.length) {
                         $preview.html('<span class="cutting-part__preview-empty">Укажите длины кусков — появится расчёт</span>');
@@ -441,24 +598,31 @@ if (empty($arResult['ERROR_MESSAGE']))
                     }
 
                     var cutsPerPiece = getCutCount(lengths);
-                    var cutsTotal = cutsPerPiece * Math.max(qty, 0);
-                    var partCost = cutsTotal * pricePerCut;
+                    var isComplexCut = basicSheet && cutsPerPiece >= 2;
+                    var cutsTotal = isComplexCut ? 0 : cutsPerPiece * Math.max(qty, 0);
+                    var partCost = isComplexCut ? 0 : cutsTotal * pricePerCut;
+                    if (isComplexCut) {
+                        hasComplexCutSummary = true;
+                        totalComplexCuts += cutsPerPiece * Math.max(qty, 0);
+                    }
                     totalCuts += cutsTotal;
                     totalCost += partCost;
 
                     var remainder = stock > 0 ? Math.max(0, stock - sum) : null;
                     var chips = lengths.map(function(len) {
-                        return '<span class="cutting-chip">' + formatMeters(len) + ' м</span>';
+                        return '<span class="cutting-chip">' + formatCutLength(len) + ' м</span>';
                     }).join('<span class="cutting-chip-sep">+</span>');
 
                     var meta = '<span class="cutting-chip cutting-chip--type">' + typeName + '</span> · ' +
                         'с одной штуки: ' + chips +
-                        ' = <strong>' + formatMeters(sum) + ' м</strong>';
+                        ' = <strong>' + formatCutLength(sum) + ' м</strong>';
                     if (remainder !== null) {
-                        meta += ', остаток прутка: <strong>' + formatMeters(remainder) + ' м</strong>';
+                        meta += ', остаток: <strong>' + formatCutLength(remainder) + ' м</strong>';
                     }
                     meta += '<br>Резов: <strong>' + cutsPerPiece + '</strong>';
-                    if (pricePerCut > 0) {
+                    if (isComplexCut) {
+                        meta += ' — <strong class="cutting-part__cost">+10% к цене за м²</strong>';
+                    } else if (pricePerCut > 0) {
                         meta += ' × ' + formatMoney(pricePerCut);
                         if (qty > 1) {
                             meta += ' × ' + qty + ' шт';
@@ -468,7 +632,7 @@ if (empty($arResult['ERROR_MESSAGE']))
                         meta += ' (цена типа резки не задана)';
                     }
                     if (qty > 1) {
-                        meta += '<br>Всего по партии: <strong>' + formatMeters(sum * qty) + ' м</strong> (' + qty + ' × ' + formatMeters(sum) + ' м)';
+                        meta += '<br>Всего по партии: <strong>' + formatCutLength(sum * qty) + ' м</strong> (' + qty + ' × ' + formatCutLength(sum) + ' м)';
                     }
 
                     $preview.html(meta);
@@ -498,9 +662,21 @@ if (empty($arResult['ERROR_MESSAGE']))
                 var rest = Math.max(0, availableFull - used);
                 $plan.find('[data-entity="cutting-summary-used"]').text(used + ' шт');
                 $plan.find('[data-entity="cutting-summary-rest"]').text(rest + ' шт');
+
+                totalCuts += autoHalfCut.cuts;
+                totalCost += autoHalfCut.cost;
+
                 var $cost = $plan.find('[data-entity="cutting-summary-cost"]');
-                if (totalCuts > 0) {
-                    $cost.text(formatMoney(totalCost) + ' (' + totalCuts + ' рез.)');
+                if (hasComplexCutSummary) {
+                    $cost.text(totalComplexCuts + ' рез. — +10% к цене за м²');
+                } else if (totalCuts > 0) {
+                    var costLabel = formatMoney(totalCost) + ' (' + totalCuts + ' рез.)';
+                    if (autoHalfCut.cuts > 0) {
+                        costLabel += autoHalfCut.cost > 0
+                            ? ' · в т.ч. 1 рез за неполную ' + formatMeters(autoHalfCut.fraction) + ' шт'
+                            : ' · 1 рез за неполную ' + formatMeters(autoHalfCut.fraction) + ' шт';
+                    }
+                    $cost.text(costLabel);
                 } else {
                     $cost.text('0 ₽');
                 }
@@ -529,6 +705,33 @@ if (empty($arResult['ERROR_MESSAGE']))
             var cuttingSaveTimers = {};
             var cuttingSaveXhrs = {};
             var cuttingStatusTimers = {};
+            var pendingPriceRefresh = {};
+
+            function requestBasketPriceRefresh(id) {
+                if ($('[data-entity="cutting-part-cuts"]:focus').length) {
+                    pendingPriceRefresh[id] = true;
+                    return;
+                }
+
+                if (BX.Sale && BX.Sale.BasketComponent) {
+                    BX.Sale.BasketComponent.sendRequest('recalculateAjax', {
+                        fullRecalculation: 'Y'
+                    });
+                }
+            }
+
+            function flushPendingPriceRefresh(id) {
+                if (!pendingPriceRefresh[id]) {
+                    return;
+                }
+
+                delete pendingPriceRefresh[id];
+                if (BX.Sale && BX.Sale.BasketComponent) {
+                    BX.Sale.BasketComponent.sendRequest('recalculateAjax', {
+                        fullRecalculation: 'Y'
+                    });
+                }
+            }
 
             function setCuttingStatus(id, text, kind) {
                 var $status = $('[data-entity="cutting-plan-status"][data-id="' + id + '"]');
@@ -556,8 +759,46 @@ if (empty($arResult['ERROR_MESSAGE']))
                 return (errors || []).some(function(msg) {
                     return msg.indexOf('больше длины прутка') !== -1
                         || msg.indexOf('укажите длины') !== -1
+                        || msg.indexOf('только целые') !== -1
                         || msg.indexOf('выберите тип резки') !== -1;
                 });
+            }
+
+            function basicSheetQuantityNeedsPlus10Price($item) {
+                if (!$item.length || String($item.attr('data-basic-sheet') || '0') !== '1') {
+                    return false;
+                }
+
+                var length = parseFloat($item.attr('data-length-per-piece') || '0');
+                var id = $item.data('id');
+                var $qty = $('#basket-item-quantity-' + id);
+                var meters = parseFloat($qty.attr('data-value') || $qty.val() || '0');
+
+                if (length <= 0 || !(meters > 0)) {
+                    return false;
+                }
+
+                var pieces = meters / length;
+                return Math.abs(pieces - Math.round(pieces)) > 0.0001;
+            }
+
+            function updateBasketItemPriceNote(id, hasSurcharge10) {
+                var $item = $('#basket-item-' + id);
+                if (!$item.length) {
+                    return;
+                }
+
+                var plus10 = !!hasSurcharge10 || basicSheetQuantityNeedsPlus10Price($item);
+                var $notes = $item.find('.basket-item-custom-notes--price');
+                var label = plus10 ? 'Цена за метр +10%' : 'Цена за метр';
+
+                if ($notes.length) {
+                    $notes.text(label);
+                } else {
+                    $item.find('.cart-table_col-price .basket-item-cell-inner').append(
+                        '<div class="basket-item-custom-notes basket-item-custom-notes--price">' + label + '</div>'
+                    );
+                }
             }
 
             function saveCuttingPlan(id, options) {
@@ -580,6 +821,13 @@ if (empty($arResult['ERROR_MESSAGE']))
                     }
 
                     var planText = enabled === 'Y' ? buildPlanText($plan) : '';
+                    var savedPlan = String($plan.find('[data-entity="cutting-parts"]').attr('data-plan') || '');
+                    var currentEnabled = $plan.attr('data-enabled') === 'Y' ? 'Y' : 'N';
+                    if (!options.force && planText === savedPlan && enabled === currentEnabled) {
+                        setCuttingStatus(id, '');
+                        return;
+                    }
+
                     setCuttingStatus(id, 'Сохраняем…', 'saving');
 
                     if (cuttingSaveXhrs[id] && cuttingSaveXhrs[id].abort) {
@@ -601,6 +849,12 @@ if (empty($arResult['ERROR_MESSAGE']))
                                 $btn.removeClass('is-active').attr('aria-expanded', 'false');
                             }
                             setCuttingStatus(id, 'Сохранено', 'saved');
+                            if (String($('#basket-item-' + id).attr('data-basic-sheet') || '0') === '1') {
+                                updateBasketItemPriceNote(id, !!(data && data.cuttingSurcharge10));
+                            }
+                            if (data.needPriceRefresh) {
+                                requestBasketPriceRefresh(id);
+                            }
                         } else {
                             setCuttingStatus(id, 'Не удалось сохранить', 'error');
                         }
@@ -621,7 +875,9 @@ if (empty($arResult['ERROR_MESSAGE']))
                 }
             }
 
-            function openCuttingPlan(id, open) {
+            function openCuttingPlan(id, open, options) {
+                options = options || {};
+                var skipSave = !!options.skipSave;
                 var $item = $('#basket-item-' + id);
                 var $btn = $item.find('[data-entity="cutting-plan-toggle"]');
                 var $row = $('#basket-item-' + id + '-cutting');
@@ -638,7 +894,9 @@ if (empty($arResult['ERROR_MESSAGE']))
                     $btn.addClass('is-active').attr('aria-expanded', 'true');
                     fillPartsFromPlan($plan.find('[data-entity="cutting-parts"]'));
                     refreshCuttingPlan(id);
-                    saveCuttingPlan(id, { immediate: true, enabled: 'Y' });
+                    if (!skipSave) {
+                        saveCuttingPlan(id, { immediate: true, enabled: 'Y' });
+                    }
                 } else {
                     // свернуть панель — резка остаётся включённой
                     $row.prop('hidden', true).removeClass('is-open');
@@ -683,7 +941,29 @@ if (empty($arResult['ERROR_MESSAGE']))
                     refreshCuttingPlan(id);
                     saveCuttingPlan(id, { immediate: true });
                 })
-                .on("input change", '[data-entity="cutting-part-qty"], [data-entity="cutting-part-cuts"], [data-entity="cutting-part-type"]', function() {
+                .on("input", '[data-entity="cutting-part-qty"], [data-entity="cutting-part-cuts"], [data-entity="cutting-part-type"]', function() {
+                    if ($(this).is('[data-entity="cutting-part-cuts"]')) {
+                        var $cuts = $(this);
+                        var sanitized = sanitizeCutLengthsInput($cuts.val());
+                        if ($cuts.val() !== sanitized) {
+                            setInputValuePreserveCaret($cuts, sanitized);
+                        }
+                    }
+                    var id = $(this).closest('[data-entity="cutting-plan"]').data('id');
+                    refreshCuttingPlan(id);
+                })
+                .on("blur", '[data-entity="cutting-part-cuts"]', function() {
+                    var $cuts = $(this);
+                    var normalized = normalizeCutLengthsText($cuts.val());
+                    if ($cuts.val() !== normalized) {
+                        $cuts.val(normalized);
+                    }
+                    var id = $(this).closest('[data-entity="cutting-plan"]').data('id');
+                    refreshCuttingPlan(id);
+                    saveCuttingPlan(id, { immediate: true });
+                    flushPendingPriceRefresh(id);
+                })
+                .on("change", '[data-entity="cutting-part-qty"], [data-entity="cutting-part-type"]', function() {
                     var id = $(this).closest('[data-entity="cutting-plan"]').data('id');
                     refreshCuttingPlan(id);
                     saveCuttingPlan(id);
@@ -709,6 +989,7 @@ if (empty($arResult['ERROR_MESSAGE']))
                 component.createBasketItem = function() {
                     originalCreate.apply(this, arguments);
                     attachCuttingRows();
+                    updateBasketTotalWithCutting();
                 };
 
                 component.redrawBasketItemNode = function(itemId) {
@@ -718,13 +999,18 @@ if (empty($arResult['ERROR_MESSAGE']))
                     }
                     originalRedraw.apply(this, arguments);
                     attachCuttingRows();
+                    var $open = $('#basket-item-' + itemId + '-cutting.is-open');
+                    if ($open.length) {
+                        openCuttingPlan(itemId, true, { skipSave: true });
+                    }
+                    updateBasketTotalWithCutting();
                 };
             }
 
             setTimeout(function() {
                 attachCuttingRows();
                 $('#basket-root [data-entity="cutting-plan-row"].is-open').each(function() {
-                    openCuttingPlan($(this).data('id'), true);
+                    openCuttingPlan($(this).data('id'), true, { skipSave: true });
                 });
                 updateBasketTotalWithCutting();
             }, 0);

@@ -9,12 +9,13 @@
         "BASKET_IMAGES_SCALING" => "adaptive",
         "COLUMNS_LIST_HEADER" => array(
             0 => "Название товара",
-            1 => "Цена",
-            2 => "Количество шт",
-            3 => "м/м²",
-            4 => "Вес, кг",
-            5 => "Сумма",
-            6 => "",
+            1 => "Марка стали",
+            2 => "Цена",
+            3 => "Количество шт",
+            4 => "м/м²",
+            5 => "Вес, кг",
+            6 => "Сумма",
+            7 => "",
         ),
         "COLUMNS_LIST_EXT" => array(
             0 => "DELETE",
@@ -23,7 +24,7 @@
         "COLUMNS_LIST_MOBILE" => array(
         ),
         "COMPATIBLE_MODE" => "Y",
-        "CORRECT_RATIO" => "Y",
+        "CORRECT_RATIO" => "N",
         "DEFERRED_REFRESH" => "N",
         "DISCOUNT_PERCENT_POSITION" => "bottom-right",
         "DISPLAY_MODE" => "extended",

@@ -63,29 +63,57 @@ foreach ($this->basketItems as $row)
 			? $row[$this->arParams['BRAND_PROPERTY'].'_VALUE']
 			: '',
         'IS_CUTTING' => false,
+        'ONLY_PIECES' => false,
+        'HALF_PIECES' => false,
+        'BASIC_SHEET' => false,
+        'WHOLE_SHEET_PIECES' => false,
+        'IS_SHEET' => false,
+        'FREE_CUTTING_1M' => false,
+        'HALF_PIECE_CUT' => false,
+        'HALF_PIECE_CUT_NOTICE' => '',
+        'DEFAULT_CUT_PRICE' => 0,
         'CUTTING_ENABLED' => false,
+        'CUTTING_SURCHARGE_10' => false,
         'CUTTING_PLAN_TEXT' => '',
         'CUTTING_PLAN_TEXT_VIEW' => '',
         'CUTTING_OPTIONS' => array(),
+        'STEEL_GRADE' => '',
 	);
 
     if ($row['PRODUCT_ID'] > 0) {
-        $cuttingServices = getProductCuttingServices($row['PRODUCT_ID']);
-        $rowData['IS_CUTTING'] = count($cuttingServices) > 0;
-        $rowData['BASKET_LENGTH_PER_PIECE'] = floatval(getPropVal(36, $row['PRODUCT_ID'], 'DLINA_RASCHET'));
-        $rowData['BASKET_WEIGHT_PER_METER'] = floatval(getPropVal(36, $row['PRODUCT_ID'], '_3_VESPMSAYT'));
+        $onlyPieces = isOnlyPiecesProduct(getPropVal(36, $row['PRODUCT_ID'], 'TOLKO_SHT'));
+        $halfPieces = isHalfPiecesProduct(getPropVal(36, $row['PRODUCT_ID'], 'TOLKO_SHT_I_0_5_SHT'));
+        $rowData['ONLY_PIECES'] = $onlyPieces;
+        $rowData['HALF_PIECES'] = $halfPieces;
         $rowData['BASKET_WIDTH'] = floatval(getPropVal(36, $row['PRODUCT_ID'], 'SHIRINA_RASCHET'));
+        $rowData['IS_SHEET'] = isSheetProduct($rowData['BASKET_WIDTH']);
+        $rowData['BASIC_SHEET'] = $rowData['IS_SHEET'] && !$onlyPieces && !$halfPieces;
+        $rowData['WHOLE_SHEET_PIECES'] = $rowData['IS_SHEET'] && !$halfPieces && !$rowData['BASIC_SHEET'];
+        $rowData['FREE_CUTTING_1M'] = $halfPieces && !$rowData['IS_SHEET'];
+
+        $cuttingServices = getProductCuttingServices($row['PRODUCT_ID']);
+        $rowData['IS_CUTTING'] = count($cuttingServices) > 0 && !$onlyPieces;
+        $rowData['BASKET_LENGTH_PER_PIECE'] = floatval(getPropVal(36, $row['PRODUCT_ID'], 'DLINA_RASCHET'));
+        $rowData['STEEL_GRADE'] = trim((string)getPropVal(36, $row['PRODUCT_ID'], '_5_MARKASAYT_ILI_RAZMER_SETKI'));
+        $rowData['BASKET_WEIGHT_PER_METER'] = floatval(getPropVal(36, $row['PRODUCT_ID'], '_3_VESPMSAYT'));
+        $rowData['BASKET_CUTTING_STOCK'] = $rowData['BASKET_WIDTH'] > 0
+            ? $rowData['BASKET_WIDTH']
+            : $rowData['BASKET_LENGTH_PER_PIECE'];
         $qtyDisplay = getBasketItemQuantityDisplay($row['PRODUCT_ID'], $row['QUANTITY']);
         $rowData['DISPLAY_PIECES'] = $qtyDisplay['PIECES'];
         $rowData['DISPLAY_AREA'] = $qtyDisplay['AREA'];
         $rowData['DISPLAY_AREA_UNIT'] = $qtyDisplay['AREA_UNIT'];
         $rowData['DISPLAY_WEIGHT'] = $qtyDisplay['WEIGHT'];
 
+        $defaultCutPrice = 0;
         foreach ($cuttingServices as $service) {
             if (empty($service['CODE'])) {
                 continue;
             }
             $price = (float)($service['VALUE'] ?? 0);
+            if ($defaultCutPrice <= 0 && $price > 0) {
+                $defaultCutPrice = $price;
+            }
             $humanName = getCuttingServiceHumanName($service['CODE'], $service['NAME'] ?? '');
             $priceLabel = $price > 0
                 ? (' — ' . number_format($price, 0, '.', ' ') . ' ₽')
@@ -98,15 +126,31 @@ foreach ($this->basketItems as $row)
                 'LABEL' => $humanName . $priceLabel,
             );
         }
+        $rowData['DEFAULT_CUT_PRICE'] = $defaultCutPrice;
+
+        if (
+            !$rowData['IS_SHEET']
+            && $rowData['BASKET_LENGTH_PER_PIECE'] > 0
+            && $rowData['IS_CUTTING']
+        ) {
+            $piecesFrac = getIncompletePieceFraction((float)$row['QUANTITY'], $rowData['BASKET_LENGTH_PER_PIECE']);
+            if ($piecesFrac > 0.0001) {
+                $rowData['HALF_PIECE_CUT'] = true;
+                $rowData['HALF_PIECE_CUT_NOTICE'] = getIncompletePieceCutNotice($piecesFrac, $defaultCutPrice);
+            }
+        }
 
         if (!empty($row['PROPS']) && is_array($row['PROPS'])) {
             foreach ($row['PROPS'] as $prop) {
                 $code = (string)($prop['CODE'] ?? '');
                 if ($code === 'CUTTING_ENABLED') {
-                    $rowData['CUTTING_ENABLED'] = (string)($prop['VALUE'] ?? '') === 'Y';
+                    $rowData['CUTTING_ENABLED'] = !$onlyPieces && (string)($prop['VALUE'] ?? '') === 'Y';
                 }
                 if ($code === 'CUTTING_PLAN_TEXT') {
                     $rowData['CUTTING_PLAN_TEXT'] = (string)($prop['VALUE'] ?? '');
+                }
+                if ($code === 'CUTTING_SURCHARGE_10') {
+                    $rowData['CUTTING_SURCHARGE_10'] = (string)($prop['VALUE'] ?? '') === 'Y';
                 }
             }
         }
@@ -141,11 +185,15 @@ foreach ($this->basketItems as $row)
         $rowData['BASKET_LENGTH_PER_PIECE'] = 0;
         $rowData['BASKET_WEIGHT_PER_METER'] = 0;
         $rowData['BASKET_WIDTH'] = 0;
+        $rowData['IS_SHEET'] = false;
+        $rowData['BASKET_CUTTING_STOCK'] = 0;
         $rowData['DISPLAY_PIECES'] = '—';
         $rowData['DISPLAY_AREA'] = '—';
         $rowData['DISPLAY_AREA_UNIT'] = '';
         $rowData['DISPLAY_WEIGHT'] = '—';
     }
+
+    applyBasketCustomPriceDisplay($rowData);
 
 	// show price including ratio
 	if ($rowData['MEASURE_RATIO'] != 1)

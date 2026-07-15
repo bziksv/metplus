@@ -18,6 +18,245 @@
 		return isNaN(num) ? null : num;
 	}
 
+	function getPiecesStep(itemData)
+	{
+		if (isBasicSheetWidthMeterItem(itemData)) {
+			var steps = getBasicSheetWidthSteps(itemData);
+			return steps ? steps.piecesStep : 1;
+		}
+
+		if (isWholeSheetItem(itemData)) {
+			return 1;
+		}
+
+		return itemData && itemData.HALF_PIECES ? 0.5 : 1;
+	}
+
+	function isBasicSheetWidthMeterItem(itemData)
+	{
+		return !!(
+			itemData
+			&& itemData.BASIC_SHEET
+			&& parseFloat(itemData.BASKET_WIDTH) > 0
+			&& parseFloat(itemData.BASKET_LENGTH_PER_PIECE) > 0
+		);
+	}
+
+	function getBasicSheetWidthSteps(itemData)
+	{
+		var length = parseFloat(itemData.BASKET_LENGTH_PER_PIECE) || 0;
+		var width = parseFloat(itemData.BASKET_WIDTH) || 0;
+		if (length <= 0 || width <= 0) {
+			return null;
+		}
+
+		var widthMeters = Math.max(1, Math.round(width));
+		var piecesStep = 1 / widthMeters;
+
+		return {
+			widthMeters: widthMeters,
+			piecesStep: piecesStep,
+			areaStep: length,
+			metersStep: length / widthMeters,
+			minPieces: piecesStep,
+			minArea: length,
+			minMeters: length / widthMeters
+		};
+	}
+
+	function isWholeSheetItem(itemData)
+	{
+		if (!itemData) {
+			return false;
+		}
+
+		if (itemData.BASIC_SHEET) {
+			return false;
+		}
+
+		if (itemData.WHOLE_SHEET_PIECES) {
+			return true;
+		}
+
+		return !!itemData.IS_SHEET && !itemData.HALF_PIECES;
+	}
+
+	function enrichItemDataFromRow(itemData, target)
+	{
+		if (!itemData || !target) {
+			return itemData;
+		}
+
+		var row = BX.findParent(target, {attrs: {'data-entity': 'basket-item'}});
+		if (!row) {
+			return itemData;
+		}
+
+		var merged = BX.clone(itemData);
+		if (String(row.getAttribute('data-half-pieces') || '0') === '1') {
+			merged.HALF_PIECES = true;
+		} else {
+			merged.HALF_PIECES = false;
+		}
+		if (String(row.getAttribute('data-free-cutting') || '0') === '1') {
+			merged.FREE_CUTTING_1M = true;
+		} else {
+			merged.FREE_CUTTING_1M = false;
+		}
+		if (String(row.getAttribute('data-basic-sheet') || '0') === '1') {
+			merged.BASIC_SHEET = true;
+		} else {
+			merged.BASIC_SHEET = false;
+		}
+		if (String(row.getAttribute('data-whole-sheet-pieces') || '0') === '1') {
+			merged.WHOLE_SHEET_PIECES = true;
+		} else {
+			merged.WHOLE_SHEET_PIECES = false;
+		}
+		if (String(row.getAttribute('data-is-sheet') || '0') === '1') {
+			merged.IS_SHEET = true;
+		}
+
+		var lengthPerPiece = parseFloat(row.getAttribute('data-length-per-piece') || '0');
+		if (lengthPerPiece > 0) {
+			merged.BASKET_LENGTH_PER_PIECE = lengthPerPiece;
+		}
+
+		var width = parseFloat(row.getAttribute('data-basket-width') || row.getAttribute('data-cutting-stock') || '0');
+		if (width > 0) {
+			merged.BASKET_WIDTH = width;
+		}
+
+		return merged;
+	}
+
+	function isFreeMeterCuttingItem(itemData)
+	{
+		return !!(itemData && itemData.FREE_CUTTING_1M && !itemData.IS_SHEET);
+	}
+
+	function enrichItemDataById(itemData)
+	{
+		if (!itemData) {
+			return itemData;
+		}
+
+		var row = document.getElementById('basket-item-' + itemData.ID);
+		if (!row) {
+			return itemData;
+		}
+
+		return enrichItemDataFromRow(itemData, row);
+	}
+
+	function snapPiecesValue(pieces, itemData)
+	{
+		if (isBasicSheetWidthMeterItem(itemData)) {
+			var steps = getBasicSheetWidthSteps(itemData);
+			if (!steps) {
+				return pieces;
+			}
+
+			var widthUnits = Math.max(1, Math.round(pieces / steps.piecesStep));
+			return parseFloat((widthUnits * steps.piecesStep).toFixed(6));
+		}
+
+		var step = getPiecesStep(itemData);
+		if (step === 0.5) {
+			if (pieces < 0.5) {
+				return 0.5;
+			}
+			return Math.round(pieces * 2) / 2;
+		}
+
+		if (pieces < 1) {
+			return 1;
+		}
+
+		return Math.round(pieces);
+	}
+
+	function formatPiecesDisplay(pieces, itemData)
+	{
+		if (isBasicSheetWidthMeterItem(itemData)) {
+			return formatQtyNumber(snapPiecesValue(pieces, itemData), 3);
+		}
+
+		if (isWholeSheetItem(itemData)) {
+			return String(Math.max(1, Math.round(pieces)));
+		}
+
+		if (isFreeMeterCuttingItem(itemData)) {
+			return Math.abs(pieces - Math.round(pieces)) < 0.01
+				? String(Math.round(pieces))
+				: formatQtyNumber(pieces, 2);
+		}
+
+		if (itemData && itemData.HALF_PIECES) {
+			if (Math.abs(pieces - Math.round(pieces)) < 0.001) {
+				return String(Math.round(pieces));
+			}
+			var halfStep = Math.round(pieces * 2) / 2;
+			if (Math.abs(pieces - halfStep) < 0.001) {
+				return halfStep % 1 === 0
+					? String(Math.round(halfStep))
+					: formatQtyNumber(halfStep, 1);
+			}
+			return formatQtyNumber(pieces, 1);
+		}
+
+		return Math.abs(pieces - Math.round(pieces)) < 0.01
+			? String(Math.round(pieces))
+			: formatQtyNumber(pieces, 2);
+	}
+
+	function isPipeMeterStepItem(itemData)
+	{
+		// прутки/трубы: метры только целыми; шаг 0,5 шт у HALF_PIECES уже даёт целые метры
+		return !!(itemData && !itemData.IS_SHEET && !isWholeSheetItem(itemData));
+	}
+
+	function snapMetersForItem(metersQty, itemData)
+	{
+		var lengthPerPiece = parseFloat(itemData.BASKET_LENGTH_PER_PIECE) || 0;
+		metersQty = parseFloat(metersQty);
+		if (isNaN(metersQty) || metersQty < 0)
+		{
+			return metersQty;
+		}
+
+		if (isFreeMeterCuttingItem(itemData))
+		{
+			return Math.max(1, Math.round(metersQty));
+		}
+
+		if (itemData.HALF_PIECES && lengthPerPiece > 0)
+		{
+			var halfPieces = snapPiecesValue(metersQty / lengthPerPiece, itemData);
+			return parseFloat((halfPieces * lengthPerPiece).toFixed(5));
+		}
+
+		if (isBasicSheetWidthMeterItem(itemData) && lengthPerPiece > 0)
+		{
+			var basicSteps = getBasicSheetWidthSteps(itemData);
+			var widthUnits = Math.max(1, Math.round(metersQty / basicSteps.metersStep));
+			return parseFloat((widthUnits * basicSteps.metersStep).toFixed(5));
+		}
+
+		if (isWholeSheetItem(itemData) && lengthPerPiece > 0)
+		{
+			var wholePieces = Math.max(1, Math.round(metersQty / lengthPerPiece));
+			return parseFloat((wholePieces * lengthPerPiece).toFixed(5));
+		}
+
+		if (isPipeMeterStepItem(itemData))
+		{
+			return Math.max(1, Math.round(metersQty));
+		}
+
+		return metersQty;
+	}
+
 	function calcBasketQtyDisplay(itemData, metersQty)
 	{
 		var meters = parseFloat(metersQty) || 0;
@@ -43,9 +282,7 @@
 		var piecesStr = '';
 		if (pieces !== null)
 		{
-			piecesStr = Math.abs(pieces - Math.round(pieces)) < 0.01
-				? String(Math.round(pieces))
-				: formatQtyNumber(pieces, 2);
+			piecesStr = formatPiecesDisplay(pieces, itemData);
 		}
 
 		return {
@@ -89,11 +326,90 @@
 		setNodeValue(piecesNode, display.pieces);
 		setNodeValue(areaNode, display.area);
 		setNodeValue(weightNode, display.weight);
+		syncDisplayPiecesAttr(itemData, display.pieces);
 
 		if (unitNode)
 		{
 			unitNode.textContent = display.areaUnit;
 		}
+	}
+
+	function isQtyInputEntity(entity, prefix)
+	{
+		return (new RegExp('^' + prefix + '-\\d+$')).test(entity);
+	}
+
+	function syncDisplayPiecesAttr(itemData, piecesValue)
+	{
+		var row = document.getElementById('basket-item-' + itemData.ID);
+		if (row && piecesValue !== '') {
+			row.setAttribute('data-display-pieces', piecesValue);
+		}
+	}
+
+	function applyQtyInput(target, handler)
+	{
+		if (!target || !target.getAttribute) {
+			return;
+		}
+
+		var entity = String(target.getAttribute('data-entity') || '');
+		handler(target, entity);
+	}
+
+	function debounce(fn, delay)
+	{
+		var timer = null;
+		return function() {
+			var args = arguments;
+			var ctx = this;
+			clearTimeout(timer);
+			timer = setTimeout(function() {
+				fn.apply(ctx, args);
+			}, delay);
+		};
+	}
+
+	function createPerItemQtyScheduler()
+	{
+		var timers = {};
+
+		function clearItemTimers(itemId, exceptKind)
+		{
+			['pieces', 'area', 'weight'].forEach(function(kind) {
+				if (exceptKind && kind === exceptKind) {
+					return;
+				}
+				var key = itemId + ':' + kind;
+				if (timers[key]) {
+					clearTimeout(timers[key]);
+					delete timers[key];
+				}
+			});
+		}
+
+		function schedule(kind, target, fn, delay)
+		{
+			var itemId = target && target.getAttribute
+				? String(target.getAttribute('data-entity') || '').replace(/^basket-item-(?:pieces|area|weight)-/, '')
+				: '';
+			if (!itemId) {
+				fn(target);
+				return;
+			}
+
+			clearItemTimers(itemId, kind);
+			var key = itemId + ':' + kind;
+			timers[key] = setTimeout(function() {
+				delete timers[key];
+				fn(target);
+			}, delay);
+		}
+
+		return {
+			clearItemTimers: clearItemTimers,
+			schedule: schedule
+		};
 	}
 
 	BX.ready(function() {
@@ -103,7 +419,7 @@
 		}
 
 		var component = BX.Sale.BasketComponent;
-		var originalSetQuantity = component.setQuantity;
+		var qtyScheduler = createPerItemQtyScheduler();
 
 		function getItemDataByTargetSafe(target)
 		{
@@ -111,7 +427,8 @@
 			{
 				return null;
 			}
-			return component.getItemDataByTarget(target);
+
+			return enrichItemDataFromRow(component.getItemDataByTarget(target), target);
 		}
 
 		function getCurrentQuantity(itemData)
@@ -128,13 +445,89 @@
 			return isNaN(num) ? 0 : num;
 		}
 
+		function correctHalfPiecesItem(itemData)
+		{
+			itemData = enrichItemDataById(itemData);
+			if (!itemData || itemData.SHOW_RESTORE)
+			{
+				return;
+			}
+
+			if (!itemData.HALF_PIECES && !isBasicSheetWidthMeterItem(itemData) && !isWholeSheetItem(itemData) && !isPipeMeterStepItem(itemData) && !isFreeMeterCuttingItem(itemData))
+			{
+				return;
+			}
+
+			var quantityField = BX(component.ids.quantity + itemData.ID);
+			if (!quantityField)
+			{
+				return;
+			}
+
+			var current = getCurrentQuantity(itemData);
+			var snapped = snapMetersForItem(current, itemData);
+			if (Math.abs(current - snapped) < 0.0001)
+			{
+				updateBasketQtyDisplay(itemData, current);
+				return;
+			}
+
+			setQuantityByMeters(itemData, snapped);
+		}
+
+		function correctAllHalfPiecesItems()
+		{
+			if (!component.items)
+			{
+				return;
+			}
+
+			Object.keys(component.items).forEach(function(id) {
+				correctHalfPiecesItem(component.items[id]);
+			});
+		}
+
+		function usesCustomLengthQuantity(itemData)
+		{
+			return (parseFloat(itemData && itemData.BASKET_LENGTH_PER_PIECE) || 0) > 0;
+		}
+
+		function finalizeQuantity(itemData, quantity)
+		{
+			// листы/прутки: шаг по длине штуки (1,5 м и т.д.), не целым метрам Bitrix
+			return snapMetersForItem(quantity, itemData);
+		}
+
+		var originalGetCorrectQuantity = component.getCorrectQuantity
+			? component.getCorrectQuantity.bind(component)
+			: null;
+
+		component.getCorrectQuantity = function(itemData, quantity) {
+			itemData = enrichItemDataById(itemData) || itemData;
+			if (usesCustomLengthQuantity(itemData)) {
+				return finalizeQuantity(itemData, quantity);
+			}
+
+			return originalGetCorrectQuantity
+				? originalGetCorrectQuantity(itemData, quantity)
+				: parseFloat(quantity) || 0;
+		};
+
 		function setQuantityByMeters(itemData, metersQty)
 		{
 			if (!itemData)
 			{
 				return;
 			}
-			var quantity = component.getCorrectQuantity ? component.getCorrectQuantity(itemData, metersQty) : metersQty;
+
+			itemData = enrichItemDataById(itemData);
+			var quantity = finalizeQuantity(itemData, metersQty);
+
+			// пересчёт типа цены (+20%) на сервере
+			if (component.actionPool) {
+				component.actionPool.needFullRecalculation = true;
+			}
+
 			component.setQuantity(itemData, quantity);
 		}
 
@@ -158,7 +551,61 @@
 			}
 
 			var currentQty = getCurrentQuantity(itemData);
-			var nextQty = parseFloat((currentQty + (lengthPerPiece * deltaPieces)).toFixed(5));
+			var step = getPiecesStep(itemData);
+
+			if (itemData.HALF_PIECES)
+			{
+				var pieces = snapPiecesValue(currentQty / lengthPerPiece + (deltaPieces * step), itemData);
+				setQuantityByMeters(itemData, pieces * lengthPerPiece);
+				return;
+			}
+
+			var nextQty = parseFloat((currentQty + (lengthPerPiece * deltaPieces * step)).toFixed(5));
+			setQuantityByMeters(itemData, nextQty);
+		}
+
+		function adjustByArea(target, delta)
+		{
+			var itemData = getItemDataByTargetSafe(target);
+			if (!itemData)
+			{
+				return;
+			}
+
+			var lengthPerPiece = parseFloat(itemData.BASKET_LENGTH_PER_PIECE) || 0;
+			var currentQty = getCurrentQuantity(itemData);
+			var nextQty;
+
+			if (isBasicSheetWidthMeterItem(itemData)) {
+				var basicSteps = getBasicSheetWidthSteps(itemData);
+				var width = parseFloat(itemData.BASKET_WIDTH) || 0;
+				var currentArea = currentQty * width;
+				var nextArea = Math.max(basicSteps.minArea, currentArea + (delta * basicSteps.areaStep));
+				nextQty = nextArea / width;
+				setQuantityByMeters(itemData, nextQty);
+				return;
+			}
+
+			// трубы/прутки: +/− по 1 метру; для «режется кратно 1 м» — тоже по 1 метру
+			if (isPipeMeterStepItem(itemData) && (!itemData.HALF_PIECES || isFreeMeterCuttingItem(itemData)))
+			{
+				nextQty = Math.max(1, Math.round(currentQty + delta));
+				setQuantityByMeters(itemData, nextQty);
+				return;
+			}
+
+			var step = getPiecesStep(itemData);
+
+			if (lengthPerPiece > 0) {
+				var pieces = currentQty / lengthPerPiece + (delta * step);
+				pieces = snapPiecesValue(pieces, itemData);
+				nextQty = pieces * lengthPerPiece;
+			} else {
+				var isQuantityFloat = component.isQuantityFloat ? component.isQuantityFloat(itemData) : true;
+				var measureRatio = isQuantityFloat ? parseFloat(itemData.MEASURE_RATIO) : parseInt(itemData.MEASURE_RATIO);
+				nextQty = parseFloat((currentQty + (measureRatio * delta * step)).toFixed(5));
+			}
+
 			setQuantityByMeters(itemData, nextQty);
 		}
 
@@ -182,49 +629,122 @@
 			setQuantityByMeters(itemData, nextQty);
 		}
 
-		function applyPiecesInput(target)
+		function applyPiecesInput(target, options)
 		{
+			options = options || {};
 			var itemData = getItemDataByTargetSafe(target);
 			if (!itemData)
 			{
 				return;
 			}
 
-			var pieces = parseInputNumber(target.value);
-			if (pieces === null || pieces < 0)
+			qtyScheduler.clearItemTimers(itemData.ID);
+
+			var raw = String(target.value || '').trim();
+			if (raw === '')
 			{
+				if (!options.force && document.activeElement === target)
+				{
+					return;
+				}
+
 				updateBasketQtyDisplay(itemData, getCurrentQuantity(itemData));
 				return;
 			}
+
+			var pieces = parseInputNumber(raw);
+			if (pieces === null || pieces < 0)
+			{
+				if (!options.force && document.activeElement === target)
+				{
+					return;
+				}
+
+				updateBasketQtyDisplay(itemData, getCurrentQuantity(itemData));
+				return;
+			}
+
+			pieces = snapPiecesValue(pieces, itemData);
 
 			var lengthPerPiece = parseFloat(itemData.BASKET_LENGTH_PER_PIECE) || 0;
 			if (lengthPerPiece <= 0)
 			{
 				setQuantityByMeters(itemData, pieces);
+				if (options.force) {
+					target.value = formatPiecesDisplay(pieces, itemData);
+				}
 				return;
 			}
 
 			setQuantityByMeters(itemData, pieces * lengthPerPiece);
+			if (options.force) {
+				target.value = formatPiecesDisplay(pieces, itemData);
+			}
 		}
 
-		function applyAreaInput(target)
+		function applyAreaInput(target, options)
 		{
+			options = options || {};
 			var itemData = getItemDataByTargetSafe(target);
 			if (!itemData)
 			{
 				return;
 			}
 
-			var area = parseInputNumber(target.value);
+			qtyScheduler.clearItemTimers(itemData.ID);
+
+			var raw = String(target.value || '').trim();
+			if (raw === '')
+			{
+				if (!options.force && document.activeElement === target)
+				{
+					return;
+				}
+
+				updateBasketQtyDisplay(itemData, getCurrentQuantity(itemData));
+				return;
+			}
+
+			var area = parseInputNumber(raw);
 			if (area === null || area < 0)
 			{
+				if (!options.force && document.activeElement === target)
+				{
+					return;
+				}
+
 				updateBasketQtyDisplay(itemData, getCurrentQuantity(itemData));
 				return;
 			}
 
 			var width = parseFloat(itemData.BASKET_WIDTH) || 0;
 			var meters = width > 0 ? (area / width) : area;
+			meters = snapMetersForItem(meters, itemData);
 			setQuantityByMeters(itemData, meters);
+			if (options.force) {
+				var display = calcBasketQtyDisplay(itemData, meters);
+				target.value = display.area;
+			}
+		}
+
+		function adjustByWeight(target, deltaKg)
+		{
+			var itemData = getItemDataByTargetSafe(target);
+			if (!itemData)
+			{
+				return;
+			}
+
+			var weightPerMeter = parseFloat(itemData.BASKET_WEIGHT_PER_METER) || 0;
+			if (weightPerMeter <= 0)
+			{
+				return;
+			}
+
+			var deltaMeters = deltaKg / weightPerMeter;
+			var currentQty = getCurrentQuantity(itemData);
+			var nextQty = parseFloat((currentQty + deltaMeters).toFixed(5));
+			setQuantityByMeters(itemData, nextQty);
 		}
 
 		function applyWeightInput(target)
@@ -234,6 +754,8 @@
 			{
 				return;
 			}
+
+			qtyScheduler.clearItemTimers(itemData.ID);
 
 			var weight = parseInputNumber(target.value);
 			if (weight === null || weight < 0)
@@ -251,14 +773,70 @@
 			setQuantityByMeters(itemData, weight / weightPerMeter);
 		}
 
+		var debouncedApplyPiecesInput = function(target) {
+			qtyScheduler.schedule('pieces', target, function(node) {
+				applyPiecesInput(node);
+			}, 250);
+		};
+		var debouncedApplyAreaInput = function(target) {
+			qtyScheduler.schedule('area', target, function(node) {
+				applyAreaInput(node);
+			}, 250);
+		};
+		var debouncedApplyWeightInput = debounce(function(target) {
+			applyWeightInput(target);
+		}, 250);
+
+		var originalApplyBasketResult = component.applyBasketResult.bind(component);
+		component.applyBasketResult = function(result) {
+			originalApplyBasketResult(result);
+			BX.defer(correctAllHalfPiecesItems);
+		};
+
+		component.quantityPlus = function(target) {
+			if (!BX.type.isDomNode(target)) {
+				target = BX.proxy_context;
+				if (component.clearQuantityInterval) {
+					component.clearQuantityInterval();
+				}
+			}
+			adjustByArea(target, 1);
+		};
+
+		component.quantityMinus = function(target) {
+			target = BX.type.isDomNode(target) ? target : BX.proxy_context;
+			adjustByArea(target, -1);
+		};
+
 		component.setQuantity = function(itemData, quantity) {
 			var quantityField = BX(component.ids.quantity + itemData.ID);
-
-			originalSetQuantity.apply(this, arguments);
-
-			if (quantityField)
+			if (!quantityField)
 			{
-				quantityField.setAttribute('data-value', quantity);
+				return;
+			}
+
+			itemData = enrichItemDataFromRow(itemData, quantityField) || enrichItemDataById(itemData);
+			quantity = finalizeQuantity(itemData, quantity);
+
+			var currentQuantity = parseFloat(quantityField.getAttribute('data-value'));
+			if (isNaN(currentQuantity))
+			{
+				currentQuantity = parseFloat(itemData.QUANTITY) || 0;
+			}
+
+			quantityField.value = quantity;
+			quantityField.setAttribute('data-value', quantity);
+
+			if (Math.abs(currentQuantity - quantity) >= 0.0001)
+			{
+				if (typeof component.animatePriceByQuantity === 'function')
+				{
+					component.animatePriceByQuantity(itemData, quantity);
+				}
+				if (component.actionPool && typeof component.actionPool.changeQuantity === 'function')
+				{
+					component.actionPool.changeQuantity(itemData.ID, quantity, currentQuantity);
+				}
 			}
 
 			var item = this.items[itemData.ID] || itemData;
@@ -302,25 +880,42 @@
 		});
 
 		BX.bind(document, 'change', function(e) {
-			var target = e.target;
-			if (!target || !target.getAttribute)
-			{
-				return;
-			}
+			applyQtyInput(e.target, function(target, entity) {
+				if (isQtyInputEntity(entity, 'basket-item-pieces')) {
+					applyPiecesInput(target, { force: true });
+				}
+				else if (isQtyInputEntity(entity, 'basket-item-area')) {
+					applyAreaInput(target, { force: true });
+				}
+				else if (isQtyInputEntity(entity, 'basket-item-weight')) {
+					applyWeightInput(target);
+				}
+			});
+		});
 
-			var entity = String(target.getAttribute('data-entity') || '');
-			if (entity.indexOf('basket-item-pieces-') === 0)
-			{
-				applyPiecesInput(target);
-			}
-			else if (entity.indexOf('basket-item-area-') === 0)
-			{
-				applyAreaInput(target);
-			}
-			else if (entity.indexOf('basket-item-weight-') === 0)
-			{
-				applyWeightInput(target);
-			}
+		BX.bind(document, 'blur', function(e) {
+			applyQtyInput(e.target, function(target, entity) {
+				if (isQtyInputEntity(entity, 'basket-item-pieces')) {
+					applyPiecesInput(target, { force: true });
+				}
+				else if (isQtyInputEntity(entity, 'basket-item-area')) {
+					applyAreaInput(target, { force: true });
+				}
+			});
+		}, true);
+
+		BX.bind(document, 'input', function(e) {
+			applyQtyInput(e.target, function(target, entity) {
+				if (isQtyInputEntity(entity, 'basket-item-pieces')) {
+					debouncedApplyPiecesInput(target);
+				}
+				else if (isQtyInputEntity(entity, 'basket-item-area')) {
+					debouncedApplyAreaInput(target);
+				}
+				else if (isQtyInputEntity(entity, 'basket-item-weight')) {
+					debouncedApplyWeightInput(target);
+				}
+			});
 		});
 
 		BX.bind(document, 'keydown', function(e) {
@@ -332,14 +927,15 @@
 
 			var entity = String(target.getAttribute('data-entity') || '');
 			if (
-				entity.indexOf('basket-item-pieces-') === 0
-				|| entity.indexOf('basket-item-area-') === 0
-				|| entity.indexOf('basket-item-weight-') === 0
+				isQtyInputEntity(entity, 'basket-item-pieces')
+				|| isQtyInputEntity(entity, 'basket-item-area')
+				|| isQtyInputEntity(entity, 'basket-item-weight')
 			)
 			{
 				e.preventDefault();
 				target.blur();
 			}
 		});
+		BX.defer(correctAllHalfPiecesItems);
 	});
 })();
