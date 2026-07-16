@@ -55,7 +55,7 @@ if (empty($arResult['ITEMS'])) {
                         <?php endif; ?>
                         <img
                             class="main-slide__img"
-                            src="<?=htmlspecialcharsbx($desktopOrig)?>"
+                            src="<?=htmlspecialcharsbx(($desktop !== '' && $desktop !== $desktopOrig) ? $desktop : $desktopOrig)?>"
                             alt="<?=$alt?>"
                             loading="eager"
                             decoding="async"

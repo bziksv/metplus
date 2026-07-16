@@ -35,7 +35,7 @@ function isCustomPrice($ID_BLOCK, $ID)
 }
 
 /**
- * Возвращает путь к WebP-версии картинки (создаёт кеш рядом с оригиналом).
+ * Возвращает путь к WebP-версии картинки (кеш в /upload/webp_cache/).
  * Если конвертация невозможна — исходный SRC.
  */
 function getImageWebpSrc($src, $quality = 82)
@@ -59,19 +59,17 @@ function getImageWebpSrc($src, $quality = 82)
     }
 
     $absSource = $docRoot . $src;
-    if (!is_file($absSource)) {
+    if (!is_file($absSource) || !is_readable($absSource)) {
         return $src;
     }
 
-    $webpRel = preg_replace('/\.(jpe?g|png|gif)$/i', '.webp', $src);
-    if ($webpRel === $src) {
-        $webpRel = $src . '.webp';
-    }
-
+    $sourceMtime = (int)@filemtime($absSource);
+    $sourceSize = (int)@filesize($absSource);
+    $hash = md5($src . '|' . $sourceMtime . '|' . $sourceSize);
+    $webpRel = '/upload/webp_cache/' . substr($hash, 0, 2) . '/' . substr($hash, 2, 2) . '/' . $hash . '.webp';
     $absWebp = $docRoot . $webpRel;
-    $sourceMtime = filemtime($absSource) ?: 0;
 
-    if (is_file($absWebp) && (filemtime($absWebp) ?: 0) >= $sourceMtime) {
+    if (is_file($absWebp) && (int)@filemtime($absWebp) >= $sourceMtime) {
         return $webpRel;
     }
 
@@ -80,7 +78,7 @@ function getImageWebpSrc($src, $quality = 82)
         return $src;
     }
 
-    switch ($info[2]) {
+    switch ((int)$info[2]) {
         case IMAGETYPE_JPEG:
             $image = @imagecreatefromjpeg($absSource);
             break;
@@ -113,10 +111,17 @@ function getImageWebpSrc($src, $quality = 82)
         return $src;
     }
 
-    $ok = @imagewebp($image, $absWebp, (int)$quality);
+    $tmpWebp = $absWebp . '.tmp.' . getmypid();
+    $ok = @imagewebp($image, $tmpWebp, (int)$quality);
     imagedestroy($image);
 
-    if (!$ok || !is_file($absWebp)) {
+    if (!$ok || !is_file($tmpWebp)) {
+        @unlink($tmpWebp);
+        return $src;
+    }
+
+    if (!@rename($tmpWebp, $absWebp)) {
+        @unlink($tmpWebp);
         return $src;
     }
 
