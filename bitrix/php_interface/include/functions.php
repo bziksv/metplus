@@ -35,6 +35,97 @@ function isCustomPrice($ID_BLOCK, $ID)
 }
 
 /**
+ * Возвращает путь к WebP-версии картинки (создаёт кеш рядом с оригиналом).
+ * Если конвертация невозможна — исходный SRC.
+ */
+function getImageWebpSrc($src, $quality = 82)
+{
+    $src = trim((string)$src);
+    if ($src === '') {
+        return '';
+    }
+
+    if (preg_match('/\.webp$/i', $src)) {
+        return $src;
+    }
+
+    if (!function_exists('imagewebp')) {
+        return $src;
+    }
+
+    $docRoot = rtrim((string)($_SERVER['DOCUMENT_ROOT'] ?? ''), '/');
+    if ($docRoot === '' || $src[0] !== '/') {
+        return $src;
+    }
+
+    $absSource = $docRoot . $src;
+    if (!is_file($absSource)) {
+        return $src;
+    }
+
+    $webpRel = preg_replace('/\.(jpe?g|png|gif)$/i', '.webp', $src);
+    if ($webpRel === $src) {
+        $webpRel = $src . '.webp';
+    }
+
+    $absWebp = $docRoot . $webpRel;
+    $sourceMtime = filemtime($absSource) ?: 0;
+
+    if (is_file($absWebp) && (filemtime($absWebp) ?: 0) >= $sourceMtime) {
+        return $webpRel;
+    }
+
+    $info = @getimagesize($absSource);
+    if (!$info || empty($info[2])) {
+        return $src;
+    }
+
+    switch ($info[2]) {
+        case IMAGETYPE_JPEG:
+            $image = @imagecreatefromjpeg($absSource);
+            break;
+        case IMAGETYPE_PNG:
+            $image = @imagecreatefrompng($absSource);
+            break;
+        case IMAGETYPE_GIF:
+            $image = @imagecreatefromgif($absSource);
+            break;
+        default:
+            return $src;
+    }
+
+    if (!$image) {
+        return $src;
+    }
+
+    if (function_exists('imagepalettetotruecolor')) {
+        @imagepalettetotruecolor($image);
+    }
+
+    if (function_exists('imagealphablending')) {
+        imagealphablending($image, true);
+        imagesavealpha($image, true);
+    }
+
+    $dir = dirname($absWebp);
+    if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
+        imagedestroy($image);
+        return $src;
+    }
+
+    $ok = @imagewebp($image, $absWebp, (int)$quality);
+    imagedestroy($image);
+
+    if (!$ok || !is_file($absWebp)) {
+        return $src;
+    }
+
+    @chmod($absWebp, 0664);
+
+    return $webpRel;
+}
+
+/**
  * Разрешает заказ товара каталога при нулевом остатке (B2B: заказ под поставку).
  */
 function ensureCatalogProductOrderable($productId, $iblockId = 36)

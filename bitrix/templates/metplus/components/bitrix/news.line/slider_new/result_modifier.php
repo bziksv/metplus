@@ -9,16 +9,21 @@ foreach ($arResult['ITEMS'] as &$arItem) {
 
     foreach (['IMG_DESKTOP', 'IMG_TABLET', 'IMG_MOBILE'] as $code) {
         $fileId = (int)($arItem['PROPERTIES'][$code]['VALUE'] ?? 0);
-        $arItem['SLIDER_IMAGES'][$code] = $fileId > 0 ? CFile::GetPath($fileId) : '';
+        $src = $fileId > 0 ? (string)CFile::GetPath($fileId) : '';
+        $arItem['SLIDER_IMAGES_ORIG'][$code] = $src;
+        $arItem['SLIDER_IMAGES'][$code] = $src !== '' ? getImageWebpSrc($src) : '';
     }
 
     if (empty($arItem['SLIDER_IMAGES']['IMG_TABLET'])) {
         $arItem['SLIDER_IMAGES']['IMG_TABLET'] = $arItem['SLIDER_IMAGES']['IMG_DESKTOP'];
+        $arItem['SLIDER_IMAGES_ORIG']['IMG_TABLET'] = $arItem['SLIDER_IMAGES_ORIG']['IMG_DESKTOP'] ?? '';
     }
 
     if (empty($arItem['SLIDER_IMAGES']['IMG_MOBILE'])) {
         $arItem['SLIDER_IMAGES']['IMG_MOBILE'] = $arItem['SLIDER_IMAGES']['IMG_TABLET']
             ?: $arItem['SLIDER_IMAGES']['IMG_DESKTOP'];
+        $arItem['SLIDER_IMAGES_ORIG']['IMG_MOBILE'] = $arItem['SLIDER_IMAGES_ORIG']['IMG_TABLET']
+            ?: ($arItem['SLIDER_IMAGES_ORIG']['IMG_DESKTOP'] ?? '');
     }
 
     $arItem['SLIDER_LINK'] = trim((string)($arItem['PROPERTIES']['LINK']['VALUE'] ?? ''));

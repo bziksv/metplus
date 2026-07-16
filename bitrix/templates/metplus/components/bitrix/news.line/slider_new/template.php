@@ -24,6 +24,9 @@ if (empty($arResult['ITEMS'])) {
             $desktop = $arItem['SLIDER_IMAGES']['IMG_DESKTOP'] ?? '';
             $tablet = $arItem['SLIDER_IMAGES']['IMG_TABLET'] ?? '';
             $mobile = $arItem['SLIDER_IMAGES']['IMG_MOBILE'] ?? '';
+            $desktopOrig = $arItem['SLIDER_IMAGES_ORIG']['IMG_DESKTOP'] ?? $desktop;
+            $tabletOrig = $arItem['SLIDER_IMAGES_ORIG']['IMG_TABLET'] ?? $tablet;
+            $mobileOrig = $arItem['SLIDER_IMAGES_ORIG']['IMG_MOBILE'] ?? $mobile;
             $link = $arItem['SLIDER_LINK'] ?? '';
             $alt = htmlspecialcharsbx($arItem['NAME']);
 
@@ -37,11 +40,22 @@ if (empty($arResult['ITEMS'])) {
                 <?php endif; ?>
 
                     <picture class="main-slide__picture">
-                        <source media="(max-width: 767px)" srcset="<?=htmlspecialcharsbx($mobile)?>">
-                        <source media="(max-width: 1199px)" srcset="<?=htmlspecialcharsbx($tablet)?>">
+                        <?php if ($mobile !== '' && $mobile !== $mobileOrig): ?>
+                        <source type="image/webp" media="(max-width: 767px)" srcset="<?=htmlspecialcharsbx($mobile)?>">
+                        <?php endif; ?>
+                        <source media="(max-width: 767px)" srcset="<?=htmlspecialcharsbx($mobileOrig)?>">
+
+                        <?php if ($tablet !== '' && $tablet !== $tabletOrig): ?>
+                        <source type="image/webp" media="(max-width: 1199px)" srcset="<?=htmlspecialcharsbx($tablet)?>">
+                        <?php endif; ?>
+                        <source media="(max-width: 1199px)" srcset="<?=htmlspecialcharsbx($tabletOrig)?>">
+
+                        <?php if ($desktop !== '' && $desktop !== $desktopOrig): ?>
+                        <source type="image/webp" srcset="<?=htmlspecialcharsbx($desktop)?>">
+                        <?php endif; ?>
                         <img
                             class="main-slide__img"
-                            src="<?=htmlspecialcharsbx($desktop)?>"
+                            src="<?=htmlspecialcharsbx($desktopOrig)?>"
                             alt="<?=$alt?>"
                             loading="eager"
                             decoding="async"
