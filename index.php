@@ -11,32 +11,35 @@ $APPLICATION->SetTitle("ООО «КОРПОРАЦИЯ МЕТАЛЛИНВЕСТ»
 <main class="main-content">
 
         <?$APPLICATION->IncludeComponent(
-	"bitrix:news.line", 
-	"slider", 
+	"bitrix:news.line",
+	"slider_new",
 	array(
 		"ACTIVE_DATE_FORMAT" => "d.m.Y",
 		"CACHE_GROUPS" => "Y",
 		"CACHE_TIME" => "300",
 		"CACHE_TYPE" => "N",
-		"COMPONENT_TEMPLATE" => "slider",
+		"COMPONENT_TEMPLATE" => "slider_new",
 		"DETAIL_URL" => "",
 		"FIELD_CODE" => array(
-			0 => "CODE",
-			1 => "NAME",
-			2 => "PREVIEW_TEXT",
-			3 => "PREVIEW_PICTURE",
-			4 => "DETAIL_TEXT",
-			5 => "",
+			0 => "NAME",
+			1 => "",
+		),
+		"PROPERTY_CODE" => array(
+			0 => "IMG_DESKTOP",
+			1 => "IMG_TABLET",
+			2 => "IMG_MOBILE",
+			3 => "LINK",
+			4 => "ADS",
 		),
 		"IBLOCKS" => array(
-			0 => "5",
+			0 => "37",
 		),
 		"IBLOCK_TYPE" => "components",
 		"NEWS_COUNT" => "20",
-		"SORT_BY1" => "ACTIVE_FROM",
-		"SORT_BY2" => "SORT",
-		"SORT_ORDER1" => "DESC",
-		"SORT_ORDER2" => "ASC"
+		"SORT_BY1" => "SORT",
+		"SORT_BY2" => "ID",
+		"SORT_ORDER1" => "ASC",
+		"SORT_ORDER2" => "DESC"
 	),
 	false
 );?>

@@ -227,11 +227,23 @@ jQuery(document).ready(function($) {
     autoplay: true,
     autoplaySpeed: 6000
   });
-  $('.main-slider').on('beforeChange', function(event, slick, currentSlide, nextSlide){
+  // Старый слайдер (фон + текст): меняем background секции
+  $('.main-slider:not(.main-slider--picture)').on('beforeChange', function(event, slick, currentSlide, nextSlide){
     var currentSlide = $(slick.$slides.get(nextSlide));
     var currentImage = currentSlide.find('.main-slide').data('background');
-    currentSlide.closest('.main-section').css('background','url('+ currentImage +') no-repeat center top');
+    if (currentImage) {
+      currentSlide.closest('.main-section').css('background','url('+ currentImage +') no-repeat center top');
+    }
   });
+  // Картиночный слайдер: пересчёт ширины после загрузки/resize (без «пляски»)
+  var $pictureSlider = $('.main-slider--picture');
+  if ($pictureSlider.length) {
+    var refreshPictureSlider = function() {
+      $pictureSlider.slick('setPosition');
+    };
+    $pictureSlider.find('img').on('load', refreshPictureSlider);
+    $(window).on('resize orientationchange', refreshPictureSlider);
+  }
   $('.review_mobile-slider').slick({
     dots: true,
     infinite: false,
