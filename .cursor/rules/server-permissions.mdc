@@ -1,0 +1,35 @@
+---
+description: Права владельца на test/prod — не root
+alwaysApply: true
+---
+
+# Права на сервере (test / prod)
+
+После **любых** действий на сервере от root (ssh, php-скрипты, mkdir, загрузка файлов, генерация картинок, кеш) — **сразу** выставить владельца сайта, не оставлять `root:root`.
+
+## Владелец
+
+| Среда | Путь сайта | User:Group |
+|-------|------------|------------|
+| **Test** | `/var/www/test_metplus_usr/data/www/test.metplus-vrn.ru` | `test_metplus_usr:test_metplus_usr` |
+| **Prod** | `/var/www/metplus-vrn.ru/data/www/metplus-vrn.ru` | пользователь/группа сайта prod (не root) |
+
+## Обязательно
+
+1. Не оставлять файлы/папки от `root` в дереве сайта (`upload/`, `bitrix/cache/`, tmp и т.д.).
+2. После скриптов от root — `chown -R user:group` на затронутые пути (минимум `upload/`).
+3. Предпочтительно: запускать php от пользователя сайта (`sudo -u test_metplus_usr ...`), а не от root.
+4. Деплой через **git** на сервере — после pull/reset проверить, что новые файлы не от root; при необходимости `chown`.
+
+## Пример (test)
+
+```bash
+SITE=/var/www/test_metplus_usr/data/www/test.metplus-vrn.ru
+chown -R test_metplus_usr:test_metplus_usr "$SITE/upload"
+# или всё, что создал root:
+find "$SITE" -user root -exec chown test_metplus_usr:test_metplus_usr {} +
+```
+
+## Почему
+
+PHP-FPM сайта пишет от `test_metplus_usr`. Файлы `root:root` → нельзя создать WebP/кеш/загрузки → баги «на test не работает».

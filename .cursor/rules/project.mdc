@@ -1,0 +1,44 @@
+---
+description: Контекст проекта metplus-vrn.ru
+alwaysApply: true
+---
+
+# metplus-vrn.ru
+
+Сайт на 1С-Битрикс — каталог металлопроката.
+
+## Правило работы
+
+- **Разработка:** только локально (`http://localhost:8086/`)
+- **«Выкатить» / «задеплоить»** = **test.metplus-vrn.ru**, не prod
+- **Prod** (`metplus-vrn.ru`) — только по явной отдельной просьбе
+
+## Сервер (37.230.112.153)
+
+- **Test (выкат):** test.metplus-vrn.ru → `/var/www/test_metplus_usr/data/www/test.metplus-vrn.ru`
+- **Prod:** metplus-vrn.ru → `/var/www/metplus-vrn.ru/data/www/metplus-vrn.ru`
+- Workflow: локально → test → prod (только если явно попросили)
+- **Права:** никогда не оставлять `root:root` — владелец сайта (`test_metplus_usr:test_metplus_usr` на test). См. правило `server-permissions.mdc`
+
+## Git
+
+Репозиторий: https://github.com/bziksv/metplus
+Не коммитить: `.settings.php`, `dbconn.php`, `license_key.php`, `.local/`, `upload/`
+
+## Где искать код
+
+- Шаблон: `bitrix/templates/metplus/`
+- Инициализация: `bitrix/php_interface/init.php`
+- Подключаемые блоки: `include/`
+- Каталог: `catalog/`
+- AJAX: `ajax/`
+
+## Не трогать без необходимости
+
+- `bitrix/modules/` — ядро Битрикс
+- `upload/` — медиа товаров
+- `bitrix/cache/`, `managed_cache/`, `stack_cache/` — кеш
+
+## Документация
+
+Журнал изменений: `docs/PROJECT.md`
