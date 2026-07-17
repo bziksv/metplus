@@ -1360,10 +1360,52 @@ if (empty($arResult['ERROR_MESSAGE']))
                 $('[data-entity="cutting-plan-row"]').each(function() {
                     var id = $(this).data('id');
                     var $item = $('#basket-item-' + id);
-                    if ($item.length && $item.next()[0] !== this) {
+                    if (!$item.length) {
+                        // товар удалён — убрать «осиротевшую» резку из DOM
+                        clearCuttingUiForItem(id);
+                        $(this).remove();
+                        return;
+                    }
+                    if ($item.next()[0] !== this) {
                         $item.after(this);
                     }
                 });
+            }
+
+            function clearCuttingUiForItem(id) {
+                var key = String(id);
+                delete cuttingPartsStateCache[key];
+                delete cuttingWizardSteps[key];
+                if (cuttingSaveTimers[key]) {
+                    clearTimeout(cuttingSaveTimers[key]);
+                    delete cuttingSaveTimers[key];
+                }
+                if (cuttingSaveXhrs[key] && cuttingSaveXhrs[key].abort) {
+                    try { cuttingSaveXhrs[key].abort(); } catch (e) {}
+                    delete cuttingSaveXhrs[key];
+                }
+                try {
+                    var openMap = getCuttingUiOpenMap();
+                    if (Object.prototype.hasOwnProperty.call(openMap, key)) {
+                        delete openMap[key];
+                        window.localStorage.setItem(CUTTING_UI_OPEN_KEY, JSON.stringify(openMap));
+                    }
+                } catch (e) {}
+                try {
+                    var map = getCuttingWizardStepMap();
+                    if (Object.prototype.hasOwnProperty.call(map, key)) {
+                        delete map[key];
+                        window.localStorage.setItem(CUTTING_WIZARD_STEP_KEY, JSON.stringify(map));
+                    }
+                } catch (e) {}
+            }
+
+            function removeCuttingRowForItem(id) {
+                var cut = document.getElementById('basket-item-' + id + '-cutting');
+                if (cut && cut.parentNode) {
+                    cut.parentNode.removeChild(cut);
+                }
+                clearCuttingUiForItem(id);
             }
 
             var cuttingSaveTimers = {};
@@ -1946,6 +1988,26 @@ if (empty($arResult['ERROR_MESSAGE']))
                 var component = BX.Sale.BasketComponent;
                 var originalCreate = component.createBasketItem;
                 var originalRedraw = component.redrawBasketItemNode;
+                var originalDelete = component.deleteBasketItem;
+
+                component.deleteBasketItem = function(itemId, restore, final) {
+                    // до удаления строки товара — сразу убрать резку (иначе остаётся «сирота»)
+                    if (!restore) {
+                        removeCuttingRowForItem(itemId);
+                    }
+                    originalDelete.apply(this, arguments);
+                    if (restore) {
+                        // restore-режим: строка товара остаётся, резку скрываем
+                        var $cut = $('#basket-item-' + itemId + '-cutting');
+                        if ($cut.length) {
+                            $cut.removeClass('is-open').prop('hidden', true);
+                            $cut.find('[data-entity="cutting-plan"]').removeClass('is-open');
+                        }
+                        clearCuttingUiForItem(itemId);
+                    }
+                    attachCuttingRows();
+                    updateBasketTotalWithCutting();
+                };
 
                 component.createBasketItem = function() {
                     originalCreate.apply(this, arguments);
