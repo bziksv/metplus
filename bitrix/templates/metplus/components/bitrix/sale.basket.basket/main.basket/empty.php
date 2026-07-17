@@ -27,8 +27,8 @@ $isCartPage = $cartDisplayMode === 'page';
     <?php endif; ?>
 
     <div class="cart-content_body">
-        <div class="empty-cart" style="text-align: center">
-            <img src="<?=$this->GetFolder()?>/images/empty_cart.svg" style="margin-bottom: 30px">
+        <div class="empty-cart">
+            <img src="<?=$this->GetFolder()?>/images/empty_cart.svg" alt="">
             <div class="bx-sbb-empty-cart-text"><?=Loc::getMessage("SBB_EMPTY_BASKET_TITLE")?></div>
             <?
             if (!empty($arParams['EMPTY_BASKET_HINT_PATH']))
@@ -46,25 +46,21 @@ $isCartPage = $cartDisplayMode === 'page';
                 <?
             }
             ?>
-            <div style="margin-top: 24px;">
+            <div class="empty-cart__action">
                 <a href="/catalog/" class="main-btn">В каталог</a>
             </div>
         </div>
     </div>
 
+    <?php if (!$isCartPage): ?>
     <div class="cart-content_footer">
         <div class="left-column">
-            <?php if ($isCartPage): ?>
-            <a href="/catalog/" class="gray-btn back-site_btn">В каталог</a>
-            <?php else: ?>
             <a href="" class="gray-btn back-site_btn js_back-site">Вернуться к сайту</a>
-            <?php endif; ?>
         </div>
-        <?php if (!$isCartPage): ?>
         <div class="right-column">
             <a href="/cart/" class="main-btn cart-full-btn">Перейти в корзину</a>
         </div>
-        <?php endif; ?>
     </div>
+    <?php endif; ?>
 
 </div>
