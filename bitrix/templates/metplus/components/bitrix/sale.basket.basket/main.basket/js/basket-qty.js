@@ -815,7 +815,22 @@
 
 		BX.bind(document, 'click', function(e) {
 			var target = e.target;
-			if (!target || !target.getAttribute)
+			if (!target)
+			{
+				return;
+			}
+
+			// клик может попасть во вложенный узел — поднимаемся до [data-entity]
+			while (target && target !== document)
+			{
+				if (target.getAttribute && target.getAttribute('data-entity'))
+				{
+					break;
+				}
+				target = target.parentNode;
+			}
+
+			if (!target || !target.getAttribute || target === document)
 			{
 				return;
 			}

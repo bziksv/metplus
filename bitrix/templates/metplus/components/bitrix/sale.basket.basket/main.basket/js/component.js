@@ -712,18 +712,32 @@
 						this.deleteBasketItems(result.MERGED_BASKET_ITEMS, false, true);
 					}
 
-					for (const id in this.items) {
-						if (!result.BASKET_DATA.BASKET_ITEM_RENDER_DATA.some(item => item.ID === id)) {
-							this.deleteBasketItem(id);
-							delete this.items[id];
+					if (result.BASKET_DATA && BX.type.isArray(result.BASKET_DATA.BASKET_ITEM_RENDER_DATA))
+					{
+						var renderIds = {};
+						for (var ri = 0; ri < result.BASKET_DATA.BASKET_ITEM_RENDER_DATA.length; ri++)
+						{
+							renderIds[String(result.BASKET_DATA.BASKET_ITEM_RENDER_DATA[ri].ID)] = true;
 						}
+
+						for (var id in this.items)
+						{
+							if (this.items.hasOwnProperty(id) && !renderIds[String(id)])
+							{
+								this.deleteBasketItem(id);
+								delete this.items[id];
+							}
+						}
+
+						var ids = result.BASKET_DATA.BASKET_ITEM_RENDER_DATA.map(function(data) {
+							return data.ID;
+						});
+						var getItemsToEdit = BX.util.array_unique([].concat(this.getItemsToEdit(), ids));
+
+						this.applyBasketResult(result.BASKET_DATA);
+						this.editBasketItems(getItemsToEdit);
 					}
 
-					const ids = result.BASKET_DATA.BASKET_ITEM_RENDER_DATA.map(data => data.ID);
-					let getItemsToEdit = [...new Set([...this.getItemsToEdit(), ...ids])];
-
-					this.applyBasketResult(result.BASKET_DATA);
-					this.editBasketItems(getItemsToEdit);
 					this.editTotal();
 
 					this.applyPriceAnimation();

@@ -1438,11 +1438,11 @@ if (empty($arResult['ERROR_MESSAGE']))
             function isCuttingUiOpen(id) {
                 var map = getCuttingUiOpenMap();
                 var key = String(id);
+                // только явный выбор пользователя; шаг мастера сам по себе панель не открывает
                 if (Object.prototype.hasOwnProperty.call(map, key)) {
                     return !!map[key];
                 }
-                // нет записи: открывать, если помним шаг мастера (пользователь работал с резкой)
-                return getCuttingWizardStepStored(id) > 0;
+                return false;
             }
 
             var CUTTING_UI_SCROLL_KEY = 'metplus_cutting_page_scroll';
@@ -1613,8 +1613,17 @@ if (empty($arResult['ERROR_MESSAGE']))
                     return;
                 }
 
+                // Через actionPool — иначе параллельный recalculateAjax затирает только что изменённое кол-во
+                if (BX.Sale && BX.Sale.BasketComponent && BX.Sale.BasketComponent.actionPool) {
+                    var pool = BX.Sale.BasketComponent.actionPool;
+                    pool.needFullRecalculation = true;
+                    pool.setRefreshStatus(false);
+                    pool.switchTimer();
+                    return;
+                }
+
                 if (BX.Sale && BX.Sale.BasketComponent) {
-                    BX.Sale.BasketComponent.sendRequest('recalculateAjax', {
+                    BX.Sale.BasketComponent.sendRequest('refreshAjax', {
                         fullRecalculation: 'Y'
                     });
                 }
@@ -1626,11 +1635,7 @@ if (empty($arResult['ERROR_MESSAGE']))
                 }
 
                 delete pendingPriceRefresh[id];
-                if (BX.Sale && BX.Sale.BasketComponent) {
-                    BX.Sale.BasketComponent.sendRequest('recalculateAjax', {
-                        fullRecalculation: 'Y'
-                    });
-                }
+                requestBasketPriceRefresh(id, true);
             }
 
             function setCuttingStatus(id, text, kind) {
@@ -1991,19 +1996,33 @@ if (empty($arResult['ERROR_MESSAGE']))
                 var originalDelete = component.deleteBasketItem;
 
                 component.deleteBasketItem = function(itemId, restore, final) {
-                    // до удаления строки товара — сразу убрать резку (иначе остаётся «сирота»)
-                    if (!restore) {
-                        removeCuttingRowForItem(itemId);
-                    }
-                    originalDelete.apply(this, arguments);
-                    if (restore) {
-                        // restore-режим: строка товара остаётся, резку скрываем
-                        var $cut = $('#basket-item-' + itemId + '-cutting');
-                        if ($cut.length) {
-                            $cut.removeClass('is-open').prop('hidden', true);
-                            $cut.find('[data-entity="cutting-plan"]').removeClass('is-open');
+                    try {
+                        // до удаления строки товара — сразу убрать резку (иначе остаётся «сирота»)
+                        if (!restore) {
+                            removeCuttingRowForItem(itemId);
                         }
-                        clearCuttingUiForItem(itemId);
+                        if (this.items && this.items[itemId]) {
+                            originalDelete.apply(this, arguments);
+                        } else {
+                            var node = document.getElementById('basket-item-' + itemId);
+                            if (node && node.parentNode) {
+                                node.parentNode.removeChild(node);
+                            }
+                            removeCuttingRowForItem(itemId);
+                        }
+                        if (restore) {
+                            // restore-режим: строка товара остаётся, резку скрываем
+                            var $cut = $('#basket-item-' + itemId + '-cutting');
+                            if ($cut.length) {
+                                $cut.removeClass('is-open').prop('hidden', true);
+                                $cut.find('[data-entity="cutting-plan"]').removeClass('is-open');
+                            }
+                            clearCuttingUiForItem(itemId);
+                        }
+                    } catch (e) {
+                        if (window.console && console.error) {
+                            console.error('deleteBasketItem', itemId, e);
+                        }
                     }
                     attachCuttingRows();
                     updateBasketTotalWithCutting();
