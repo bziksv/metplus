@@ -804,54 +804,73 @@
 			updateBasketQtyDisplay(item, quantity);
 		};
 
-		BX.bind(document, 'click', function(e) {
-			var target = e.target;
-			if (!target)
+		// Шт/вес: биндим на кнопки строки (как м/м²) — BX.bind(document) здесь не срабатывает
+		function bindPiecesWeightButtons(node)
+		{
+			if (!BX.type.isDomNode(node))
 			{
 				return;
 			}
 
-			// клик может попасть во вложенный узел — поднимаемся до [data-entity]
-			while (target && target !== document)
+			var piecesBlock = node.querySelector('[data-entity="basket-item-pieces-block"]');
+			if (piecesBlock && !piecesBlock.getAttribute('data-metplus-qty-bound'))
 			{
-				if (target.getAttribute && target.getAttribute('data-entity'))
+				piecesBlock.setAttribute('data-metplus-qty-bound', '1');
+				var piecesMinus = piecesBlock.querySelector('[data-entity="basket-item-pieces-minus"]');
+				var piecesPlus = piecesBlock.querySelector('[data-entity="basket-item-pieces-plus"]');
+				if (piecesMinus)
 				{
-					break;
+					BX.bind(piecesMinus, 'click', function(e) {
+						e.preventDefault();
+						adjustByPieces(piecesMinus, -1);
+					});
 				}
-				target = target.parentNode;
+				if (piecesPlus)
+				{
+					BX.bind(piecesPlus, 'click', function(e) {
+						e.preventDefault();
+						adjustByPieces(piecesPlus, +1);
+					});
+				}
 			}
 
-			if (!target || !target.getAttribute || target === document)
+			var weightBlock = node.querySelector('[data-entity="basket-item-weight-block"]');
+			if (weightBlock && !weightBlock.getAttribute('data-metplus-qty-bound'))
 			{
-				return;
+				weightBlock.setAttribute('data-metplus-qty-bound', '1');
+				var weightMinus = weightBlock.querySelector('[data-entity="basket-item-weight-minus"]');
+				var weightPlus = weightBlock.querySelector('[data-entity="basket-item-weight-plus"]');
+				if (weightMinus)
+				{
+					BX.bind(weightMinus, 'click', function(e) {
+						e.preventDefault();
+						adjustByWeight(weightMinus, -1);
+					});
+				}
+				if (weightPlus)
+				{
+					BX.bind(weightPlus, 'click', function(e) {
+						e.preventDefault();
+						adjustByWeight(weightPlus, +1);
+					});
+				}
 			}
+		}
 
-			var entity = target.getAttribute('data-entity');
-			if (!entity)
+		var originalBindQuantityEvents = component.bindQuantityEvents
+			? component.bindQuantityEvents.bind(component)
+			: null;
+		component.bindQuantityEvents = function(node, data) {
+			if (originalBindQuantityEvents)
 			{
-				return;
+				originalBindQuantityEvents(node, data);
 			}
+			bindPiecesWeightButtons(node);
+		};
 
-			if (entity === 'basket-item-pieces-minus')
-			{
-				e.preventDefault();
-				adjustByPieces(target, -1);
-			}
-			else if (entity === 'basket-item-pieces-plus')
-			{
-				e.preventDefault();
-				adjustByPieces(target, +1);
-			}
-			else if (entity === 'basket-item-weight-minus')
-			{
-				e.preventDefault();
-				adjustByWeight(target, -1);
-			}
-			else if (entity === 'basket-item-weight-plus')
-			{
-				e.preventDefault();
-				adjustByWeight(target, +1);
-			}
+		// уже отрисованные строки
+		Object.keys(component.items || {}).forEach(function(itemId) {
+			bindPiecesWeightButtons(BX(component.ids.item + itemId));
 		});
 
 		BX.bind(document, 'change', function(e) {
