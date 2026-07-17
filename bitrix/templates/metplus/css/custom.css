@@ -2041,15 +2041,20 @@ html[data-cart-view="original"] .basket-root--page .cutting-plan-notice {
     }
 }
 
-/* Шапка: телефон крупнее и в одну линию с логотипом / городом */
+/* Шапка: телефон крупнее и с нормальным отступом от логотипа */
 .main-head_left-column {
     align-items: center;
+    gap: 2rem;
+}
+
+.head-logo {
+    margin-right: 0;
 }
 
 .head_phone-box {
     display: flex;
     align-items: center;
-    margin-left: 0.35em;
+    margin-left: 0;
     font-size: 1.125rem;
 }
 
