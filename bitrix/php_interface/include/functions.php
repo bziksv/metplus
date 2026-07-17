@@ -29,6 +29,53 @@ function getLengthProduct($ID_BLOCK, $ID)
     return floatval(getPropVal($ID_BLOCK, $ID, 'DLINA_RASCHET'));
 }
 
+/**
+ * Число для расчёта веса: пустое/нет значения → 1.
+ */
+function getWeightCalcFactor($value)
+{
+    if ($value === null || $value === '') {
+        return 1.0;
+    }
+
+    $normalized = str_replace(',', '.', trim((string)$value));
+    if ($normalized === '' || !is_numeric($normalized)) {
+        return 1.0;
+    }
+
+    $number = (float)$normalized;
+
+    return $number == 0.0 ? 1.0 : $number;
+}
+
+/**
+ * Вес одной штуки, кг = Коэффициент_Расчет × Ширина_Расчет × Длина_Расчет
+ * (нет значения → 1).
+ */
+function getProductPieceWeightKg($productId, $iblockId = 36)
+{
+    $coeff = getWeightCalcFactor(getPropVal($iblockId, $productId, 'KOEFFITSENT_RASCHET'));
+    $width = getWeightCalcFactor(getPropVal($iblockId, $productId, 'SHIRINA_RASCHET'));
+    $length = getWeightCalcFactor(getPropVal($iblockId, $productId, 'DLINA_RASCHET'));
+
+    return round($coeff * $width * $length, 6);
+}
+
+/**
+ * Вес погонного метра, кг/м = вес штуки / длина.
+ */
+function getProductWeightPerMeterKg($productId, $iblockId = 36)
+{
+    $pieceWeight = getProductPieceWeightKg($productId, $iblockId);
+    $length = getWeightCalcFactor(getPropVal($iblockId, $productId, 'DLINA_RASCHET'));
+
+    if ($length <= 0) {
+        return $pieceWeight;
+    }
+
+    return round($pieceWeight / $length, 6);
+}
+
 function isCustomPrice($ID_BLOCK, $ID)
 {
     return getCoefficientProduct($ID_BLOCK, $ID) > 0 && getLengthProduct($ID_BLOCK, $ID) > 0;
@@ -278,6 +325,64 @@ function hasIncompletePieceCut($quantity, $lengthPerPiece)
     return getIncompletePieceFraction($quantity, $lengthPerPiece) > 0.0001;
 }
 
+/**
+ * Делит метраж: база (целые шаги) + кусок (остаток под наценку).
+ */
+function splitQuantityForPieceSurcharge($quantity, $stepMeters)
+{
+    $step = (float)$stepMeters;
+    $qty = (float)$quantity;
+
+    if ($step <= 0 || $qty <= 0) {
+        return [
+            'base_meters' => max(0, $qty),
+            'surcharge_meters' => 0.0,
+            'base_steps' => 0,
+        ];
+    }
+
+    $steps = (int)floor(($qty / $step) + 1e-9);
+    $baseMeters = round($steps * $step, 6);
+    $surchargeMeters = round(max(0, $qty - $baseMeters), 6);
+
+    if ($surchargeMeters <= 0.0001) {
+        $surchargeMeters = 0.0;
+        $baseMeters = $qty;
+    }
+
+    return [
+        'base_meters' => $baseMeters,
+        'surcharge_meters' => $surchargeMeters,
+        'base_steps' => $steps,
+    ];
+}
+
+/**
+ * Средневзвешенная цена за метр: наценка только на кусок.
+ */
+function blendMeterPriceWithPieceSurcharge($basePrice, $surchargePrice, $baseMeters, $surchargeMeters)
+{
+    $basePrice = (float)$basePrice;
+    $surchargePrice = (float)$surchargePrice;
+    $baseMeters = (float)$baseMeters;
+    $surchargeMeters = (float)$surchargeMeters;
+    $total = $baseMeters + $surchargeMeters;
+
+    if ($total <= 0) {
+        return $basePrice;
+    }
+
+    if ($surchargeMeters <= 0.0001) {
+        return round($basePrice, 2);
+    }
+
+    if ($baseMeters <= 0.0001) {
+        return round($surchargePrice, 2);
+    }
+
+    return round((($baseMeters * $basePrice) + ($surchargeMeters * $surchargePrice)) / $total, 2);
+}
+
 function formatIncompletePieceFraction($fraction)
 {
     $fraction = (float)$fraction;
@@ -305,7 +410,7 @@ function getIncompletePieceCutNotice($fraction, $cutPrice = 0)
 
 function getFreeCuttingTipText()
 {
-    return 'Товар режется кратно 1 метру без наценки. Длины кусков — кратно 1 метру. Заказ поштучно: целые или 0,5 шт.';
+    return 'Товар режется кратно 1 метру без наценки. Длины кусков — кратно 1 метру.';
 }
 
 function isSheetProduct($width)
@@ -319,15 +424,30 @@ function isBasicSheetProduct($productId, $iblockId = 36)
         return false;
     }
 
+    // Листы заказываем кратно 1 м длины, даже если в 1С стоит «Только шт и 0,5 шт»
     if (isOnlyPiecesProduct(getPropVal($iblockId, $productId, 'TOLKO_SHT'))) {
         return false;
     }
 
-    if (isHalfPiecesProduct(getPropVal($iblockId, $productId, 'TOLKO_SHT_I_0_5_SHT'))) {
+    return true;
+}
+
+/**
+ * Лист с флагом «Только шт и 0,5 шт»: без любых +10% (неполная / сложная резка), только оплата резов.
+ */
+function basicSheetSkipsIncompletePieceSurcharge($productId, $iblockId = 36)
+{
+    if (!isBasicSheetProduct($productId, $iblockId)) {
         return false;
     }
 
-    return true;
+    return isHalfPiecesProduct(getPropVal($iblockId, $productId, 'TOLKO_SHT_I_0_5_SHT'));
+}
+
+/** @deprecated alias — то же, что basicSheetSkipsIncompletePieceSurcharge */
+function basicSheetSkipsAllPieceSurcharges($productId, $iblockId = 36)
+{
+    return basicSheetSkipsIncompletePieceSurcharge($productId, $iblockId);
 }
 
 function getBasicSheetSurchargePercent()
@@ -344,13 +464,15 @@ function getBasicSheetWidthMeterSteps($lengthPerPiece, $width)
         return null;
     }
 
-    $widthMeters = max(1, (int)round($width));
+    // Шаг заказа — 1 м по Длина_Расчет
+    $lengthMeters = max(1, (int)round($length));
 
     return [
-        'WIDTH_METERS' => $widthMeters,
-        'PIECE_STEP' => 1 / $widthMeters,
-        'AREA_STEP' => $length,
-        'METER_STEP' => $length / $widthMeters,
+        'LENGTH_METERS' => $lengthMeters,
+        'WIDTH_METERS' => $lengthMeters, // совместимость со старым ключом (число шагов по 1 м)
+        'PIECE_STEP' => 1 / $lengthMeters,
+        'AREA_STEP' => $width, // 1 м длины × ширина = м²
+        'METER_STEP' => 1.0,
         'FULL_AREA' => $length * $width,
     ];
 }
@@ -363,9 +485,9 @@ function snapBasicSheetPiecesByWidthMeter($pieces, $lengthPerPiece, $width)
     }
 
     $pieceStep = $steps['PIECE_STEP'];
-    $widthUnits = max(1, (int)round(((float)$pieces) / $pieceStep));
+    $lengthUnits = max(1, (int)round(((float)$pieces) / $pieceStep));
 
-    return round($widthUnits * $pieceStep, 6);
+    return round($lengthUnits * $pieceStep, 6);
 }
 
 function snapBasicSheetMetersByWidthMeter($metersQty, $lengthPerPiece, $width)
@@ -376,24 +498,35 @@ function snapBasicSheetMetersByWidthMeter($metersQty, $lengthPerPiece, $width)
     }
 
     $meterStep = $steps['METER_STEP'];
-    $widthUnits = max(1, (int)round(((float)$metersQty) / $meterStep));
+    $lengthUnits = max(1, (int)round(((float)$metersQty) / $meterStep));
 
-    return round($widthUnits * $meterStep, 5);
+    return round($lengthUnits * $meterStep, 5);
 }
 
 function getBasicSheetCuttingTipText()
 {
-    return 'Заказ в шт или м² кратно 1 м ширины листа. Резка по ширине — кратно 1 м. Рез пополам — стоимость одного реза. Больше резов — +10% к цене за м².';
+    return 'Заказ в шт или м² — кратно 1 м длины. Резка по длине — кратно 1 м. '
+        . 'Резы всегда оплачиваются по тарифу. '
+        . 'Рез пополам (2 куска) — 1 рез. '
+        . 'Больше резов — дополнительно +10% только на резанные куски. '
+        . 'Неполная штука — +10% на кусок и 1 рез, целые без резки — по обычной цене.';
+}
+
+function getBasicSheetHalfPiecesCuttingTipText()
+{
+    return 'Заказ в шт или м² — кратно 1 м длины. Резка по длине — кратно 1 м. '
+        . 'Резы всегда оплачиваются по тарифу. '
+        . 'Наценок (+10%) нет ни за неполную штуку, ни за сложную резку — только стоимость резов.';
 }
 
 function getBasicSheetPiecesTipText()
 {
-    return 'Штуки или м² — кратно 1 м ширины листа (например, 1,5 м² = 1 м ширины).';
+    return 'Штуки или м² — кратно 1 м длины (например, при длине 6 м шаг = 1/6 шт ≈ ширина листа в м²).';
 }
 
 function getBasicSheetDimensionsTipText()
 {
-    return 'Длина и ширина листа заданы производителем. Количество — в штуках или м², кратно 1 м ширины.';
+    return 'Длина и ширина листа заданы производителем. Количество — в штуках или м², кратно 1 м длины.';
 }
 
 function parseCutLengthsFromPlanSegment($segment)
@@ -424,12 +557,37 @@ function getCutCountFromLengths(array $lengths)
     return $count <= 1 ? 0 : $count - 1;
 }
 
-function analyzeBasicSheetCuttingPlan($planText)
+function analyzeBasicSheetCuttingPlan($planText, $productId = null)
 {
     $result = [
         'hasComplexCut' => false,
         'hasHalfCut' => false,
+        'hasIncompletePlan' => false,
+        'complexPieces' => 0,
+        'simplePieces' => 0,
+        'totalCuts' => 0,
+        'complexCuts' => 0,
+        'simpleCuts' => 0,
+        'incompletePlanCuts' => 0,
+        'incompletePlanCutsFee' => 0.0,
+        'cutsFee' => 0.0,
     ];
+
+    $priceByCode = [];
+    $defaultCutPrice = 0.0;
+    if ($productId) {
+        foreach (getProductCuttingServices((int)$productId) as $service) {
+            $code = (string)($service['CODE'] ?? '');
+            $price = (float)($service['VALUE'] ?? 0);
+            if ($code === '') {
+                continue;
+            }
+            $priceByCode[$code] = $price;
+            if ($defaultCutPrice <= 0 && $price > 0) {
+                $defaultCutPrice = $price;
+            }
+        }
+    }
 
     foreach (preg_split('/\R+/u', trim((string)$planText)) ?: [] as $line) {
         $line = trim((string)$line);
@@ -437,24 +595,282 @@ function analyzeBasicSheetCuttingPlan($planText)
             continue;
         }
 
+        $qty = 0;
+        $typeCode = '';
         $cutsSegment = '';
-        if (preg_match('/^(\d+)\s*шт\s*\|\s*[^|]+\|\s*([^|]+)\s*\|/ui', $line, $matches)) {
+        $isIncompleteLine = false;
+
+        if (preg_match('/^неполн\w*\s*\|\s*([^|]+)\|\s*([^|]+)\s*\|/ui', $line, $matches)) {
+            $isIncompleteLine = true;
+            $qty = 1;
+            $typeCode = trim($matches[1]);
             $cutsSegment = $matches[2];
+        } elseif (preg_match('/^(\d+)\s*шт\s*\|\s*([^|]+)\|\s*([^|]+)\s*\|/ui', $line, $matches)) {
+            $qty = (int)$matches[1];
+            $typeCode = trim($matches[2]);
+            $cutsSegment = $matches[3];
         } elseif (preg_match('/^(\d+)\s*шт\s*[—\-:]\s*(.+)$/ui', $line, $matches)) {
+            $qty = (int)$matches[1];
             $cutsSegment = preg_replace('/\s*м\s*$/ui', '', trim($matches[2]));
         } elseif (preg_match('/^(\d+)\s*[-–—]\s*(.+)$/u', $line, $matches)) {
+            $qty = (int)$matches[1];
             $cutsSegment = trim($matches[2]);
         }
 
+        if ($qty <= 0) {
+            continue;
+        }
+
         $cutCount = getCutCountFromLengths(parseCutLengthsFromPlanSegment($cutsSegment));
+        if ($cutCount <= 0) {
+            continue;
+        }
+
+        $cutPrice = $priceByCode[$typeCode] ?? $defaultCutPrice;
+        $lineFee = $cutCount * $qty * $cutPrice;
+        $result['cutsFee'] += $lineFee;
+        $result['totalCuts'] += $cutCount * $qty;
+
+        if ($isIncompleteLine) {
+            $result['hasIncompletePlan'] = true;
+            $result['incompletePlanCuts'] += $cutCount * $qty;
+            $result['incompletePlanCutsFee'] += $lineFee;
+            continue;
+        }
+
         if ($cutCount >= 2) {
             $result['hasComplexCut'] = true;
-        } elseif ($cutCount === 1) {
+            $result['complexPieces'] += $qty;
+            $result['complexCuts'] += $cutCount * $qty;
+        } else {
             $result['hasHalfCut'] = true;
+            $result['simplePieces'] += $qty;
+            $result['simpleCuts'] += $qty;
         }
     }
 
+    $result['cutsFee'] = round((float)$result['cutsFee'], 2);
+    $result['incompletePlanCutsFee'] = round((float)$result['incompletePlanCutsFee'], 2);
+
     return $result;
+}
+
+/**
+ * Детальная разбивка металла/резки для листа (целые / резанные / неполная / резы).
+ */
+function buildBasicSheetPositionBreakdown($productId, $quantity, $iblockId = 36, $planText = null)
+{
+    $length = getLengthProduct($iblockId, $productId);
+    $quantity = (float)$quantity;
+    if ($length <= 0 || $quantity <= 0 || !isBasicSheetProduct($productId, $iblockId)) {
+        return null;
+    }
+
+    $basePriceRow = fetchCatalogPriceRow($productId, 17);
+    if (!$basePriceRow) {
+        return null;
+    }
+
+    $baseUnit = (float)$basePriceRow['PRICE'];
+    $percent = getBasicSheetSurchargePercent();
+    $surchargeUnit = round($baseUnit * (1 + $percent / 100), 2);
+    $skipAllSurcharge = basicSheetSkipsIncompletePieceSurcharge($productId, $iblockId);
+
+    if ($planText === null) {
+        $planText = (string)(getBasketItemPropForPrice($productId, $quantity, 'CUTTING_PLAN_TEXT') ?? '');
+        $enabled = (string)(getBasketItemPropForPrice($productId, $quantity, 'CUTTING_ENABLED') ?? '');
+        if ($enabled !== 'Y') {
+            $planText = '';
+        }
+    }
+
+    $analysis = analyzeBasicSheetCuttingPlan($planText, $productId);
+    $split = splitQuantityForPieceSurcharge($quantity, $length);
+
+    $incompleteRaw = (float)$split['surcharge_meters'];
+    $incompleteMeters = $skipAllSurcharge ? 0.0 : $incompleteRaw;
+    $incompleteAtBaseMeters = $skipAllSurcharge ? $incompleteRaw : 0.0;
+    $wholeMetersAvailable = round(max(0, $quantity - $incompleteRaw), 6);
+
+    $complexPieces = min((int)$analysis['complexPieces'], (int)floor(($wholeMetersAvailable / $length) + 1e-9));
+    $complexMeters = round($complexPieces * $length, 6);
+    $simplePieces = min((int)$analysis['simplePieces'], max(0, (int)floor(($wholeMetersAvailable - $complexMeters) / $length + 1e-9)));
+    $simpleMeters = round($simplePieces * $length, 6);
+
+    $uncutMeters = round(max(0, $wholeMetersAvailable - $complexMeters - $simpleMeters), 6);
+    $uncutPieces = $length > 0 ? $uncutMeters / $length : 0;
+    $incompletePieces = $length > 0 ? $incompleteMeters / $length : 0;
+    $incompleteAtBasePieces = $length > 0 ? $incompleteAtBaseMeters / $length : 0;
+
+    $uncutSum = round($uncutMeters * $baseUnit, 2);
+    $simpleSum = round($simpleMeters * $baseUnit, 2);
+    // Флаг 0,5 шт: без +10% даже на сложную резку. Иначе +10% на резанные.
+    $complexUnit = $skipAllSurcharge ? $baseUnit : $surchargeUnit;
+    $complexSum = round($complexMeters * $complexUnit, 2);
+    $incompleteSum = round($incompleteMeters * $surchargeUnit, 2);
+    $incompleteAtBaseSum = round($incompleteAtBaseMeters * $baseUnit, 2);
+
+    $metalSum = round($uncutSum + $simpleSum + $complexSum + $incompleteSum + $incompleteAtBaseSum, 2);
+    $metalMeters = round($uncutMeters + $simpleMeters + $complexMeters + $incompleteMeters + $incompleteAtBaseMeters, 6);
+    $blended = $metalMeters > 0.0001 ? round($metalSum / $metalMeters, 2) : $baseUnit;
+
+    $lines = [];
+    if ($uncutMeters > 0.0001) {
+        $lines[] = [
+            'KIND' => 'uncut',
+            'LABEL' => 'Целые без резки',
+            'TEXT' => formatIncompletePieceFraction($uncutPieces) . ' шт × ' . formatBasketMoney($length) . ' м = '
+                . formatBasketMoney($uncutMeters) . ' м × ' . formatBasketMoney($baseUnit) . ' ₽ = '
+                . formatBasketMoney($uncutSum) . ' ₽',
+            'SUM' => $uncutSum,
+        ];
+    }
+    if ($simpleMeters > 0.0001) {
+        $cuts = (int)$analysis['simpleCuts'];
+        $lines[] = [
+            'KIND' => 'simple_cut',
+            'LABEL' => 'Резанные (1 рез)',
+            'TEXT' => formatIncompletePieceFraction($simplePieces) . ' шт × ' . formatBasketMoney($length) . ' м = '
+                . formatBasketMoney($simpleMeters) . ' м × ' . formatBasketMoney($baseUnit) . ' ₽ = '
+                . formatBasketMoney($simpleSum) . ' ₽'
+                . ($cuts > 0 ? ' · резов: ' . $cuts : ''),
+            'SUM' => $simpleSum,
+        ];
+    }
+    if ($complexMeters > 0.0001) {
+        $cuts = (int)$analysis['complexCuts'];
+        if ($skipAllSurcharge) {
+            $lines[] = [
+                'KIND' => 'complex_cut',
+                'LABEL' => 'Резанные',
+                'TEXT' => formatIncompletePieceFraction($complexPieces) . ' шт × ' . formatBasketMoney($length) . ' м = '
+                    . formatBasketMoney($complexMeters) . ' м × ' . formatBasketMoney($baseUnit) . ' ₽ = '
+                    . formatBasketMoney($complexSum) . ' ₽'
+                    . ($cuts > 0 ? ' · резов: ' . $cuts . ' (без наценки)' : ' (без наценки)'),
+                'SUM' => $complexSum,
+            ];
+        } else {
+            $lines[] = [
+                'KIND' => 'complex_cut',
+                'LABEL' => 'Резанные (сложная резка)',
+                'TEXT' => formatIncompletePieceFraction($complexPieces) . ' шт × ' . formatBasketMoney($length) . ' м = '
+                    . formatBasketMoney($complexMeters) . ' м × ' . formatBasketMoney($surchargeUnit) . ' ₽ (+'
+                    . $percent . '%) = ' . formatBasketMoney($complexSum) . ' ₽'
+                    . ($cuts > 0 ? ' · резов: ' . $cuts : ''),
+                'SUM' => $complexSum,
+            ];
+        }
+    }
+    if ($incompleteMeters > 0.0001) {
+        $lines[] = [
+            'KIND' => 'incomplete',
+            'LABEL' => 'Неполная штука',
+            'TEXT' => formatIncompletePieceFraction($incompletePieces) . ' шт = '
+                . formatBasketMoney($incompleteMeters) . ' м × ' . formatBasketMoney($surchargeUnit) . ' ₽ (+'
+                . $percent . '%) = ' . formatBasketMoney($incompleteSum) . ' ₽',
+            'SUM' => $incompleteSum,
+        ];
+    }
+    if ($incompleteAtBaseMeters > 0.0001) {
+        $lines[] = [
+            'KIND' => 'incomplete_free',
+            'LABEL' => 'Неполная (без наценки)',
+            'TEXT' => formatIncompletePieceFraction($incompleteAtBasePieces) . ' шт = '
+                . formatBasketMoney($incompleteAtBaseMeters) . ' м × ' . formatBasketMoney($baseUnit) . ' ₽ = '
+                . formatBasketMoney($incompleteAtBaseSum) . ' ₽',
+            'SUM' => $incompleteAtBaseSum,
+        ];
+    }
+
+    $complexCuts = (int)($analysis['complexCuts'] ?? 0);
+    $simpleCuts = (int)($analysis['simpleCuts'] ?? 0);
+    $totalCuts = (int)($analysis['totalCuts'] ?? 0);
+    $cutsFee = (float)($analysis['cutsFee'] ?? 0);
+
+    // Неполная штука = 1 авто-рез, если нет партии «неполная» в плане
+    $incompleteCutFee = 0.0;
+    $incompleteCutCount = 0;
+    $hasIncompletePlan = !empty($analysis['hasIncompletePlan']);
+    if ($incompleteRaw > 0.0001 && !$hasIncompletePlan) {
+        $incompleteCutCount = 1;
+        $defaultCutPrice = 0.0;
+        foreach (getProductCuttingServices((int)$productId) as $service) {
+            $price = (float)($service['VALUE'] ?? 0);
+            if ($price > 0) {
+                $defaultCutPrice = $price;
+                break;
+            }
+        }
+        $incompleteCutFee = $defaultCutPrice;
+        $cutsFee = round($cutsFee + $incompleteCutFee, 2);
+        $totalCuts += $incompleteCutCount;
+    }
+
+    if ($totalCuts > 0 || $cutsFee > 0.0001) {
+        $cutsText = formatBasketMoney($cutsFee) . ' ₽';
+        if ($totalCuts > 0) {
+            $cutsText .= ' (' . $totalCuts . ' рез.)';
+        }
+        if ($hasIncompletePlan && (int)($analysis['incompletePlanCuts'] ?? 0) > 0) {
+            $cutsText .= ' · неполная по плану: ' . (int)$analysis['incompletePlanCuts'] . ' рез.';
+        } elseif ($incompleteCutCount > 0) {
+            $cutsText .= ' · в т.ч. 1 рез за неполную '
+                . formatIncompletePieceFraction($length > 0 ? $incompleteRaw / $length : 0) . ' шт';
+        }
+        if ($complexCuts > 0 && !$skipAllSurcharge) {
+            $cutsText .= ' · плюс +' . $percent . '% на резанные куски';
+        }
+        $lines[] = [
+            'KIND' => 'cuts_fee',
+            'LABEL' => 'Оплата резов',
+            'TEXT' => $cutsText,
+            'SUM' => $cutsFee,
+        ];
+    }
+
+    $grandTotal = round($metalSum + $cutsFee, 2);
+
+    $lines[] = [
+        'KIND' => 'metal_total',
+        'LABEL' => 'Металл',
+        'TEXT' => 'Металл: ' . formatBasketMoney($metalSum) . ' ₽ · средняя '
+            . formatBasketMoney($blended) . ' ₽/м',
+        'SUM' => $metalSum,
+    ];
+    if ($cutsFee > 0.0001) {
+        $lines[] = [
+            'KIND' => 'grand_total',
+            'LABEL' => 'С резкой',
+            'TEXT' => 'С резкой: ' . formatBasketMoney($grandTotal) . ' ₽',
+            'SUM' => $grandTotal,
+        ];
+    }
+
+    $hasSurcharge = !$skipAllSurcharge && ($complexMeters > 0.0001 || $incompleteMeters > 0.0001);
+
+    return [
+        'PERCENT' => $percent,
+        'BASE_UNIT' => $baseUnit,
+        'SURCHARGE_UNIT' => $surchargeUnit,
+        'BLENDED_PRICE' => $blended,
+        'METAL_SUM' => $metalSum,
+        'CUTS_FEE' => $cutsFee,
+        'GRAND_TOTAL' => $grandTotal,
+        'UNCUT_METERS' => $uncutMeters,
+        'SIMPLE_METERS' => $simpleMeters,
+        'COMPLEX_METERS' => $complexMeters,
+        'INCOMPLETE_METERS' => $incompleteMeters,
+        'COMPLEX_PIECES' => $complexPieces,
+        'SIMPLE_PIECES' => $simplePieces,
+        'UNCUT_PIECES' => $uncutPieces,
+        'INCOMPLETE_PIECES' => $incompletePieces,
+        'ANALYSIS' => $analysis,
+        'LINES' => $lines,
+        'HAS_SURCHARGE' => $hasSurcharge,
+        'NOTE' => $hasSurcharge
+            ? ('Разбивка цены · средняя ' . formatBasketMoney($blended) . ' ₽/м')
+            : 'Цена за метр',
+    ];
 }
 
 function getBasketItemPropForPrice($productId, $quantity, $propCode)
@@ -557,9 +973,95 @@ function formatBasketPriceNoteLabel($surchargePercent = null)
     return $label;
 }
 
+/**
+ * Текст/данные разбивки: целые по обычной цене, кусок с наценкой.
+ */
+function buildPieceSurchargeBreakdown(array $split, $lengthPerPiece, $percent, $baseUnitPrice, $surchargeUnitPrice, $blendedPrice)
+{
+    $length = (float)$lengthPerPiece;
+    $baseMeters = (float)($split['base_meters'] ?? 0);
+    $surchargeMeters = (float)($split['surcharge_meters'] ?? 0);
+    $percent = (int)$percent;
+
+    $basePieces = $length > 0 ? $baseMeters / $length : 0;
+    $surchargePieces = $length > 0 ? $surchargeMeters / $length : 0;
+
+    $basePiecesText = formatIncompletePieceFraction($basePieces);
+    // для целых шагов 0.5 показывать как 0.5
+    if ($length > 0 && abs($basePieces - round($basePieces * 2) / 2) < 0.001) {
+        $halfSteps = round($basePieces * 2) / 2;
+        $basePiecesText = (abs($halfSteps - (int)$halfSteps) < 0.001)
+            ? (string)(int)$halfSteps
+            : rtrim(rtrim(number_format($halfSteps, 1, '.', ''), '0'), '.');
+    }
+
+    $surchargePiecesText = formatIncompletePieceFraction($surchargePieces);
+
+    $lines = [];
+    if ($baseMeters > 0.0001) {
+        $lines[] = [
+            'TEXT' => $basePiecesText . ' шт — обычная цена ('
+                . formatBasketMoney($baseUnitPrice) . '/м)',
+        ];
+    }
+    if ($surchargeMeters > 0.0001) {
+        $lines[] = [
+            'TEXT' => 'Кусок ' . $surchargePiecesText . ' шт — +' . $percent . '% ('
+                . formatBasketMoney($surchargeUnitPrice) . '/м)',
+        ];
+    }
+
+    $note = 'Наценка +' . $percent . '% только на кусок';
+    if ($blendedPrice > 0) {
+        $note .= ' · средняя ' . formatBasketMoney($blendedPrice) . '/м';
+    }
+
+    $plainLines = [];
+    foreach ($lines as $line) {
+        $plainLines[] = $line['TEXT'];
+    }
+
+    return [
+        'PERCENT' => $percent,
+        'NOTE' => $note,
+        'LINES' => $lines,
+        'BASE_METERS' => $baseMeters,
+        'SURCHARGE_METERS' => $surchargeMeters,
+        'BASE_PIECES_TEXT' => $basePiecesText,
+        'SURCHARGE_PIECES_TEXT' => $surchargePiecesText,
+        'BASE_UNIT_PRICE' => (float)$baseUnitPrice,
+        'SURCHARGE_UNIT_PRICE' => (float)$surchargeUnitPrice,
+        'BLENDED_PRICE' => (float)$blendedPrice,
+        'HTML' => implode("\n", array_merge([$note], $plainLines)),
+    ];
+}
+
+function formatPieceSurchargePriceNote(array $split, $lengthPerPiece, $percent, $baseUnitPrice, $surchargeUnitPrice, $blendedPrice)
+{
+    $breakdown = buildPieceSurchargeBreakdown(
+        $split,
+        $lengthPerPiece,
+        $percent,
+        $baseUnitPrice,
+        $surchargeUnitPrice,
+        $blendedPrice
+    );
+
+    return $breakdown['HTML'];
+}
+
+function formatBasketMoney($value)
+{
+    return number_format((float)$value, 2, '.', ' ');
+}
+
 function basicSheetQuantityNeedsPlus10($productId, $quantity, $iblockId = 36)
 {
     if (!isBasicSheetProduct($productId, $iblockId)) {
+        return false;
+    }
+
+    if (basicSheetSkipsIncompletePieceSurcharge($productId, $iblockId)) {
         return false;
     }
 
@@ -568,15 +1070,104 @@ function basicSheetQuantityNeedsPlus10($productId, $quantity, $iblockId = 36)
     return quantityNeedsMeterSurcharge($quantity, $length);
 }
 
-function resolveBasketSurchargePercent(array $rowData)
+/**
+ * Данные наценки за кусок для позиции корзины (или null).
+ */
+function resolveBasketPieceSurchargeData(array $rowData)
 {
-    if (!empty($rowData['CUTTING_SURCHARGE_10'])) {
-        return getBasicSheetSurchargePercent();
-    }
-
     $productId = (int)($rowData['PRODUCT_ID'] ?? 0);
     $quantity = (float)($rowData['QUANTITY'] ?? 0);
-    if ($productId > 0 && basicSheetQuantityNeedsPlus10($productId, $quantity)) {
+
+    if ($productId <= 0 || $quantity <= 0 || !isCustomPrice(36, $productId)) {
+        return null;
+    }
+
+    $length = getLengthProduct(36, $productId);
+    if ($length <= 0) {
+        return null;
+    }
+
+    $basePriceRow = fetchCatalogPriceRow($productId, 17);
+    if (!$basePriceRow) {
+        return null;
+    }
+
+    $baseUnit = (float)$basePriceRow['PRICE'];
+
+    if (isBasicSheetProduct($productId)) {
+        $breakdown = buildBasicSheetPositionBreakdown($productId, $quantity);
+        if (!$breakdown || empty($breakdown['HAS_SURCHARGE'])) {
+            return null;
+        }
+
+        $displayLines = [];
+        foreach ($breakdown['LINES'] as $line) {
+            if (($line['KIND'] ?? '') === 'metal_total') {
+                continue;
+            }
+            $displayLines[] = [
+                'TEXT' => ($line['LABEL'] ?? '') . ': ' . ($line['TEXT'] ?? ''),
+            ];
+        }
+        $displayLines[] = [
+            'TEXT' => $breakdown['LINES'][count($breakdown['LINES']) - 1]['TEXT'] ?? '',
+        ];
+
+        return [
+            'PERCENT' => (int)$breakdown['PERCENT'],
+            'NOTE' => (string)$breakdown['NOTE'],
+            'LINES' => $displayLines,
+            'BASE_METERS' => (float)$breakdown['UNCUT_METERS'] + (float)$breakdown['SIMPLE_METERS'],
+            'SURCHARGE_METERS' => (float)$breakdown['COMPLEX_METERS'] + (float)$breakdown['INCOMPLETE_METERS'],
+            'BASE_PIECES_TEXT' => formatIncompletePieceFraction((float)$breakdown['UNCUT_PIECES'] + (float)$breakdown['SIMPLE_PIECES']),
+            'SURCHARGE_PIECES_TEXT' => formatIncompletePieceFraction((float)$breakdown['COMPLEX_PIECES'] + (float)$breakdown['INCOMPLETE_PIECES']),
+            'BASE_UNIT_PRICE' => (float)$breakdown['BASE_UNIT'],
+            'SURCHARGE_UNIT_PRICE' => (float)$breakdown['SURCHARGE_UNIT'],
+            'BLENDED_PRICE' => (float)$breakdown['BLENDED_PRICE'],
+            'HTML' => implode("\n", array_merge(
+                [(string)$breakdown['NOTE']],
+                array_map(static function ($l) {
+                    return (string)($l['TEXT'] ?? '');
+                }, $displayLines)
+            )),
+            'DETAIL' => $breakdown,
+        ];
+    }
+
+    if (productAllowsFreeMeterCutting($productId)) {
+        return null;
+    }
+
+    $half = $length / 2;
+    if (!quantityNeedsMeterSurcharge($quantity, $half)) {
+        return null;
+    }
+
+    $split = splitQuantityForPieceSurcharge($quantity, $half);
+    if ($split['surcharge_meters'] <= 0.0001) {
+        return null;
+    }
+
+    $plus20 = fetchCatalogPriceRow($productId, 18);
+    $surchargeUnit = $plus20 ? (float)$plus20['PRICE'] : round($baseUnit * 1.2, 2);
+    $blended = blendMeterPriceWithPieceSurcharge(
+        $baseUnit,
+        $surchargeUnit,
+        $split['base_meters'],
+        $split['surcharge_meters']
+    );
+
+    return buildPieceSurchargeBreakdown($split, $length, 20, $baseUnit, $surchargeUnit, $blended);
+}
+
+function resolveBasketSurchargePercent(array $rowData)
+{
+    $pieceData = resolveBasketPieceSurchargeData($rowData);
+    if ($pieceData) {
+        return (int)$pieceData['PERCENT'];
+    }
+
+    if (!empty($rowData['CUTTING_SURCHARGE_10'])) {
         return getBasicSheetSurchargePercent();
     }
 
@@ -595,54 +1186,103 @@ function applyBasketCustomPriceDisplay(array &$rowData)
         return;
     }
 
-    $surchargePercent = resolveBasketSurchargePercent($rowData);
-    $rowData['NOTES'] = formatBasketPriceNoteLabel($surchargePercent);
-
-    if ($surchargePercent === null) {
-        return;
-    }
-
     if (!\Bitrix\Main\Loader::includeModule('catalog')) {
         return;
     }
 
-    $basePrice = fetchCatalogPriceRow($productId, 17);
-    if (!$basePrice) {
+    $currency = (string)$rowData['CURRENCY'];
+    $quantity = (float)$rowData['QUANTITY'];
+
+    if (isBasicSheetProduct($productId)) {
+        $planText = !empty($rowData['CUTTING_ENABLED'])
+            ? (string)($rowData['CUTTING_PLAN_TEXT'] ?? '')
+            : '';
+        $breakdown = buildBasicSheetPositionBreakdown($productId, $quantity, 36, $planText);
+        if ($breakdown) {
+            $blended = (float)$breakdown['BLENDED_PRICE'];
+            $cutsFee = (float)($breakdown['CUTS_FEE'] ?? 0);
+            $grandTotal = (float)($breakdown['GRAND_TOTAL'] ?? 0);
+            // сумма позиции = металл + наценки + резы (как шаг «Итого»)
+            $sum = $grandTotal > 0
+                ? \Bitrix\Sale\PriceMaths::roundPrecision($grandTotal)
+                : \Bitrix\Sale\PriceMaths::roundPrecision($blended * $quantity);
+            $price = $quantity > 0.0001 ? round($sum / $quantity, 2) : $blended;
+            $rowData['NOTES'] = $cutsFee > 0.0001
+                ? ('С резкой · ' . formatBasketMoney($price) . ' ₽/м')
+                : (string)$breakdown['NOTE'];
+            $rowData['PRICE'] = $price;
+            $rowData['PRICE_FORMATED'] = CCurrencyLang::CurrencyFormat($price, $currency, true);
+            $rowData['FULL_PRICE'] = $price;
+            $rowData['FULL_PRICE_FORMATED'] = $rowData['PRICE_FORMATED'];
+            $rowData['DISCOUNT_PRICE'] = 0;
+            $rowData['SHOW_DISCOUNT_PRICE'] = false;
+
+            $rowData['SUM_PRICE'] = $sum;
+            $rowData['SUM_PRICE_FORMATED'] = CCurrencyLang::CurrencyFormat($sum, $currency, true);
+
+            $hasDetail = !empty($breakdown['HAS_SURCHARGE']) || ((float)($breakdown['CUTS_FEE'] ?? 0) > 0.0001);
+            if ($hasDetail) {
+                $displayLines = [];
+                foreach ($breakdown['LINES'] as $line) {
+                    $kind = (string)($line['KIND'] ?? '');
+                    if (in_array($kind, ['metal_total', 'grand_total'], true)) {
+                        $displayLines[] = ['TEXT' => (string)($line['TEXT'] ?? '')];
+                        continue;
+                    }
+                    $displayLines[] = [
+                        'TEXT' => ($line['LABEL'] ?? '') . ': ' . ($line['TEXT'] ?? ''),
+                    ];
+                }
+                $rowData['SURCHARGE_BREAKDOWN'] = $breakdown;
+                $rowData['SURCHARGE_BREAKDOWN_LINES'] = $displayLines;
+                $rowData['HAS_PIECE_SURCHARGE'] = true;
+            } else {
+                $rowData['HAS_PIECE_SURCHARGE'] = false;
+                $rowData['SURCHARGE_BREAKDOWN_LINES'] = [];
+            }
+
+            return;
+        }
+    }
+
+    $pieceData = resolveBasketPieceSurchargeData($rowData);
+
+    if ($pieceData) {
+        $price = (float)$pieceData['BLENDED_PRICE'];
+        $rowData['NOTES'] = $pieceData['NOTE'];
+        $rowData['SURCHARGE_BREAKDOWN'] = $pieceData;
+        $rowData['SURCHARGE_BREAKDOWN_LINES'] = $pieceData['LINES'];
+        $rowData['HAS_PIECE_SURCHARGE'] = true;
+
+        $rowData['PRICE'] = $price;
+        $rowData['PRICE_FORMATED'] = CCurrencyLang::CurrencyFormat($price, $currency, true);
+        $rowData['FULL_PRICE'] = $price;
+        $rowData['FULL_PRICE_FORMATED'] = $rowData['PRICE_FORMATED'];
+        $rowData['DISCOUNT_PRICE'] = 0;
+        $rowData['SHOW_DISCOUNT_PRICE'] = false;
+
+        $sum = \Bitrix\Sale\PriceMaths::roundPrecision($price * $quantity);
+        $rowData['SUM_PRICE'] = $sum;
+        $rowData['SUM_PRICE_FORMATED'] = CCurrencyLang::CurrencyFormat($sum, $currency, true);
+
         return;
     }
 
-    if ($surchargePercent === 20) {
-        $plus20 = fetchCatalogPriceRow($productId, 18);
-        $price = $plus20
-            ? (float)$plus20['PRICE']
-            : (float)$basePrice['PRICE'] * 1.2;
-    } else {
-        $price = round((float)$basePrice['PRICE'] * (1 + $surchargePercent / 100), 2);
-    }
-
-    $quantity = (float)$rowData['QUANTITY'];
-    $currency = (string)$rowData['CURRENCY'];
-
-    $rowData['PRICE'] = $price;
-    $rowData['PRICE_FORMATED'] = CCurrencyLang::CurrencyFormat($price, $currency, true);
-    $rowData['FULL_PRICE'] = $price;
-    $rowData['FULL_PRICE_FORMATED'] = $rowData['PRICE_FORMATED'];
-    $rowData['DISCOUNT_PRICE'] = 0;
-    $rowData['SHOW_DISCOUNT_PRICE'] = false;
-
-    $sum = \Bitrix\Sale\PriceMaths::roundPrecision($price * $quantity);
-    $rowData['SUM_PRICE'] = $sum;
-    $rowData['SUM_PRICE_FORMATED'] = CCurrencyLang::CurrencyFormat($sum, $currency, true);
+    $rowData['HAS_PIECE_SURCHARGE'] = false;
+    $rowData['SURCHARGE_BREAKDOWN_LINES'] = [];
+    $rowData['NOTES'] = formatBasketPriceNoteLabel(null);
 }
 
 function getSheetCuttingTipText()
 {
-    return 'Товар режется кратно 1 метру. Заказ поштучно: целые или 0,5 шт.';
+    return 'Заказ в шт или м² — кратно 1 м длины. Без наценки за неполную штуку — только стоимость резов.';
 }
 
 function getHalfPiecesCuttingLegendText($isSheet = false)
 {
-    return $isSheet ? 'Режется кратно 1 метру' : 'Режется кратно 1 метру без наценки';
+    return $isSheet
+        ? 'Кратно 1 м длины · без наценки за кусок · только резы'
+        : 'Режется кратно 1 метру без наценки';
 }
 
 function isWeightFrom500Product($value)
@@ -692,7 +1332,7 @@ function getBasketItemQuantityDisplay($productId, $metersQuantity)
     $iblockId = 36;
     $metersQty = (float)$metersQuantity;
     $lengthPerPiece = floatval(getPropVal($iblockId, $productId, 'DLINA_RASCHET'));
-    $weightPerMeter = floatval(getPropVal($iblockId, $productId, '_3_VESPMSAYT'));
+    $weightPerMeter = getProductWeightPerMeterKg($productId, $iblockId);
     $width = floatval(getPropVal($iblockId, $productId, 'SHIRINA_RASCHET'));
 
     $pieces = $lengthPerPiece > 0 ? $metersQty / $lengthPerPiece : null;
@@ -723,7 +1363,7 @@ function getBasketItemQuantityDisplay($productId, $metersQuantity)
         } elseif ($halfPieces) {
             $piecesFormatted = abs($pieces - round($pieces)) < 0.01
                 ? (string)(int)round($pieces)
-                : formatBasketQtyNumber($pieces, 1);
+                : formatBasketQtyNumber($pieces, 2);
         } else {
             $piecesFormatted = abs($pieces - round($pieces)) < 0.01
                 ? (string)(int)round($pieces)

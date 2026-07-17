@@ -44,8 +44,8 @@ foreach ($basketItem->getPropertyCollection() as $property) {
 }
 
 if ($enabled === 'Y' && isBasicSheetProduct($productId)) {
-    $analysis = analyzeBasicSheetCuttingPlan($planText);
-    if ($analysis['hasComplexCut']) {
+    $analysis = analyzeBasicSheetCuttingPlan($planText, $productId);
+    if ($analysis['hasComplexCut'] && !basicSheetSkipsIncompletePieceSurcharge($productId)) {
         $cuttingSurcharge10 = 'Y';
     }
 } elseif ($enabled !== 'Y' && $oldSurcharge10 === 'Y') {

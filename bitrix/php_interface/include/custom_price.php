@@ -87,29 +87,7 @@ function customBasketPriceTypeHandler($productId, $quantity = 1, $arUserGroups =
         $half = $length / 2;
         $isBasicSheet = isBasicSheetProduct($productId, $ID_BLOCK);
 
-        $applyPlus10 = false;
-        $applyPlus20 = false;
-
         $allowsFreeMeterCutting = productAllowsFreeMeterCutting($productId, $ID_BLOCK);
-
-        if ($isBasicSheet) {
-            if (basicSheetQuantityNeedsPlus10($productId, $quantity, $ID_BLOCK)) {
-                $applyPlus10 = true;
-            }
-
-            if (
-                !$applyPlus10
-                && getBasketItemPropForPrice($productId, $quantity, 'CUTTING_SURCHARGE_10') === 'Y'
-            ) {
-                $applyPlus10 = true;
-            }
-        } elseif (
-            !$allowsFreeMeterCutting
-            && quantityNeedsMeterSurcharge($quantity, $half)
-        ) {
-            // не кратно 0,5 шт (= половине длины) → +20%
-            $applyPlus20 = true;
-        }
 
         $basePrice = fetchCatalogPriceRow($productId, $pricePerMeterId);
         if (!$basePrice) {
@@ -124,34 +102,67 @@ function customBasketPriceTypeHandler($productId, $quantity = 1, $arUserGroups =
             }
         }
 
-        if ($applyPlus10) {
-            $percent = getBasicSheetSurchargePercent();
-            $price = (float)$basePrice['PRICE'] * (1 + $percent / 100);
+        $baseUnit = (float)$basePrice['PRICE'];
+
+        // Базовый лист: целые / резанные(+10% при сложной) / неполная(+10%) / резы → цена за м
+        if ($isBasicSheet) {
+            $breakdown = buildBasicSheetPositionBreakdown($productId, $quantity, $ID_BLOCK);
+            if ($breakdown) {
+                $unitPrice = (float)$breakdown['BLENDED_PRICE'];
+                $cutsFee = (float)($breakdown['CUTS_FEE'] ?? 0);
+                $grandTotal = (float)($breakdown['GRAND_TOTAL'] ?? 0);
+                // оплата резов входит в стоимость позиции (как в «Итого» мастера)
+                if ($cutsFee > 0.0001 && $quantity > 0 && $grandTotal > 0) {
+                    $unitPrice = round($grandTotal / $quantity, 2);
+                }
+                $notes = (string)$breakdown['NOTE'];
+                if ($cutsFee > 0.0001) {
+                    $notes = 'С резкой · ' . formatBasketMoney($unitPrice) . ' ₽/м';
+                }
+
+                return buildCustomOptimalPriceResult(
+                    $basePrice,
+                    $unitPrice,
+                    $notes
+                );
+            }
 
             return buildCustomOptimalPriceResult(
                 $basePrice,
-                $price,
-                'Цена за метр +' . $percent . '%'
+                $baseUnit,
+                'Цена за метр'
             );
         }
 
-        if ($applyPlus20) {
+        // Трубы/арматура: не кратно 0,5 шт → +20% только на кусок
+        if (
+            !$allowsFreeMeterCutting
+            && quantityNeedsMeterSurcharge($quantity, $half)
+        ) {
+            $split = splitQuantityForPieceSurcharge($quantity, $half);
             $plus20 = fetchCatalogPriceRow($productId, $pricePerMeterPlus20Id);
-            $price = $plus20
+            $surchargeUnit = $plus20
                 ? (float)$plus20['PRICE']
-                : (float)$basePrice['PRICE'] * 1.2;
+                : round($baseUnit * 1.2, 2);
             $source = $plus20 ?: $basePrice;
+
+            $price = blendMeterPriceWithPieceSurcharge(
+                $baseUnit,
+                $surchargeUnit,
+                $split['base_meters'],
+                $split['surcharge_meters']
+            );
 
             return buildCustomOptimalPriceResult(
                 $source,
                 $price,
-                'Цена за метр +20%'
+                formatPieceSurchargePriceNote($split, $length, 20, $baseUnit, $surchargeUnit, $price)
             );
         }
 
         return buildCustomOptimalPriceResult(
             $basePrice,
-            $basePrice['PRICE'],
+            $baseUnit,
             'Цена за метр'
         );
     } finally {

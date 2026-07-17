@@ -164,16 +164,38 @@
     </div>
 <? endif; ?>
 
+<div aria-hidden="true" class="modal fade js-modal" id="basketItemDeleteConfirm" role="dialog">
+    <div class="modal-dialog modal-dialog-centered modal-basket-delete" role="document">
+        <div class="modal-content">
+            <button aria-label="Close" class="close uhified_close-btn" data-dismiss="modal" type="button"></button>
+            <div class="basket-delete-confirm">
+                <div class="basket-delete-confirm__title">Удалить товар из корзины?</div>
+                <div class="basket-delete-confirm__name" data-entity="basket-delete-name"></div>
+                <div class="basket-delete-confirm__actions">
+                    <button type="button" class="basket-delete-confirm__btn basket-delete-confirm__btn--cancel" data-dismiss="modal">Отмена</button>
+                    <button type="button" class="basket-delete-confirm__btn basket-delete-confirm__btn--danger" data-entity="basket-delete-confirm">Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <link href="<?=SITE_TEMPLATE_PATH?>/css/min.css" rel="stylesheet" />
 <link href="<?=SITE_TEMPLATE_PATH?>/css/main.css" rel="stylesheet" />
 <link href="<?=SITE_TEMPLATE_PATH?>/css/custom.css?v=<?=filemtime($_SERVER['DOCUMENT_ROOT'] . SITE_TEMPLATE_PATH . '/css/custom.css')?>" rel="stylesheet" />
+<link href="<?=SITE_TEMPLATE_PATH?>/css/cart-views.css?v=<?=filemtime($_SERVER['DOCUMENT_ROOT'] . SITE_TEMPLATE_PATH . '/css/cart-views.css')?>" rel="stylesheet" />
+<link href="<?=SITE_TEMPLATE_PATH?>/css/cutting-wizard.css?v=<?=filemtime($_SERVER['DOCUMENT_ROOT'] . SITE_TEMPLATE_PATH . '/css/cutting-wizard.css')?>" rel="stylesheet" />
 <?php if (strpos($APPLICATION->GetCurPage(), '/catalog/') === 0): ?>
 <link href="<?=SITE_TEMPLATE_PATH?>/css/catalog-views.css?v=<?=filemtime($_SERVER['DOCUMENT_ROOT'] . SITE_TEMPLATE_PATH . '/css/catalog-views.css')?>" rel="stylesheet" />
 <?php endif; ?>
+
+<?php include $_SERVER['DOCUMENT_ROOT'] . SITE_TEMPLATE_PATH . '/include/cart_view_switcher.php'; ?>
+
 <script src="<?=SITE_TEMPLATE_PATH?>/js/min.js"></script>
 <script src="<?=SITE_TEMPLATE_PATH?>/libs/fancyTable.js?v=<?=filemtime($_SERVER['DOCUMENT_ROOT'] . SITE_TEMPLATE_PATH . '/libs/fancyTable.js')?>"></script>
 <script src="<?=SITE_TEMPLATE_PATH?>/libs/parallax.js"></script>
 <script src="<?=SITE_TEMPLATE_PATH?>/js/main.js?v=<?=filemtime($_SERVER['DOCUMENT_ROOT'] . SITE_TEMPLATE_PATH . '/js/main.js')?>"></script>
+<script src="<?=SITE_TEMPLATE_PATH?>/js/cart-view-switcher.js?v=<?=filemtime($_SERVER['DOCUMENT_ROOT'] . SITE_TEMPLATE_PATH . '/js/cart-view-switcher.js')?>"></script>
 <?php if (strpos($APPLICATION->GetCurPage(), '/catalog/') === 0): ?>
 <script src="<?=SITE_TEMPLATE_PATH?>/js/catalog-view-switcher.js?v=<?=filemtime($_SERVER['DOCUMENT_ROOT'] . SITE_TEMPLATE_PATH . '/js/catalog-view-switcher.js')?>"></script>
 <?php endif; ?>

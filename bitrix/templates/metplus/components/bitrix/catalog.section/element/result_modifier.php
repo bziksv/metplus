@@ -59,8 +59,9 @@ foreach ($arResult['ITEMS'] as &$arItem) {
     $arItem['ONLY_PIECES'] = isOnlyPiecesProduct($arItem['PROPERTIES']['TOLKO_SHT']['VALUE'] ?? '');
     $arItem['HALF_PIECES'] = isHalfPiecesProduct($arItem['PROPERTIES']['TOLKO_SHT_I_0_5_SHT']['VALUE'] ?? '');
     $arItem['IS_SHEET'] = isSheetProduct($arItem['PROPERTIES']['SHIRINA_RASCHET']['VALUE'] ?? 0);
+    // Лист: шаг кратно 1 м длины. Флаг 0,5 шт на листе → без +10% за кусок (только резы)
+    $arItem['BASIC_SHEET'] = $arItem['IS_SHEET'] && !$arItem['ONLY_PIECES'];
     $arItem['FREE_CUTTING_1M'] = $arItem['HALF_PIECES'] && !$arItem['IS_SHEET'];
-    $arItem['BASIC_SHEET'] = $arItem['IS_SHEET'] && !$arItem['ONLY_PIECES'] && !$arItem['HALF_PIECES'];
     $arItem['WEIGHT_FROM_500'] = isWeightFrom500Product($arItem['PROPERTIES']['SHT_M_VES_OT500_KG']['VALUE'] ?? '');
 
     if ($arItem['WEIGHT_FROM_500']) {
@@ -81,6 +82,9 @@ foreach ($arResult['ITEMS'] as &$arItem) {
 
     if ($arItem['BASIC_SHEET']) {
         $arResult['HAS_BASIC_SHEET_ROWS'] = true;
+        if (!$arItem['HALF_PIECES']) {
+            $arResult['HAS_BASIC_SHEET_PAID_ROWS'] = true;
+        }
     }
 
     $prices = $arItem['ITEM_ALL_PRICES'][0]['PRICES'] ?? null;

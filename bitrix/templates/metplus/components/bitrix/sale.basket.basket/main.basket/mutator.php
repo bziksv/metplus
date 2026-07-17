@@ -72,12 +72,15 @@ foreach ($this->basketItems as $row)
         'HALF_PIECE_CUT' => false,
         'HALF_PIECE_CUT_NOTICE' => '',
         'DEFAULT_CUT_PRICE' => 0,
+        'BASE_METER_PRICE' => 0,
         'CUTTING_ENABLED' => false,
         'CUTTING_SURCHARGE_10' => false,
         'CUTTING_PLAN_TEXT' => '',
         'CUTTING_PLAN_TEXT_VIEW' => '',
         'CUTTING_OPTIONS' => array(),
         'STEEL_GRADE' => '',
+        'SECTION_PAGE_URL' => '',
+        'HAS_SECTION_LINK' => false,
 	);
 
     if ($row['PRODUCT_ID'] > 0) {
@@ -87,7 +90,8 @@ foreach ($this->basketItems as $row)
         $rowData['HALF_PIECES'] = $halfPieces;
         $rowData['BASKET_WIDTH'] = floatval(getPropVal(36, $row['PRODUCT_ID'], 'SHIRINA_RASCHET'));
         $rowData['IS_SHEET'] = isSheetProduct($rowData['BASKET_WIDTH']);
-        $rowData['BASIC_SHEET'] = $rowData['IS_SHEET'] && !$onlyPieces && !$halfPieces;
+        // Лист: шаг кратно 1 м длины. Флаг 0,5 шт → без +10% за кусок (только резы)
+        $rowData['BASIC_SHEET'] = $rowData['IS_SHEET'] && !$onlyPieces;
         $rowData['WHOLE_SHEET_PIECES'] = $rowData['IS_SHEET'] && !$halfPieces && !$rowData['BASIC_SHEET'];
         $rowData['FREE_CUTTING_1M'] = $halfPieces && !$rowData['IS_SHEET'];
 
@@ -95,10 +99,60 @@ foreach ($this->basketItems as $row)
         $rowData['IS_CUTTING'] = count($cuttingServices) > 0 && !$onlyPieces;
         $rowData['BASKET_LENGTH_PER_PIECE'] = floatval(getPropVal(36, $row['PRODUCT_ID'], 'DLINA_RASCHET'));
         $rowData['STEEL_GRADE'] = trim((string)getPropVal(36, $row['PRODUCT_ID'], '_5_MARKASAYT_ILI_RAZMER_SETKI'));
-        $rowData['BASKET_WEIGHT_PER_METER'] = floatval(getPropVal(36, $row['PRODUCT_ID'], '_3_VESPMSAYT'));
-        $rowData['BASKET_CUTTING_STOCK'] = $rowData['BASKET_WIDTH'] > 0
-            ? $rowData['BASKET_WIDTH']
-            : $rowData['BASKET_LENGTH_PER_PIECE'];
+        $rowData['BASKET_WEIGHT_PER_METER'] = getProductWeightPerMeterKg($row['PRODUCT_ID'], 36);
+
+        // ссылка на раздел каталога, где лежит товар
+        if (\Bitrix\Main\Loader::includeModule('iblock')) {
+            $productId = (int)$row['PRODUCT_ID'];
+            $sectionId = 0;
+            $elRes = \CIBlockElement::GetList(
+                [],
+                ['ID' => $productId, 'IBLOCK_ID' => 36],
+                false,
+                false,
+                ['ID', 'IBLOCK_ID', 'IBLOCK_SECTION_ID', 'DETAIL_PAGE_URL']
+            );
+            if ($el = $elRes->GetNext()) {
+                $sectionId = (int)($el['IBLOCK_SECTION_ID'] ?? 0);
+                if ($rowData['SECTION_PAGE_URL'] === '' && !empty($el['DETAIL_PAGE_URL'])) {
+                    // запасной вариант — карточка товара
+                    $rowData['DETAIL_PAGE_URL'] = (string)$el['DETAIL_PAGE_URL'];
+                }
+            }
+            if ($sectionId <= 0) {
+                $groups = \CIBlockElement::GetElementGroups($productId, true, ['ID', 'CODE']);
+                if ($g = $groups->Fetch()) {
+                    $sectionId = (int)$g['ID'];
+                }
+            }
+            if ($sectionId > 0) {
+                $secRes = \CIBlockSection::GetList(
+                    [],
+                    ['ID' => $sectionId, 'IBLOCK_ID' => 36, 'ACTIVE' => 'Y'],
+                    false,
+                    ['ID', 'CODE', 'SECTION_PAGE_URL']
+                );
+                if ($sec = $secRes->GetNext()) {
+                    $sectionUrl = trim((string)($sec['SECTION_PAGE_URL'] ?? ''));
+                    if ($sectionUrl === '' && !empty($sec['CODE'])) {
+                        $sectionUrl = '/catalog/' . rawurlencode((string)$sec['CODE']) . '/';
+                    }
+                    if ($sectionUrl !== '') {
+                        $rowData['SECTION_PAGE_URL'] = $sectionUrl;
+                    }
+                }
+            }
+        }
+        if ($rowData['SECTION_PAGE_URL'] === '') {
+            $detailUrl = trim((string)($rowData['DETAIL_PAGE_URL'] ?? ''));
+            if ($detailUrl !== '') {
+                $rowData['SECTION_PAGE_URL'] = $detailUrl;
+            }
+        }
+        $rowData['HAS_SECTION_LINK'] = $rowData['SECTION_PAGE_URL'] !== '';
+        $rowData['BASKET_CUTTING_STOCK'] = $rowData['BASKET_LENGTH_PER_PIECE'] > 0
+            ? $rowData['BASKET_LENGTH_PER_PIECE']
+            : $rowData['BASKET_WIDTH'];
         $qtyDisplay = getBasketItemQuantityDisplay($row['PRODUCT_ID'], $row['QUANTITY']);
         $rowData['DISPLAY_PIECES'] = $qtyDisplay['PIECES'];
         $rowData['DISPLAY_AREA'] = $qtyDisplay['AREA'];
@@ -127,10 +181,16 @@ foreach ($this->basketItems as $row)
             );
         }
         $rowData['DEFAULT_CUT_PRICE'] = $defaultCutPrice;
+        $rowData['BASE_METER_PRICE'] = 0;
+        if ($rowData['BASIC_SHEET'] || $rowData['IS_SHEET']) {
+            $baseMeterRow = function_exists('fetchCatalogPriceRow') ? fetchCatalogPriceRow((int)$row['PRODUCT_ID'], 17) : null;
+            if ($baseMeterRow) {
+                $rowData['BASE_METER_PRICE'] = (float)$baseMeterRow['PRICE'];
+            }
+        }
 
         if (
-            !$rowData['IS_SHEET']
-            && $rowData['BASKET_LENGTH_PER_PIECE'] > 0
+            $rowData['BASKET_LENGTH_PER_PIECE'] > 0
             && $rowData['IS_CUTTING']
         ) {
             $piecesFrac = getIncompletePieceFraction((float)$row['QUANTITY'], $rowData['BASKET_LENGTH_PER_PIECE']);
@@ -163,6 +223,11 @@ foreach ($this->basketItems as $row)
                     continue;
                 }
                 $chunks = array_map('trim', explode('|', $line));
+                if (count($chunks) >= 3 && preg_match('/^неполн/ui', $chunks[0])) {
+                    $typeName = $chunks[3] ?? $chunks[1];
+                    $viewLines[] = 'неполная · ' . $typeName . ' · ' . $chunks[2] . ' м';
+                    continue;
+                }
                 if (count($chunks) >= 3 && preg_match('/^(\d+)\s*шт$/ui', $chunks[0], $m)) {
                     $typeName = $chunks[3] ?? $chunks[1];
                     $viewLines[] = $m[1] . ' шт · ' . $typeName . ' · ' . $chunks[2] . ' м';

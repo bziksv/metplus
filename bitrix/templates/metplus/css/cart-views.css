@@ -1,0 +1,145 @@
+/* Cart view switcher — Оригинал / Новая (как каталог) */
+.cart-view-switcher {
+  position: fixed;
+  left: 18px;
+  bottom: 18px;
+  z-index: 1200;
+  font-family: inherit;
+}
+
+.cart-view-switcher__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  min-height: 42px;
+  padding: 0.55em 1.1em;
+  border: 1px solid #073e71;
+  border-radius: 999px;
+  background: #073e71;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(7, 62, 113, 0.28);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.cart-view-switcher__toggle:hover,
+.cart-view-switcher.is-open .cart-view-switcher__toggle {
+  background: #0a4f8f;
+  box-shadow: 0 14px 32px rgba(7, 62, 113, 0.34);
+}
+
+.cart-view-switcher__panel {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 10px);
+  width: 240px;
+  padding: 0.9em;
+  border: 1px solid #d7e3ef;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 18px 40px rgba(15, 35, 58, 0.18);
+}
+
+.cart-view-switcher__title {
+  margin-bottom: 0.65em;
+  color: #073e71;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.cart-view-switcher__buttons {
+  display: grid;
+  gap: 0.45em;
+}
+
+.cart-view-switcher__btn {
+  display: block;
+  width: 100%;
+  padding: 0.65em 0.8em;
+  border: 1px solid #dbe6f0;
+  border-radius: 8px;
+  background: #f7fafc;
+  color: #2f4052;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.cart-view-switcher__btn:hover {
+  border-color: #3ebbf3;
+  background: #eef8fe;
+  color: #073e71;
+}
+
+.cart-view-switcher__btn.is-active {
+  border-color: #073e71;
+  background: #073e71;
+  color: #fff;
+}
+
+/* ——— Оригинал: прячем новый UX резки ——— */
+html[data-cart-view="original"] .cutting-target,
+html[data-cart-view="original"] .cutting-stock-bar,
+html[data-cart-view="original"] .cutting-stock-bar__legend,
+html[data-cart-view="original"] .cutting-rule-chips,
+html[data-cart-view="original"] .cutting-plan__add--incomplete,
+html[data-cart-view="original"] .cutting-part__target-badge,
+html[data-cart-view="original"] .cart-full-btn,
+html[data-cart-view="original"] .cutting-plan__cost-totals,
+html[data-cart-view="original"] .cutting-plan__add-label--new {
+  display: none !important;
+}
+
+html[data-cart-view="original"] .basket-root--page .cutting-plan-notice {
+  display: block;
+}
+
+html[data-cart-view="original"] .cutting-plan__add-label--original {
+  display: inline;
+}
+
+/* ——— Новая: полный UX ——— */
+html[data-cart-view="new"] .cutting-plan__add-label--original {
+  display: none !important;
+}
+
+html[data-cart-view="new"] .cutting-plan__add-label--new {
+  display: inline;
+}
+
+/* По умолчанию до применения JS — оригинал */
+html:not([data-cart-view]) .cutting-target,
+html:not([data-cart-view]) .cutting-stock-bar,
+html:not([data-cart-view]) .cutting-stock-bar__legend,
+html:not([data-cart-view]) .cutting-rule-chips,
+html:not([data-cart-view]) .cutting-plan__add--incomplete,
+html:not([data-cart-view]) .cutting-part__target-badge,
+html:not([data-cart-view]) .cart-full-btn,
+html:not([data-cart-view]) .cutting-plan__cost-totals,
+html:not([data-cart-view]) .cutting-plan__add-label--new {
+  display: none !important;
+}
+
+html:not([data-cart-view]) .cutting-plan__add-label--original {
+  display: inline;
+}
+
+@media (max-width: 575px) {
+  .cart-view-switcher {
+    left: 12px;
+    bottom: 12px;
+  }
+
+  .cart-view-switcher__toggle {
+    min-height: 38px;
+    padding: 0.45em 0.9em;
+    font-size: 0.8125rem;
+  }
+}

@@ -146,11 +146,53 @@
 		bindInitialEvents: function()
 		{
 			this.bindWarningEvents();
+			this.bindDeleteConfirmModal();
 
 			BX.bind(window, 'scroll', BX.proxy(this.checkStickyHeaders, this));
 			BX.bind(window, 'scroll', BX.proxy(this.lazyLoad, this));
 
 			BX.bind(window, 'resize', BX.throttle(this.checkStickyHeaders, 20, this));
+		},
+
+		bindDeleteConfirmModal: function()
+		{
+			if (this.deleteConfirmBound)
+			{
+				return;
+			}
+
+			var modal = BX('basketItemDeleteConfirm');
+			if (!BX.type.isDomNode(modal))
+			{
+				return;
+			}
+
+			this.deleteConfirmBound = true;
+			var self = this;
+			var confirmBtn = this.getEntity(modal, 'basket-delete-confirm');
+			if (BX.type.isDomNode(confirmBtn))
+			{
+				BX.bind(confirmBtn, 'click', function(e) {
+					e.preventDefault();
+					var itemId = modal.getAttribute('data-pending-item-id');
+					modal.removeAttribute('data-pending-item-id');
+					if (window.jQuery && jQuery.fn.modal)
+					{
+						jQuery(modal).modal('hide');
+					}
+					if (itemId && self.items[itemId])
+					{
+						self.executeDeleteItem(self.items[itemId]);
+					}
+				});
+			}
+
+			if (window.jQuery)
+			{
+				jQuery(modal).on('hidden.bs.modal.metplusBasketDelete', function() {
+					modal.removeAttribute('data-pending-item-id');
+				});
+			}
 		},
 
 		bindWarningEvents: function()
@@ -644,6 +686,15 @@
 					if (!BX.type.isPlainObject(result))
 						return;
 
+					var cartBody = document.querySelector('.cart-content_body');
+					var savedScrollTop = cartBody ? cartBody.scrollTop : 0;
+					var restoreCartScroll = function() {
+						if (!cartBody) {
+							return;
+						}
+						cartBody.scrollTop = savedScrollTop;
+					};
+
 					this.actionPool.setRefreshStatus(result.BASKET_REFRESHED);
 
 					if (result.RESTORED_BASKET_ITEMS)
@@ -677,6 +728,13 @@
 
 					this.applyPriceAnimation();
 					this.editWarnings();
+
+					restoreCartScroll();
+					requestAnimationFrame(function() {
+						restoreCartScroll();
+						setTimeout(restoreCartScroll, 0);
+						setTimeout(restoreCartScroll, 50);
+					});
 
 					this.actionPool.switchTimer();
 
@@ -2186,17 +2244,48 @@
 			var itemData = this.getItemDataByTarget(BX.proxy_context);
 			if (itemData)
 			{
-				this.actionPool.deleteItem(itemData.ID);
-
-				this.items[itemData.ID].SHOW_LOADING = true;
-
-				if (this.params.SHOW_RESTORE === 'Y' && this.isItemAvailable(itemData.ID))
-				{
-					this.items[itemData.ID].SHOW_RESTORE = true;
-				}
-
-				this.redrawBasketItemNode(itemData.ID);
+				this.requestDeleteConfirmation(itemData);
 			}
+		},
+
+		requestDeleteConfirmation: function(itemData)
+		{
+			var modal = BX('basketItemDeleteConfirm');
+			if (!BX.type.isDomNode(modal) || !window.jQuery || !jQuery.fn.modal)
+			{
+				this.executeDeleteItem(itemData);
+				return;
+			}
+
+			this.bindDeleteConfirmModal();
+
+			var nameNode = this.getEntity(modal, 'basket-delete-name');
+			if (BX.type.isDomNode(nameNode))
+			{
+				nameNode.textContent = itemData.NAME || '';
+			}
+
+			modal.setAttribute('data-pending-item-id', String(itemData.ID));
+			jQuery(modal).modal('show');
+		},
+
+		executeDeleteItem: function(itemData)
+		{
+			if (!itemData || !itemData.ID)
+			{
+				return;
+			}
+
+			this.actionPool.deleteItem(itemData.ID);
+
+			this.items[itemData.ID].SHOW_LOADING = true;
+
+			if (this.params.SHOW_RESTORE === 'Y' && this.isItemAvailable(itemData.ID))
+			{
+				this.items[itemData.ID].SHOW_RESTORE = true;
+			}
+
+			this.redrawBasketItemNode(itemData.ID);
 		},
 
 		addDelayedAction: function()

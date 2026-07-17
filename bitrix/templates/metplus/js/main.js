@@ -443,7 +443,156 @@ jQuery(document).ready(function($) {
     }
   });
 
+  // Резка: клик «Хочу порезку» (footer — после jQuery; inline-скрипт корзины может выполниться раньше)
+  var CUTTING_WIZARD_STEP_KEY = 'metplus_cutting_wizard_step';
+
+  function metplusReadCuttingWizardStepMap() {
+    try {
+      var raw = window.localStorage.getItem(CUTTING_WIZARD_STEP_KEY);
+      var map = raw ? JSON.parse(raw) : {};
+      return map && typeof map === 'object' ? map : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function metplusRememberCuttingWizardStep(id, step) {
+    if (!id) {
+      return;
+    }
+    step = parseInt(step, 10) || 1;
+    if (step < 1) step = 1;
+    if (step > 3) step = 3;
+    if (window.MetplusBasketCutting && typeof window.MetplusBasketCutting.rememberStep === 'function') {
+      window.MetplusBasketCutting.rememberStep(id, step);
+      return;
+    }
+    try {
+      var map = metplusReadCuttingWizardStepMap();
+      map[String(id)] = step;
+      window.localStorage.setItem(CUTTING_WIZARD_STEP_KEY, JSON.stringify(map));
+    } catch (e) {}
+  }
+
+  function metplusGetStoredCuttingWizardStep(id) {
+    if (!id) {
+      return 0;
+    }
+    if (window.MetplusBasketCutting && typeof window.MetplusBasketCutting.getStoredStep === 'function') {
+      return parseInt(window.MetplusBasketCutting.getStoredStep(id), 10) || 0;
+    }
+    var map = metplusReadCuttingWizardStepMap();
+    var step = parseInt(map[String(id)], 10) || 0;
+    return (step >= 1 && step <= 3) ? step : 0;
+  }
+
+  function metplusSetCuttingWizardStep($plan, step) {
+    step = parseInt(step, 10) || 1;
+    if (step < 1) step = 1;
+    if (step > 3) step = 3;
+    $plan.attr('data-wizard-step', String(step));
+    $plan.find('[data-entity="cutting-wizard-panel"]').each(function() {
+      var panelStep = String($(this).attr('data-wizard-panel') || '');
+      this.hidden = panelStep !== String(step);
+    });
+    $plan.find('[data-wizard-tab]').each(function() {
+      var t = parseInt($(this).attr('data-wizard-tab'), 10) || 0;
+      $(this).toggleClass('is-active', t === step);
+      $(this).toggleClass('is-done', t < step);
+    });
+    var $cost = $plan.find('[data-entity="cutting-summary-cost"]').first();
+    $plan.find('[data-entity="cutting-summary-cost-copy"]').text($cost.text() || '0 ₽');
+    var id = $plan.attr('data-id') || $plan.data('id');
+    metplusRememberCuttingWizardStep(id, step);
+  }
+  window.metplusSetCuttingWizardStep = metplusSetCuttingWizardStep;
+  window.metplusGetStoredCuttingWizardStep = metplusGetStoredCuttingWizardStep;
+
+  $(document).on('click.metplusCuttingToggle', '#basket-root [data-entity="cutting-plan-toggle"]', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var id = this.getAttribute('data-id');
+    if (!id) {
+      return false;
+    }
+    var $row = $('#basket-item-' + id + '-cutting');
+    if (!$row.length) {
+      return false;
+    }
+    var isOpen = false;
+    if ($row[0] && !$row[0].hidden && $row.hasClass('is-open')) {
+      isOpen = true;
+    }
+    if (window.MetplusBasketCutting && typeof window.MetplusBasketCutting.open === 'function') {
+      window.MetplusBasketCutting.open(id, !isOpen);
+      if (!isOpen) {
+        var $plan = $row.find('[data-entity="cutting-plan"]');
+        var hasPlan = String($plan.find('[data-entity="cutting-parts"]').attr('data-plan') || '').trim() !== '';
+        var savedStep = metplusGetStoredCuttingWizardStep(id);
+        var openStep = (savedStep >= 1 && savedStep <= 3) ? savedStep : (hasPlan ? 3 : 1);
+        metplusSetCuttingWizardStep($plan, openStep);
+      }
+      return false;
+    }
+    // fallback без полного модуля резки
+    var $btn = $(this);
+    if (!isOpen) {
+      $row.prop('hidden', false).addClass('is-open');
+      $row.find('[data-entity="cutting-plan"]').attr('data-enabled', 'Y').addClass('is-open');
+      $btn.addClass('is-active').attr('aria-expanded', 'true').text('Изменить резку');
+      metplusSetCuttingWizardStep($row.find('[data-entity="cutting-plan"]'), 1);
+    } else {
+      $row.prop('hidden', true).removeClass('is-open');
+      $row.find('[data-entity="cutting-plan"]').removeClass('is-open');
+      $btn.attr('aria-expanded', 'false');
+    }
+    return false;
+  });
+
+  $(document).on('click.metplusCuttingWizard', '#basket-root [data-entity="cutting-wizard-next"], #basket-root [data-entity="cutting-wizard-back"]', function(e) {
+    e.preventDefault();
+    var id = $(this).attr('data-id');
+    var toStep = parseInt($(this).attr('data-to-step'), 10) || 1;
+    var $plan = $('#basket-item-' + id + '-cutting').find('[data-entity="cutting-plan"]');
+    if (!$plan.length) {
+      return false;
+    }
+
+    // шаг 1 → 2: партии = только выбранная цель (не добавлять вторую к дефолтной целой)
+    if (toStep === 2 && $(this).is('[data-entity="cutting-wizard-next"]')) {
+      if (window.MetplusBasketCutting && typeof window.MetplusBasketCutting.syncPartsToSelectedTarget === 'function') {
+        window.MetplusBasketCutting.syncPartsToSelectedTarget(id);
+        if (typeof window.MetplusBasketCutting.refreshPlan === 'function') {
+          window.MetplusBasketCutting.refreshPlan(id);
+        }
+      }
+    }
+
+    metplusSetCuttingWizardStep($plan, toStep);
+    if (toStep === 3 && window.MetplusBasketCutting && typeof window.MetplusBasketCutting.refreshAll === 'function') {
+      window.MetplusBasketCutting.refreshAll();
+    }
+    return false;
+  });
+
+  $(document).on('click.metplusCuttingWizard', '#basket-root [data-wizard-tab]', function(e) {
+    e.preventDefault();
+    var $plan = $(this).closest('[data-entity="cutting-plan"]');
+    var step = parseInt($(this).attr('data-wizard-tab'), 10) || 1;
+    metplusSetCuttingWizardStep($plan, step);
+    return false;
+  });
+
   $('.head-cart').on('click', 'a', function() {
+    var cartView = (window.MetplusCartView && window.MetplusCartView.getActiveView)
+      ? window.MetplusCartView.getActiveView()
+      : 'new';
+
+    // Новая корзина — страница /cart/
+    if (cartView === 'new') {
+      window.location.href = '/cart/';
+      return false;
+    }
 
     $.get("/ajax/", { component: "cart" }).done(function(data) {
       $('.cart-content > .cart-content_first').html(data);
@@ -451,18 +600,37 @@ jQuery(document).ready(function($) {
       if (!is_mobile()) {
         $('html').addClass('is-hidden');
       }
+      if (window.MetplusBasketCutting && typeof window.MetplusBasketCutting.refreshAll === 'function') {
+        window.MetplusBasketCutting.refreshAll();
+      }
     });
 
     return false;
   });
 
-  $('.cart-content').on('click', '.js-checkout', function() {
-    var comment = $(this).closest('.container').find('.cart-table_textarea').val();
+  function openCheckoutFromComment(comment) {
     $.get("/ajax/", { component: "order" }).done(function(data) {
       $('.cart-content > .cart-content_second').html(data);
-      $('.cart-content > .cart-content_second').find('textarea[name="COMMENT"]').val(comment);
+      $('.cart-content > .cart-content_second').find('textarea[name="COMMENT"]').val(comment || '');
+      $('.cart-content').addClass('is-open');
       $('.cart-content_second').addClass('is-open');
+      if (!is_mobile()) {
+        $('html').addClass('is-hidden');
+      }
     });
+  }
+
+  $('.cart-content').on('click', '.js-checkout', function() {
+    var comment = $(this).closest('.container').find('.cart-table_textarea').val();
+    openCheckoutFromComment(comment);
+    return false;
+  });
+
+  // Оформление со страницы /cart/ — заказ в overlay
+  $(document).on('click', '.basket-root--page .js-checkout', function(e) {
+    e.preventDefault();
+    var comment = $(this).closest('#basket-root').find('.cart-table_textarea').val();
+    openCheckoutFromComment(comment);
     return false;
   });
 
@@ -651,13 +819,15 @@ jQuery(document).ready(function($) {
       return null;
     }
 
-    let widthMeters = Math.max(1, Math.round(width));
+    // Шаг — 1 м по длине листа (Длина_Расчет)
+    let lengthMeters = Math.max(1, Math.round(length));
 
     return {
-      widthMeters: widthMeters,
-      piecesStep: 1 / widthMeters,
-      areaStep: length,
-      metersStep: length / widthMeters,
+      lengthMeters: lengthMeters,
+      widthMeters: lengthMeters,
+      piecesStep: 1 / lengthMeters,
+      areaStep: width,
+      metersStep: 1,
       fullArea: length * width
     };
   }
@@ -668,8 +838,8 @@ jQuery(document).ready(function($) {
       return pieces;
     }
 
-    let widthUnits = Math.max(1, Math.round(pieces / steps.piecesStep));
-    return parseFloat((widthUnits * steps.piecesStep).toFixed(6));
+    let lengthUnits = Math.max(1, Math.round(pieces / steps.piecesStep));
+    return parseFloat((lengthUnits * steps.piecesStep).toFixed(6));
   }
 
   function snapBasicSheetAreaValue($row, area) {
@@ -678,8 +848,8 @@ jQuery(document).ready(function($) {
       return area;
     }
 
-    let widthUnits = Math.max(1, Math.round(area / steps.areaStep));
-    return parseFloat((widthUnits * steps.areaStep).toFixed(3));
+    let lengthUnits = Math.max(1, Math.round(area / steps.areaStep));
+    return parseFloat((lengthUnits * steps.areaStep).toFixed(3));
   }
 
   function getBasicSheetAreaPerPiece($row) {
@@ -1070,8 +1240,6 @@ jQuery(document).ready(function($) {
 
     if (isOnlyPiecesRow($row) || isWeightFrom500Row($row)) {
       normalizePiecesValue(self);
-    } else if (isHalfPiecesRow($row)) {
-      normalizeHalfPiecesValue(self);
     }
 
     if (isWeightFrom500Row($row)) {

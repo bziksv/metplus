@@ -43,7 +43,7 @@ if(count($arResult['ITEMS'])) :
             <th class="product-table_col-qty">Ширина (метры)</th>
             <?php endif; ?>
             <?php if (!empty($arResult['HAS_BASIC_SHEET_ROWS'])): ?>
-            <th class="product-table_col-qty" data-tip="Кратно 1 м ширины листа">м²</th>
+            <th class="product-table_col-qty" data-tip="Кратно 1 м длины листа">м²</th>
             <?php endif; ?>
             <th class="product-table_col-qty">Штуки</th>
             <th>Купить</th>
@@ -58,14 +58,16 @@ if(count($arResult['ITEMS'])) :
             $basicSheet = !empty($arItem['BASIC_SHEET']);
             $metersInPiece = $arItem['PROPERTIES']['DLINA_RASCHET']['VALUE'];
             $widthValue = $arItem['PROPERTIES']['SHIRINA_RASCHET']['VALUE'];
-            $weightValue = $arItem['PROPERTIES']['_3_VESPMSAYT']['VALUE'] ?? '';
-            $weightPerMeter = floatval($weightValue);
-            $weightPerPiece = $weightPerMeter * floatval($metersInPiece);
+            $weightPerMeter = getProductWeightPerMeterKg((int)$arItem['ID'], (int)$arItem['IBLOCK_ID']);
+            $weightPerPiece = getProductPieceWeightKg((int)$arItem['ID'], (int)$arItem['IBLOCK_ID']);
             $initialWeightKg = $weightPerPiece > 0 ? round($weightPerPiece, 2) : '';
-            $piecesStep = $onlyPieces || $basicSheet ? '1' : ($halfPieces ? '0.5' : '0.1');
-            $piecesMin = $onlyPieces || $basicSheet ? '1' : ($halfPieces ? '0.5' : '0.1');
+            $weightValue = $weightPerMeter > 0 ? (string)$weightPerMeter : '';
+            $piecesStep = $onlyPieces || $basicSheet ? '1' : '0.1';
+            $piecesMin = $onlyPieces || $basicSheet ? '1' : '0.1';
             $lockedTitle = 'Продажа только целыми штуками. Метры и ширина заданы производителем.';
-            $basicSheetTip = getBasicSheetCuttingTipText();
+            $basicSheetTip = ($basicSheet && $halfPieces)
+                ? getBasicSheetHalfPiecesCuttingTipText()
+                : getBasicSheetCuttingTipText();
             $basicSheetDimensionsTip = getBasicSheetDimensionsTipText();
             $sheetAreaPerPiece = ($basicSheet && $metersInPiece && $widthValue)
                 ? round(floatval($metersInPiece) * floatval($widthValue), 3)
@@ -77,7 +79,9 @@ if(count($arResult['ITEMS'])) :
                 $piecesStep = $basicSheetSteps['PIECE_STEP'];
                 $piecesMin = $basicSheetSteps['PIECE_STEP'];
             }
-            $halfPiecesCuttingTip = $isSheet ? getSheetCuttingTipText() : getFreeCuttingTipText();
+            $halfPiecesCuttingTip = ($basicSheet && $halfPieces)
+                ? getBasicSheetHalfPiecesCuttingTipText()
+                : ($isSheet ? getSheetCuttingTipText() : getFreeCuttingTipText());
             $weightEditable = !empty($arResult['EDITABLE_WEIGHT_COLUMN']) && $weightPerMeter > 0;
             $weightFrom500 = !empty($arItem['WEIGHT_FROM_500']);
             $minBulkWeight = getMinBulkWeightKg();
@@ -100,6 +104,10 @@ if(count($arResult['ITEMS'])) :
                 <?php elseif ($weightFrom500): ?>
                 <button type="button" class="product-hint product-hint--bulk" data-tip="<?=$weightFrom500Tip?>" aria-label="<?=$weightFrom500Tip?>">
                     <span class="product-hint__label">500+</span>
+                </button>
+                <?php elseif ($basicSheet && $halfPieces): ?>
+                <button type="button" class="product-hint product-hint--cut-free" data-tip="<?=$basicSheetTip?>" aria-label="<?=$basicSheetTip?>">
+                    <span class="product-hint__label">1м</span>
                 </button>
                 <?php elseif ($basicSheet): ?>
                 <button type="button" class="product-hint product-hint--cut-paid" data-tip="<?=$basicSheetTip?>" aria-label="<?=$basicSheetTip?>">
@@ -135,7 +143,7 @@ if(count($arResult['ITEMS'])) :
             <?php if (!empty($arResult['SHOW_WEIGHT_COLUMN'])): ?>
             <td class="product-table_cell-qty product-table_cell-weight">
                 <?php if ($weightEditable): ?>
-                <div class="product-table_field"<?=$weightFrom500 ? ' data-tip="' . htmlspecialcharsbx(getWeightFrom500PiecesTipText($minBulkWeight)) . '"' : ' data-tip="Вес погонного метра: ' . $weightPerMeter . ' кг/м"'?>>
+                <div class="product-table_field"<?=$weightFrom500 ? ' data-tip="' . htmlspecialcharsbx(getWeightFrom500PiecesTipText($minBulkWeight)) . '"' : ' data-tip="Вес шт = Коэф. × Ширина × Длина · ' . $weightPerMeter . ' кг/м"'?>>
                     <input type="number" class="product-table-input product-table-input_weight" min="0.01" step="<?=$weightFrom500 ? '0.001' : '0.01'?>" placeholder="0" name="weight_kg" value="<?=$initialWeightKg?>" data-weight-per-meter="<?=$weightPerMeter?>"<?=$weightFrom500 ? ' data-tip-pieces="' . htmlspecialcharsbx(getWeightFrom500PiecesTipText($minBulkWeight)) . '" data-tip-bulk="' . htmlspecialcharsbx(getWeightFrom500BulkTipText($minBulkWeight)) . '"' : ''?>>
                 </div>
                 <?php else: ?>
@@ -220,14 +228,14 @@ if(count($arResult['ITEMS'])) :
             <span class="product-hint-legend__text">Только целыми штуками</span>
         </div>
         <?php endif; ?>
-        <?php if (!empty($arResult['HAS_BASIC_SHEET_ROWS'])): ?>
+        <?php if (!empty($arResult['HAS_BASIC_SHEET_PAID_ROWS'])): ?>
         <div class="product-hint-legend product-hint-legend--badge product-hint-legend--cut-paid" data-tip="<?=htmlspecialcharsbx(getBasicSheetCuttingTipText())?>">
             <span class="product-hint-legend__badge product-hint product-hint--cut-paid" aria-hidden="true"><span class="product-hint__label">1шт</span></span>
-            <span class="product-hint-legend__text">Заказ в шт или м² · кратно 1 м ширины</span>
+            <span class="product-hint-legend__text">Заказ в шт или м² · кратно 1 м длины · +10% на кусок / резанные</span>
         </div>
         <?php endif; ?>
         <?php if (!empty($arResult['HAS_HALF_PIECES_SHEET_ROWS'])): ?>
-        <div class="product-hint-legend product-hint-legend--badge product-hint-legend--cut-free" data-tip="<?=htmlspecialcharsbx(getSheetCuttingTipText())?>">
+        <div class="product-hint-legend product-hint-legend--badge product-hint-legend--cut-free" data-tip="<?=htmlspecialcharsbx(getBasicSheetHalfPiecesCuttingTipText())?>">
             <span class="product-hint-legend__badge product-hint product-hint--cut-free" aria-hidden="true"><span class="product-hint__label">1м</span></span>
             <span class="product-hint-legend__text"><?=htmlspecialcharsbx(getHalfPiecesCuttingLegendText(true))?></span>
         </div>

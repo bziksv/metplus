@@ -9,7 +9,8 @@ use Bitrix\Main\Localization\Loc;
 <script id="basket-total-template" type="text/html">
 
     <div class="left-column">
-        <a href="" class="gray-btn back-site_btn js_back-site">Вернуться к сайту</a>
+        <a href="/catalog/" class="gray-btn back-site_btn basket-back-catalog">В каталог</a>
+        <a href="" class="gray-btn back-site_btn js_back-site basket-back-overlay">Вернуться к сайту</a>
     </div>
     <div class="right-column">
         <div class="cart-total-price">
@@ -24,6 +25,7 @@ use Bitrix\Main\Localization\Loc;
             <span class="cart-total-price__label">Итого с резкой:</span>
             <span class="cart-total_sum" data-entity="basket-total-with-cutting">0 ₽</span>
         </div>
+        <a href="/cart/" class="main-btn cart-full-btn">Перейти в корзину</a>
         <a href="" class="main-btn checkout-btn js-checkout"><?=Loc::getMessage('SBB_ORDER')?></a>
     </div>
 

@@ -22,7 +22,7 @@
 - Обмен с **1С** (модуль `askaron.pro1c`)
 - Динамическая надбавка **+20%**, если количество не кратно половине длины (`DLINA_RASCHET / 2`)
 - Услуги **резки** (газовая / абразивная) — доплата в корзине
-- Оформление заказа через **выдвижную корзину** (AJAX), без полноценного `/personal/`
+- Оформление заказа через **страницу `/cart/`** + overlay (быстрый просмотр / checkout), без полноценного `/personal/`
 
 ---
 
@@ -145,7 +145,12 @@ bitrix/php_interface/init.php
 
 ## Корзина и AJAX
 
-Оформление заказа — **выдвижная панель**, не классический личный кабинет.
+**Основная корзина:** страница [`/cart/`](../cart/index.php) (полный UX резки).  
+**Быстрый просмотр:** выдвижная панель (overlay) по клику на иконку в шапке — кнопка «Перейти в корзину».  
+**Переключатель** (слева внизу, как у каталога): «Корзина: Оригинал» / «Новая» — `localStorage` + `data-cart-view`.  
+Оформление заказа пока остаётся в overlay (`?component=order`).
+
+Общий include: `include/sale_basket.php` (`CART_DISPLAY_MODE` = `page` | `overlay`).
 
 **Роутер:** `ajax/index.php` → `?component=<name>`
 
@@ -153,12 +158,15 @@ bitrix/php_interface/init.php
 |----------|------|------------|
 | `?component=add_cart` | `ajax/add_cart.php` | Добавить товар (метры + резка) |
 | `?component=cart_small` | `ajax/cart_small.php` | Мини-корзина в шапке |
-| `?component=cart` | `ajax/cart.php` | Полная корзина в слайдере |
+| `?component=cart` | `ajax/cart.php` | Overlay-корзина |
+| `/cart/` | `cart/index.php` | Страница корзины |
 | `?component=order` | `ajax/order.php` | Форма заказа (`prime:order`) |
 | `/ajax/cutting_services_options.php` | — | Выбор типа резки (Fancybox) |
 | `/ajax/update_cutting_type_in_cart.php` | — | Обновить резку в корзине |
+| `/ajax/update_cutting_plan_in_cart.php` | — | План резки (целые / неполная) |
 
-Фронтенд: `bitrix/templates/metplus/js/main.js`.
+Фронтенд: `bitrix/templates/metplus/js/main.js`.  
+Резка неполной: строка плана `неполная | CODE | 1+2+5 |`; при плане авто-1 рез за неполную отключается.
 
 ---
 
@@ -354,6 +362,7 @@ dev/                        — отладочная страница (не дл
 | 2026-07-13 | Легенда: бейдж 500+/замок для доп. условий; правило вывода подсказок в `catalog-visual-language.md` |
 | 2026-07-13 | Корзина: явная порезка по партиям (без авто-резки), автосохранение плана, итог «с резкой», компактный UI |
 | 2026-07-13 | Каталог: переключатель видов + стили `catalog-views.css` / `catalog-view-switcher.js` |
+| 2026-07-17 | Корзина `/cart/` + overlay; резка неполной; переключатель «Корзина: Оригинал / Новая» (как каталог) |
 
 ### Шаблон записи
 

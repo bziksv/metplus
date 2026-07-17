@@ -1556,6 +1556,7 @@ align-items: center;
   margin: 0 -15px;
   margin-bottom: auto;
   overflow: auto;
+  overflow-anchor: none;
 }
 
 .cart-content_body .check-icon {

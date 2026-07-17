@@ -51,6 +51,37 @@
     })();
     </script>
 <?php endif; ?>
+    <script>
+    (function () {
+        var key = 'metplus_cart_view_v2';
+        var allowed = { original: 1, new: 1 };
+        var params = new URLSearchParams(window.location.search);
+        var fromUrl = params.get('cart_view');
+        var view = 'new';
+
+        if (fromUrl && allowed[fromUrl]) {
+            view = fromUrl;
+            try { localStorage.setItem(key, view); } catch (e) {}
+        } else {
+            try {
+                var stored = localStorage.getItem(key);
+                if (stored && allowed[stored]) {
+                    view = stored;
+                }
+            } catch (e) {}
+        }
+
+        document.documentElement.setAttribute('data-cart-view', view);
+
+        var labels = { original: 'Оригинал', new: 'Новая' };
+        document.addEventListener('DOMContentLoaded', function () {
+            var toggle = document.getElementById('cart-view-switcher-toggle');
+            if (toggle) {
+                toggle.textContent = 'Корзина: ' + (labels[view] || labels.new);
+            }
+        });
+    })();
+    </script>
 </head>
 <body>
 <div id="panel"><? $APPLICATION->ShowPanel(); ?></div>
