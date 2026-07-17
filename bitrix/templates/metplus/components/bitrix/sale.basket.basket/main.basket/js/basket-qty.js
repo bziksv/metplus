@@ -592,10 +592,21 @@
 				return;
 			}
 
-			var deltaMeters = deltaKg / weightPerMeter;
 			var currentQty = getCurrentQuantity(itemData);
+			var deltaMeters = deltaKg / weightPerMeter;
 			var nextQty = parseFloat((currentQty + deltaMeters).toFixed(5));
-			setQuantityByMeters(itemData, nextQty);
+			var snapped = finalizeQuantity(itemData, nextQty);
+
+			// 1 кг может быть меньше шага snap — тогда шагнуть минимум на 1 м / длину штуки
+			if (Math.abs(snapped - currentQty) < 0.0001)
+			{
+				var lengthPerPiece = parseFloat(itemData.BASKET_LENGTH_PER_PIECE) || 0;
+				var bump = (isWholeSheetItem(itemData) && lengthPerPiece > 0) ? lengthPerPiece : 1;
+				nextQty = parseFloat((currentQty + (deltaKg > 0 ? bump : -bump)).toFixed(5));
+				snapped = finalizeQuantity(itemData, nextQty);
+			}
+
+			setQuantityByMeters(itemData, snapped);
 		}
 
 		function applyPiecesInput(target, options)
@@ -694,26 +705,6 @@
 				var display = calcBasketQtyDisplay(itemData, meters);
 				target.value = display.area;
 			}
-		}
-
-		function adjustByWeight(target, deltaKg)
-		{
-			var itemData = getItemDataByTargetSafe(target);
-			if (!itemData)
-			{
-				return;
-			}
-
-			var weightPerMeter = parseFloat(itemData.BASKET_WEIGHT_PER_METER) || 0;
-			if (weightPerMeter <= 0)
-			{
-				return;
-			}
-
-			var deltaMeters = deltaKg / weightPerMeter;
-			var currentQty = getCurrentQuantity(itemData);
-			var nextQty = parseFloat((currentQty + deltaMeters).toFixed(5));
-			setQuantityByMeters(itemData, nextQty);
 		}
 
 		function applyWeightInput(target)
