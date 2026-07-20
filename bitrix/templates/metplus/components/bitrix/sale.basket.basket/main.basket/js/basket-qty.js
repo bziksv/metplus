@@ -95,6 +95,11 @@
 		}
 
 		var merged = BX.clone(itemData);
+		if (String(row.getAttribute('data-only-pieces') || '0') === '1') {
+			merged.ONLY_PIECES = true;
+		} else {
+			merged.ONLY_PIECES = false;
+		}
 		if (String(row.getAttribute('data-half-pieces') || '0') === '1') {
 			merged.HALF_PIECES = true;
 		} else {
@@ -137,6 +142,11 @@
 		return !!(itemData && itemData.FREE_CUTTING_1M && !itemData.IS_SHEET);
 	}
 
+	function isOnlyPiecesItem(itemData)
+	{
+		return !!(itemData && itemData.ONLY_PIECES);
+	}
+
 	function enrichItemDataById(itemData)
 	{
 		if (!itemData) {
@@ -177,7 +187,7 @@
 			return formatQtyNumber(snapPiecesValue(pieces, itemData), 3);
 		}
 
-		if (isWholeSheetItem(itemData)) {
+		if (isWholeSheetItem(itemData) || isOnlyPiecesItem(itemData)) {
 			return String(Math.max(1, Math.round(pieces)));
 		}
 
@@ -194,8 +204,8 @@
 
 	function isPipeMeterStepItem(itemData)
 	{
-		// прутки/трубы: метры только целыми
-		return !!(itemData && !itemData.IS_SHEET && !isWholeSheetItem(itemData));
+		// прутки/трубы: метры только целыми (кроме «ТОЛЬКО ШТ» — там шаг = длина штуки)
+		return !!(itemData && !itemData.IS_SHEET && !isWholeSheetItem(itemData) && !isOnlyPiecesItem(itemData));
 	}
 
 	function snapMetersForItem(metersQty, itemData)
@@ -223,6 +233,12 @@
 		{
 			var wholePieces = Math.max(1, Math.round(metersQty / lengthPerPiece));
 			return parseFloat((wholePieces * lengthPerPiece).toFixed(5));
+		}
+
+		if (isOnlyPiecesItem(itemData) && lengthPerPiece > 0)
+		{
+			var onlyPieces = Math.max(1, Math.round(metersQty / lengthPerPiece));
+			return parseFloat((onlyPieces * lengthPerPiece).toFixed(5));
 		}
 
 		if (isPipeMeterStepItem(itemData))
@@ -429,7 +445,7 @@
 				return;
 			}
 
-			if (!itemData.HALF_PIECES && !isBasicSheetWidthMeterItem(itemData) && !isWholeSheetItem(itemData) && !isPipeMeterStepItem(itemData) && !isFreeMeterCuttingItem(itemData))
+			if (!itemData.HALF_PIECES && !isBasicSheetWidthMeterItem(itemData) && !isWholeSheetItem(itemData) && !isOnlyPiecesItem(itemData) && !isPipeMeterStepItem(itemData) && !isFreeMeterCuttingItem(itemData))
 			{
 				return;
 			}
@@ -601,7 +617,9 @@
 			if (Math.abs(snapped - currentQty) < 0.0001)
 			{
 				var lengthPerPiece = parseFloat(itemData.BASKET_LENGTH_PER_PIECE) || 0;
-				var bump = (isWholeSheetItem(itemData) && lengthPerPiece > 0) ? lengthPerPiece : 1;
+				var bump = (lengthPerPiece > 0 && (isWholeSheetItem(itemData) || isOnlyPiecesItem(itemData)))
+					? lengthPerPiece
+					: 1;
 				nextQty = parseFloat((currentQty + (deltaKg > 0 ? bump : -bump)).toFixed(5));
 				snapped = finalizeQuantity(itemData, nextQty);
 			}

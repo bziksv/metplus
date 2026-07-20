@@ -9,6 +9,10 @@ if (!defined('B_PROLOG_INCLUDED') || B_PROLOG_INCLUDED !== true) {
  */
 $cartDisplayMode = isset($cartDisplayMode) && $cartDisplayMode === 'page' ? 'page' : 'overlay';
 
+if (function_exists('normalizeCurrentBasketOnlyPiecesQuantities')) {
+    normalizeCurrentBasketOnlyPiecesQuantities();
+}
+
 $APPLICATION->IncludeComponent(
     'bitrix:sale.basket.basket',
     'main.basket',

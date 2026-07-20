@@ -294,6 +294,23 @@ function isOnlyPiecesProduct($value)
     return in_array($normalized, ['да', 'y', 'yes', '1', 'true'], true);
 }
 
+/**
+ * «ТОЛЬКО ШТ»: количество в метрах → кратно длине одной штуки.
+ */
+function snapOnlyPiecesMetersQuantity($metersQty, $lengthPerPiece)
+{
+    $metersQty = (float)$metersQty;
+    $lengthPerPiece = (float)$lengthPerPiece;
+
+    if ($lengthPerPiece <= 0) {
+        return max(1, (int)round($metersQty));
+    }
+
+    $pieces = max(1, (int)round($metersQty / $lengthPerPiece));
+
+    return round($pieces * $lengthPerPiece, 5);
+}
+
 function isHalfPiecesProduct($value)
 {
     return isOnlyPiecesProduct($value);
@@ -1334,6 +1351,11 @@ function getBasketItemQuantityDisplay($productId, $metersQuantity)
     $lengthPerPiece = floatval(getPropVal($iblockId, $productId, 'DLINA_RASCHET'));
     $weightPerMeter = getProductWeightPerMeterKg($productId, $iblockId);
     $width = floatval(getPropVal($iblockId, $productId, 'SHIRINA_RASCHET'));
+    $onlyPieces = isOnlyPiecesProduct(getPropVal($iblockId, $productId, 'TOLKO_SHT'));
+
+    if ($onlyPieces && $lengthPerPiece > 0) {
+        $metersQty = snapOnlyPiecesMetersQuantity($metersQty, $lengthPerPiece);
+    }
 
     $pieces = $lengthPerPiece > 0 ? $metersQty / $lengthPerPiece : null;
     $weight = $weightPerMeter > 0 ? $metersQty * $weightPerMeter : null;
@@ -1353,7 +1375,9 @@ function getBasketItemQuantityDisplay($productId, $metersQuantity)
         $basicSheet = isBasicSheetProduct($productId, $iblockId);
         $wholeSheetPieces = $isSheet && !$halfPieces && !$basicSheet;
 
-        if ($basicSheet && $width > 0 && $lengthPerPiece > 0) {
+        if ($onlyPieces) {
+            $piecesFormatted = (string)max(1, (int)round($pieces));
+        } elseif ($basicSheet && $width > 0 && $lengthPerPiece > 0) {
             $piecesFormatted = formatBasketQtyNumber(
                 snapBasicSheetPiecesByWidthMeter($pieces, $lengthPerPiece, $width),
                 3
