@@ -889,8 +889,40 @@ jQuery(document).ready(function($) {
     return $row.data('weight-editable') == 1;
   }
 
+  function updateCalculatedWeightDisplay($row) {
+    if (isWeightFrom500Row($row) || isWeightEditableRow($row)) {
+      return;
+    }
+
+    let $display = $row.find('[data-weight-display]');
+    let $hidden = $row.find('input[name="weight_kg"][type="hidden"]');
+    if (!$display.length && !$hidden.length) {
+      return;
+    }
+
+    let weightPerMeter = getWeightPerMeter($row);
+    let meters = parseFloat(String($row.find('[name="meters"]').val()).replace(',', '.')) || 0;
+    if (!weightPerMeter || meters <= 0) {
+      if ($display.length) {
+        $display.text('—');
+      }
+      if ($hidden.length) {
+        $hidden.val('');
+      }
+      return;
+    }
+
+    let kg = formatQty(meters * weightPerMeter, 3);
+    if ($display.length) {
+      $display.text(kg);
+    }
+    if ($hidden.length) {
+      $hidden.val(kg);
+    }
+  }
+
   function isWeightFrom500Row($row) {
-    return $row.data('weight-from-500') == 1;
+    return $row.data('weight-from-bulk') == 1 || $row.data('weight-from-500') == 1;
   }
 
   function getMinBulkWeight($row) {
@@ -960,27 +992,28 @@ jQuery(document).ready(function($) {
     let $meters = $row.find('[name="meters"]');
     let $pieces = $row.find('[name="pieces"]');
     let minBulk = getMinBulkWeight($row);
+    let lockMeters = isOnlyPiecesRow($row);
 
     if (mode === 'bulk') {
       $weight.prop('readonly', false).attr({min: minBulk, step: '0.001'}).removeClass('is-readonly is-synced');
       $weight.closest('.product-table_field').removeClass('product-table_field--restricted product-table_field--synced');
-      setFieldRestricted($meters, true);
-      setFieldRestricted($pieces, true);
-      $pieces.attr({min: 1, step: '1'});
+      setFieldRestricted($meters, lockMeters);
+      setFieldRestricted($pieces, false);
+      $pieces.attr({min: lockMeters ? 1 : 0.1, step: lockMeters ? '1' : '0.1'});
       $row.find('.product-table_cell-weight').removeClass('product-table_cell--locked');
-      $row.find('[name="meters"]').closest('td').addClass('product-table_cell--locked');
-      $row.find('[name="pieces"]').closest('td').addClass('product-table_cell--locked');
+      $row.find('[name="meters"]').closest('td').toggleClass('product-table_cell--locked', lockMeters);
+      $row.find('[name="pieces"]').closest('td').removeClass('product-table_cell--locked');
       updateWeightFieldTip($row, mode);
       return;
     }
 
     $weight.prop('readonly', false).attr({min: 0.01, step: '0.001'}).removeClass('is-readonly').addClass('is-synced');
     $weight.closest('.product-table_field').addClass('product-table_field--synced').removeClass('product-table_field--restricted');
-    setFieldRestricted($meters, true);
+    setFieldRestricted($meters, lockMeters);
     setFieldRestricted($pieces, false);
-    $pieces.attr({min: 1, step: '1'});
+    $pieces.attr({min: lockMeters ? 1 : 0.1, step: lockMeters ? '1' : '0.1'});
     $row.find('.product-table_cell-weight').removeClass('product-table_cell--locked');
-    $row.find('[name="meters"]').closest('td').addClass('product-table_cell--locked');
+    $row.find('[name="meters"]').closest('td').toggleClass('product-table_cell--locked', lockMeters);
     $row.find('[name="pieces"]').closest('td').removeClass('product-table_cell--locked');
     updateWeightFieldTip($row, mode);
   }
@@ -990,14 +1023,85 @@ jQuery(document).ready(function($) {
     return $weight.is(':focus') || $weight.data('is-editing') === 1;
   }
 
+  function formatPiecesDisplay(pieces) {
+    pieces = parseFloat(pieces);
+    if (isNaN(pieces)) {
+      return '';
+    }
+    if (Math.abs(pieces - Math.round(pieces)) < 1e-6) {
+      return String(Math.round(pieces));
+    }
+    return formatQty(pieces, 1);
+  }
+
+  /** Длина кратно 0,1 м (1.1, 1.2…), не 1.35 */
+  function snapMetersTenth(meters) {
+    meters = parseFloat(meters);
+    if (isNaN(meters) || meters <= 0) {
+      return 0.1;
+    }
+    return Math.max(0.1, Math.round(meters * 10) / 10);
+  }
+
+  function formatMetersDisplay(meters) {
+    meters = snapMetersTenth(meters);
+    if (Math.abs(meters - Math.round(meters)) < 1e-6) {
+      return String(Math.round(meters));
+    }
+    return formatQty(meters, 1);
+  }
+
+  /** Штуки кратно 0,1 (1.1, 1.2, 1.3…), не 1.35 */
+  function snapPiecesTenth(pieces) {
+    pieces = parseFloat(pieces);
+    if (isNaN(pieces) || pieces <= 0) {
+      return 0.1;
+    }
+    return Math.max(0.1, Math.round(pieces * 10) / 10);
+  }
+
   function syncFromPiecesMode($row) {
-    let pieces = normalizePiecesValue($row.find('[name="pieces"]'));
-    let metersInOnePiece = parseFloat($row.data('length')) || getMetersInOnePiece($row.find('[name="pieces"]'));
+    let $piecesInput = $row.find('[name="pieces"]');
+    let pieces;
+    if (isOnlyPiecesRow($row)) {
+      pieces = normalizePiecesValue($piecesInput);
+    } else {
+      pieces = snapPiecesTenth($piecesInput.val());
+      $piecesInput.val(formatPiecesDisplay(pieces));
+    }
+    let metersInOnePiece = parseFloat($row.data('length')) || getMetersInOnePiece($piecesInput);
     let weightPerMeter = getWeightPerMeter($row);
-    let meters = pieces * metersInOnePiece;
+    let meters = snapMetersTenth(pieces * metersInOnePiece);
     let kg = meters * weightPerMeter;
 
-    $row.find('[name="meters"]').val(formatQty(meters, 2));
+    $row.find('[name="meters"]').val(formatMetersDisplay(meters));
+
+    if (!isWeightFieldEditing($row)) {
+      $row.find('[name="weight_kg"]').val(formatQty(kg, 3));
+    }
+
+    if (kg >= getMinBulkWeight($row)) {
+      setOrderMode($row, 'bulk');
+      return;
+    }
+
+    setOrderMode($row, 'pieces');
+  }
+
+  function syncFromMetersMode($row) {
+    if (isOnlyPiecesRow($row)) {
+      return;
+    }
+
+    let metersInOnePiece = parseFloat($row.data('length')) || getMetersInOnePiece($row.find('[name="pieces"]'));
+    let weightPerMeter = getWeightPerMeter($row);
+    let meters = snapMetersTenth($row.find('[name="meters"]').val());
+    let pieces = snapPiecesTenth(metersInOnePiece > 0 ? (meters / metersInOnePiece) : meters);
+    meters = snapMetersTenth(pieces * metersInOnePiece);
+    let kg = meters * weightPerMeter;
+
+    $row.find('[name="meters"]').val(formatMetersDisplay(meters));
+    $row.find('[name="pieces"]').val(formatPiecesDisplay(pieces));
 
     if (!isWeightFieldEditing($row)) {
       $row.find('[name="weight_kg"]').val(formatQty(kg, 3));
@@ -1018,8 +1122,10 @@ jQuery(document).ready(function($) {
     let metersInOnePiece = parseFloat($row.data('length')) || getMetersInOnePiece($row.find('[name="pieces"]'));
 
     if (kg < minBulk) {
-      let pieces = Math.max(1, Math.round(kg / getWeightPerPiece($row)));
-      $row.find('[name="pieces"]').val(pieces);
+      let pieces = isOnlyPiecesRow($row)
+        ? ceilOnlyPiecesValue(kg / getWeightPerPiece($row))
+        : snapPiecesTenth(kg / getWeightPerPiece($row));
+      $row.find('[name="pieces"]').val(formatPiecesDisplay(pieces));
       syncFromPiecesMode($row);
       return;
     }
@@ -1027,13 +1133,47 @@ jQuery(document).ready(function($) {
     let meters = kg / weightPerMeter;
     let pieces = meters / metersInOnePiece;
 
-    $row.find('[name="meters"]').val(formatQty(meters, 2));
-    $row.find('[name="pieces"]').val(formatQty(pieces, 3));
+    // «ТОЛЬКО ШТ»: штуки всегда вверх (58.48 → 59), метры/вес подтягиваем
+    if (isOnlyPiecesRow($row)) {
+      pieces = ceilOnlyPiecesValue(pieces);
+      meters = pieces * metersInOnePiece;
+      if (!isWeightFieldEditing($row)) {
+        kg = meters * weightPerMeter;
+        $row.find('[name="weight_kg"]').val(formatQty(kg, 3));
+      }
+    } else {
+      pieces = snapPiecesTenth(pieces);
+      meters = snapMetersTenth(pieces * metersInOnePiece);
+      if (!isWeightFieldEditing($row)) {
+        kg = meters * weightPerMeter;
+        $row.find('[name="weight_kg"]').val(formatQty(kg, 3));
+      }
+    }
+
+    $row.find('[name="meters"]').val(formatMetersDisplay(meters));
+    $row.find('[name="pieces"]').val(formatPiecesDisplay(pieces));
     setOrderMode($row, 'bulk');
+  }
+
+  function ceilOnlyPiecesValue(pieces) {
+    pieces = parseFloat(pieces);
+    if (isNaN(pieces) || pieces <= 0) {
+      return 1;
+    }
+    if (Math.abs(pieces - Math.round(pieces)) < 1e-6) {
+      return Math.max(1, Math.round(pieces));
+    }
+    return Math.max(1, Math.ceil(pieces));
   }
 
   function resolveCartQuantity($row) {
     let metersInOnePiece = parseFloat($row.data('length')) || getMetersInOnePiece($row.find('[name="pieces"]'));
+
+    if (isHalfPiecesRow($row)) {
+      let pieces = normalizeHalfPiecesValue($row.find('[name="pieces"]'));
+      syncHalfPiecesSheetArea($row, pieces);
+      return pieces * metersInOnePiece;
+    }
 
     if (isBasicSheetRow($row)) {
       let pieces = snapBasicSheetPiecesValue($row, parseFloat(String($row.find('[name="pieces"]').val()).replace(',', '.')) || 0);
@@ -1041,7 +1181,7 @@ jQuery(document).ready(function($) {
     }
 
     if ($row.data('only-pieces') == 1) {
-      let pieces = parseInt($row.find('[name="pieces"]').val(), 10) || 1;
+      let pieces = ceilOnlyPiecesValue($row.find('[name="pieces"]').val());
       return pieces * metersInOnePiece;
     }
 
@@ -1054,12 +1194,18 @@ jQuery(document).ready(function($) {
           return null;
         }
 
-        return kg / weightPerMeter;
+        let meters = kg / weightPerMeter;
+        if (isOnlyPiecesRow($row) && metersInOnePiece > 0) {
+          let pieces = ceilOnlyPiecesValue(meters / metersInOnePiece);
+          return pieces * metersInOnePiece;
+        }
+
+        return meters;
       }
 
-      let pieces = parseInt($row.find('[name="pieces"]').val(), 10);
+      let pieces = parseFloat(String($row.find('[name="pieces"]').val()).replace(',', '.'));
 
-      if (isNaN(pieces) || pieces < 1) {
+      if (isNaN(pieces) || pieces <= 0) {
         return null;
       }
 
@@ -1118,27 +1264,59 @@ jQuery(document).ready(function($) {
 
     if (source === 'weight') {
       let kg = parseFloat($weight.val()) || 0;
-      let meters = kg / weightPerMeter;
-      let pieces = meters / metersInOnePiece;
-      $meters.val(formatQty(meters, 2));
-      $pieces.val(formatQty(pieces, 2));
+      let meters = snapMetersTenth(kg / weightPerMeter);
+      let pieces = snapPiecesTenth(meters / metersInOnePiece);
+      meters = snapMetersTenth(pieces * metersInOnePiece);
+      if (isHalfPiecesRow($row)) {
+        pieces = Math.max(0.5, Math.round(pieces * 2) / 2);
+        meters = pieces * metersInOnePiece;
+        kg = meters * weightPerMeter;
+        $weight.val(formatQty(kg, 2));
+      } else {
+        kg = meters * weightPerMeter;
+        if (!isWeightFieldEditing($row)) {
+          $weight.val(formatQty(kg, 3));
+        }
+      }
+      $meters.val(isHalfPiecesRow($row) ? formatQty(meters, 2) : formatMetersDisplay(meters));
+      $pieces.val(pieces % 1 === 0 ? String(Math.round(pieces)) : formatQty(pieces, 1));
       return;
     }
 
     if (source === 'meters') {
-      let meters = parseFloat($meters.val()) || 0;
+      let meters = isHalfPiecesRow($row)
+        ? (parseFloat($meters.val()) || 0)
+        : snapMetersTenth($meters.val());
       let pieces = meters / metersInOnePiece;
+      if (isHalfPiecesRow($row)) {
+        pieces = Math.max(0.5, Math.round(pieces * 2) / 2);
+        meters = pieces * metersInOnePiece;
+        $meters.val(formatQty(meters, 2));
+      } else {
+        pieces = snapPiecesTenth(pieces);
+        meters = snapMetersTenth(pieces * metersInOnePiece);
+        $meters.val(formatMetersDisplay(meters));
+      }
       let kg = meters * weightPerMeter;
-      $pieces.val(formatQty(pieces, 2));
+      $pieces.val(pieces % 1 === 0 ? String(Math.round(pieces)) : formatQty(pieces, 1));
       $weight.val(formatQty(kg, 2));
       return;
     }
 
     if (source === 'pieces') {
-      let pieces = parseFloat($pieces.val()) || 0;
-      let meters = pieces * metersInOnePiece;
+      let pieces = parseFloat(String($pieces.val()).replace(',', '.')) || 0;
+      if (isHalfPiecesRow($row)) {
+        pieces = Math.max(0.5, Math.round(pieces * 2) / 2);
+        $pieces.val(pieces % 1 === 0 ? String(Math.round(pieces)) : pieces.toFixed(1));
+      } else {
+        pieces = snapPiecesTenth(pieces);
+        $pieces.val(formatPiecesDisplay(pieces));
+      }
+      let meters = isHalfPiecesRow($row)
+        ? pieces * metersInOnePiece
+        : snapMetersTenth(pieces * metersInOnePiece);
       let kg = meters * weightPerMeter;
-      $meters.val(formatQty(meters, 2));
+      $meters.val(isHalfPiecesRow($row) ? formatQty(meters, 2) : formatMetersDisplay(meters));
       $weight.val(formatQty(kg, 2));
     }
   }
@@ -1164,6 +1342,45 @@ jQuery(document).ready(function($) {
     pieces = Math.round(pieces * 2) / 2;
     $input.val(pieces % 1 === 0 ? String(Math.round(pieces)) : pieces.toFixed(1));
     return pieces;
+  }
+
+  function syncHalfPiecesSheetArea($row, pieces) {
+    let $area = $row.find('[name="area_m2"]');
+    if (!$area.length) {
+      return;
+    }
+    let fullArea = parseFloat($area.data('full-area')) || 0;
+    if (fullArea <= 0) {
+      return;
+    }
+    $area.val(formatQty(pieces * fullArea, 3));
+  }
+
+  function syncHalfPiecesFromArea($row) {
+    let $area = $row.find('[name="area_m2"]');
+    let fullArea = parseFloat($area.data('full-area')) || 0;
+    let areaStep = parseFloat($area.data('area-step')) || (fullArea * 0.5);
+    if (fullArea <= 0 || areaStep <= 0) {
+      return;
+    }
+
+    let area = parseFloat(String($area.val()).replace(',', '.'));
+    if (isNaN(area) || area < areaStep) {
+      area = areaStep;
+    }
+    let units = Math.max(1, Math.round(area / areaStep));
+    area = parseFloat((units * areaStep).toFixed(3));
+    let pieces = Math.max(0.5, Math.round((area / fullArea) * 2) / 2);
+    area = parseFloat((pieces * fullArea).toFixed(3));
+
+    $area.val(formatQty(area, 3));
+    let $pieces = $row.find('[name="pieces"]');
+    $pieces.val(pieces % 1 === 0 ? String(Math.round(pieces)) : pieces.toFixed(1));
+
+    let metersInOnePiece = parseFloat($row.data('length')) || getMetersInOnePiece($pieces) || 0;
+    if (metersInOnePiece > 0) {
+      $row.find('[name="meters"]').val(formatQty(pieces * metersInOnePiece, 2));
+    }
   }
 
   $('.product-table').on('focus', '[name="weight_kg"]', function() {
@@ -1235,11 +1452,15 @@ jQuery(document).ready(function($) {
 
     if (isBasicSheetRow($row)) {
       syncBasicSheetFromPieces($row);
+      updateCalculatedWeightDisplay($row);
       return;
     }
 
-    if (isOnlyPiecesRow($row) || isWeightFrom500Row($row)) {
+    if (isOnlyPiecesRow($row)) {
       normalizePiecesValue(self);
+    } else if (isHalfPiecesRow($row)) {
+      let pieces = normalizeHalfPiecesValue(self);
+      syncHalfPiecesSheetArea($row, pieces);
     }
 
     if (isWeightFrom500Row($row)) {
@@ -1252,16 +1473,34 @@ jQuery(document).ready(function($) {
       return;
     }
 
-    let pieces = parseFloat(self.val());
-    let meters = pieces * metersInOnePiece;
-    $row.find('[name="meters"]').val(meters);
+    let pieces = isHalfPiecesRow($row)
+      ? normalizeHalfPiecesValue(self)
+      : snapPiecesTenth(self.val());
+    if (!isHalfPiecesRow($row)) {
+      self.val(formatPiecesDisplay(pieces));
+    }
+    let meters = isHalfPiecesRow($row)
+      ? pieces * metersInOnePiece
+      : snapMetersTenth(pieces * metersInOnePiece);
+    $row.find('[name="meters"]').val(
+      isHalfPiecesRow($row) ? formatQty(meters, 2) : formatMetersDisplay(meters)
+    );
+    if (isHalfPiecesRow($row)) {
+      syncHalfPiecesSheetArea($row, pieces);
+    }
+    updateCalculatedWeightDisplay($row);
   });
 
   $('.product-table').on('input', '[name="meters"]', function() {
     let self = $(this);
     let $row = self.closest('tr');
 
-    if (isOnlyPiecesRow($row) || isWeightFrom500Row($row) || isBasicSheetRow($row)) {
+    if (isOnlyPiecesRow($row) || isBasicSheetRow($row)) {
+      return;
+    }
+
+    if (isWeightFrom500Row($row)) {
+      syncFromMetersMode($row);
       return;
     }
 
@@ -1272,15 +1511,27 @@ jQuery(document).ready(function($) {
 
     let metersInOnePiece = getMetersInOnePiece(self);
     let meters = parseFloat(self.val());
-    let pieces = isBasicSheetRow($row)
-      ? Math.max(1, Math.round(meters / metersInOnePiece))
-      : (meters / metersInOnePiece).toFixed(2);
+    let pieces = isHalfPiecesRow($row)
+      ? Math.max(0.5, Math.round((meters / metersInOnePiece) * 2) / 2)
+      : snapPiecesTenth(meters / metersInOnePiece);
 
-    $row.find('[name="pieces"]').val(pieces);
+    $row.find('[name="pieces"]').val(
+      isHalfPiecesRow($row)
+        ? (pieces % 1 === 0 ? String(Math.round(pieces)) : pieces.toFixed(1))
+        : formatPiecesDisplay(pieces)
+    );
+    if (isHalfPiecesRow($row)) {
+      syncHalfPiecesSheetArea($row, pieces);
+    }
+    updateCalculatedWeightDisplay($row);
   });
 
   $('.product-table').on('input blur change', '[name="area_m2"]', function() {
     let $row = $(this).closest('tr');
+    if (isHalfPiecesRow($row) && parseFloat($row.data('width')) > 0) {
+      syncHalfPiecesFromArea($row);
+      return;
+    }
     if (!isBasicSheetRow($row)) {
       return;
     }
@@ -1292,36 +1543,52 @@ jQuery(document).ready(function($) {
     let self = $(this);
     let $row = self.closest('tr');
 
-    if (isOnlyPiecesRow($row) || isWeightFrom500Row($row) || isBasicSheetRow($row)) {
+    if (isOnlyPiecesRow($row) || isBasicSheetRow($row)) {
       return;
     }
 
-    // трубы/прутки — метры только целыми
-    if ($row.data('width') > 0) {
+    if (isWeightFrom500Row($row)) {
+      syncFromMetersMode($row);
       return;
     }
 
-    let meters = parseFloat(String(self.val()).replace(',', '.'));
-    if (isNaN(meters) || meters < 1) {
-      meters = 1;
-    } else {
-      meters = Math.round(meters);
-    }
-
-    self.val(meters);
     let metersInOnePiece = getMetersInOnePiece(self) || parseFloat($row.data('length')) || 1;
-    $row.find('[name="pieces"]').val((meters / metersInOnePiece).toFixed(2));
+
+    // «Только шт и 0,5 шт» — метры кратно 0,5 × длина штуки
+    if (isHalfPiecesRow($row)) {
+      let meters = parseFloat(String(self.val()).replace(',', '.'));
+      if (isNaN(meters) || meters <= 0) {
+        meters = metersInOnePiece * 0.5;
+      }
+      let pieces = Math.max(0.5, Math.round((meters / metersInOnePiece) * 2) / 2);
+      meters = pieces * metersInOnePiece;
+      self.val(formatQty(meters, 2));
+      $row.find('[name="pieces"]').val(pieces % 1 === 0 ? String(Math.round(pieces)) : pieces.toFixed(1));
+      syncHalfPiecesSheetArea($row, pieces);
+      if (isWeightEditableRow($row)) {
+        syncRowQuantities($row, 'meters');
+      }
+      updateCalculatedWeightDisplay($row);
+      return;
+    }
+
+    // трубы/прутки/круг — длина кратно 0,1 м
+    let meters = snapMetersTenth(self.val());
+    self.val(formatMetersDisplay(meters));
+    let pieces = snapPiecesTenth(meters / metersInOnePiece);
+    $row.find('[name="pieces"]').val(formatPiecesDisplay(pieces));
 
     if (isWeightEditableRow($row)) {
       syncRowQuantities($row, 'meters');
     }
+    updateCalculatedWeightDisplay($row);
   });
 
   $('.product-table tr[data-basic-sheet="1"]').each(function() {
     syncBasicSheetFromArea($(this), { force: true });
   });
 
-  $('.product-table tr[data-weight-from-500="1"]').each(function() {
+  $('.product-table tr[data-weight-from-bulk="1"], .product-table tr[data-weight-from-500="1"]').each(function() {
     syncFromPiecesMode($(this));
   });
 

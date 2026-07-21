@@ -42,11 +42,11 @@ use Bitrix\Main\Localization\Loc;
                     {{/BASIC_SHEET}}
                     {{#IS_SHEET}}
                     {{^BASIC_SHEET}}
-                    <span class="cutting-plan-notice">Режется кратно 1 метру</span>
+                    <span class="cutting-plan-notice">Режется кратно 0,1 м</span>
                     {{/BASIC_SHEET}}
                     {{/IS_SHEET}}
                     {{#FREE_CUTTING_1M}}
-                    <span class="cutting-plan-notice cutting-plan-notice--free">Режется кратно 1 метру без наценки</span>
+                    <span class="cutting-plan-notice cutting-plan-notice--free">Режется кратно 0,1 м без наценки</span>
                     {{/FREE_CUTTING_1M}}
                     {{^IS_SHEET}}
                     {{^FREE_CUTTING_1M}}
@@ -208,8 +208,8 @@ use Bitrix\Main\Localization\Loc;
                                     </select>
                                 </label>
                                 <label class="cutting-part__field cutting-part__field--wide">
-                                    <span class="cutting-part__label">Куски, м</span>
-                                    <input class="cutting-part__input" type="text" placeholder="например: 2 3 1" data-entity="cutting-part-cuts">
+                                    <span class="cutting-part__label">Куски, м <span class="cutting-part__label-hint">(режем кратно 0.1 м)</span></span>
+                                    <input class="cutting-part__input" type="text" placeholder="например: 1.2 3.5 2" data-entity="cutting-part-cuts" inputmode="decimal">
                                 </label>
                                 <button type="button" class="cutting-part__remove" data-entity="cutting-part-remove" aria-label="Удалить партию">×</button>
                             </div>
@@ -291,7 +291,7 @@ use Bitrix\Main\Localization\Loc;
                     {{/BASIC_SHEET}}
                     {{#FREE_CUTTING_1M}}
                     {{^BASIC_SHEET}}
-                    Резка кратно 1 м — без +20%. Неполная — стоимость одного реза.
+                    Резка кратно 0,1 м — без +20%. Неполная — стоимость одного реза.
                     {{/BASIC_SHEET}}
                     {{/FREE_CUTTING_1M}}
                     {{^IS_SHEET}}

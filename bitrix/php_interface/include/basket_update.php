@@ -9,6 +9,7 @@ use Bitrix\Sale\Basket;
  *
  * Старые виртуальные строки (PRODUCT_ID = 0) просто удаляем.
  * «ТОЛЬКО ШТ» — QUANTITY кратно длине штуки.
+ * «Только шт и 0,5 шт» — QUANTITY кратно 0,5 × длина штуки.
  */
 function snapBasketItemOnlyPiecesQuantity($basketItem)
 {
@@ -36,8 +37,44 @@ function snapBasketItemOnlyPiecesQuantity($basketItem)
     return true;
 }
 
+function snapBasketItemHalfPiecesQuantity($basketItem)
+{
+    $productId = (int)$basketItem->getProductId();
+    if ($productId <= 0) {
+        return false;
+    }
+
+    // листы без «0,5 шт» — свой шаг (1 м длины)
+    if (isBasicSheetProduct($productId, 36) && !isHalfPiecesProduct(getPropVal(36, $productId, 'TOLKO_SHT_I_0_5_SHT'))) {
+        return false;
+    }
+
+    if (!isHalfPiecesProduct(getPropVal(36, $productId, 'TOLKO_SHT_I_0_5_SHT'))) {
+        return false;
+    }
+
+    // «ТОЛЬКО ШТ» важнее — целые штуки
+    if (isOnlyPiecesProduct(getPropVal(36, $productId, 'TOLKO_SHT'))) {
+        return false;
+    }
+
+    $lengthPerPiece = (float)getPropVal(36, $productId, 'DLINA_RASCHET');
+    if ($lengthPerPiece <= 0) {
+        return false;
+    }
+
+    $qty = (float)$basketItem->getQuantity();
+    $snapped = snapHalfPiecesMetersQuantity($qty, $lengthPerPiece);
+    if (abs($snapped - $qty) <= 0.0001) {
+        return false;
+    }
+
+    $basketItem->setField('QUANTITY', $snapped);
+    return true;
+}
+
 /**
- * Нормализация «ТОЛЬКО ШТ» до рендера корзины (иначе сумма ещё по старым метрам).
+ * Нормализация шагов штук до рендера корзины.
  */
 function normalizeCurrentBasketOnlyPiecesQuantities()
 {
@@ -52,7 +89,7 @@ function normalizeCurrentBasketOnlyPiecesQuantities()
 
     $changed = false;
     foreach ($basket as $basketItem) {
-        if (snapBasketItemOnlyPiecesQuantity($basketItem)) {
+        if (snapBasketItemOnlyPiecesQuantity($basketItem) || snapBasketItemHalfPiecesQuantity($basketItem)) {
             $changed = true;
         }
     }
@@ -74,5 +111,6 @@ function OnSaleBasketBeforeSavedHandler(Event $event)
         }
 
         snapBasketItemOnlyPiecesQuantity($basketItem);
+        snapBasketItemHalfPiecesQuantity($basketItem);
     }
 }

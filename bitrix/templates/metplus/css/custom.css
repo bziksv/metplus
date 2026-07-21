@@ -661,6 +661,30 @@ button.product-hint {
     line-height: 1.2;
 }
 
+.product-table th .product-table_th-title {
+    display: block;
+    line-height: 1.2;
+}
+
+.product-table th .product-table_th-formula {
+    display: block;
+    margin-top: 4px;
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1.25;
+    opacity: 0.78;
+    white-space: normal;
+    max-width: 11em;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.product-table th.product-table_col-steel .product-table_th-formula,
+.product-table th.product-table_col-price .product-table_th-formula,
+.product-table th.product-table_col-qty .product-table_th-formula {
+    max-width: 12em;
+}
+
 .product-table th .price-header sup {
     font-size: 0.62em;
     line-height: 0;
@@ -1242,6 +1266,11 @@ button.product-hint {
     font-size: 12px;
     font-weight: 700;
     color: #334155;
+}
+
+.cutting-part__label-hint {
+    font-weight: 500;
+    color: #64748b;
 }
 
 .cutting-part__input {

@@ -24,6 +24,59 @@ function getCoefficientProduct($ID_BLOCK, $ID)
     return floatval(getPropVal($ID_BLOCK, $ID, 'KOEFFITSENT_RASCHET'));
 }
 
+/**
+ * ID типа цен «1-1000» (базовая из 1С).
+ */
+function getBaseCatalogPriceTypeId()
+{
+    return 16;
+}
+
+/**
+ * Цена за кг = цена 1-1000 × Коэффициент_Расчет.
+ */
+function getProductPricePerKg($productId, $iblockId = 36)
+{
+    $productId = (int)$productId;
+    if ($productId <= 0) {
+        return null;
+    }
+
+    $coefficient = (float)getPropVal($iblockId, $productId, 'KOEFFITSENT_RASCHET');
+    if ($coefficient <= 0) {
+        return null;
+    }
+
+    $baseRow = function_exists('fetchCatalogPriceRow')
+        ? fetchCatalogPriceRow($productId, getBaseCatalogPriceTypeId())
+        : null;
+
+    if (!$baseRow) {
+        return null;
+    }
+
+    $basePrice = (float)($baseRow['PRICE'] ?? 0);
+    if ($basePrice <= 0) {
+        return null;
+    }
+
+    return round($basePrice * $coefficient, 2);
+}
+
+function formatProductPricePerKg($productId, $iblockId = 36)
+{
+    $price = getProductPricePerKg($productId, $iblockId);
+    if ($price === null) {
+        return '—';
+    }
+
+    if (class_exists('CCurrencyLang')) {
+        return CCurrencyLang::CurrencyFormat($price, 'RUB', true);
+    }
+
+    return number_format($price, 2, '.', ' ') . ' руб.';
+}
+
 function getLengthProduct($ID_BLOCK, $ID)
 {
     return floatval(getPropVal($ID_BLOCK, $ID, 'DLINA_RASCHET'));
@@ -280,7 +333,8 @@ function shouldShowPlusPriceColumn($sectionCode)
 
 function isWeightSection($sectionCode)
 {
-    return in_array($sectionCode, ['stal_armaturnaya_a3'], true);
+    // колонка «Вес, кг» показывается во всех разделах каталога
+    return true;
 }
 
 function isOnlyPiecesProduct($value)
@@ -296,17 +350,62 @@ function isOnlyPiecesProduct($value)
 
 /**
  * «ТОЛЬКО ШТ»: количество в метрах → кратно длине одной штуки.
+ * Штуки всегда вверх (58.48 → 59).
  */
+function snapOnlyPiecesValue($pieces)
+{
+    $pieces = (float)$pieces;
+    if ($pieces <= 0) {
+        return 1;
+    }
+
+    if (abs($pieces - round($pieces)) < 1e-6) {
+        return max(1, (int)round($pieces));
+    }
+
+    return max(1, (int)ceil($pieces));
+}
+
 function snapOnlyPiecesMetersQuantity($metersQty, $lengthPerPiece)
 {
     $metersQty = (float)$metersQty;
     $lengthPerPiece = (float)$lengthPerPiece;
 
     if ($lengthPerPiece <= 0) {
-        return max(1, (int)round($metersQty));
+        return (float)snapOnlyPiecesValue($metersQty);
     }
 
-    $pieces = max(1, (int)round($metersQty / $lengthPerPiece));
+    $pieces = snapOnlyPiecesValue($metersQty / $lengthPerPiece);
+
+    return round($pieces * $lengthPerPiece, 5);
+}
+
+/**
+ * «Только шт и 0,5 шт»: штуки кратно 0,5 (0.5, 1, 1.5, 2…).
+ */
+function snapHalfPiecesValue($pieces)
+{
+    $pieces = (float)$pieces;
+    if ($pieces < 0.5) {
+        return 0.5;
+    }
+
+    return round($pieces * 2) / 2;
+}
+
+/**
+ * «Только шт и 0,5 шт»: метры → кратно 0,5 × Длина_Расчет.
+ */
+function snapHalfPiecesMetersQuantity($metersQty, $lengthPerPiece)
+{
+    $metersQty = (float)$metersQty;
+    $lengthPerPiece = (float)$lengthPerPiece;
+
+    if ($lengthPerPiece <= 0) {
+        return snapHalfPiecesValue($metersQty);
+    }
+
+    $pieces = snapHalfPiecesValue($metersQty / $lengthPerPiece);
 
     return round($pieces * $lengthPerPiece, 5);
 }
@@ -427,7 +526,7 @@ function getIncompletePieceCutNotice($fraction, $cutPrice = 0)
 
 function getFreeCuttingTipText()
 {
-    return 'Товар режется кратно 1 метру без наценки. Длины кусков — кратно 1 метру.';
+    return 'Товар режется кратно 0,1 м без наценки. Длины кусков — кратно 0,1 м (например 1.2 3.5).';
 }
 
 function isSheetProduct($width)
@@ -522,7 +621,7 @@ function snapBasicSheetMetersByWidthMeter($metersQty, $lengthPerPiece, $width)
 
 function getBasicSheetCuttingTipText()
 {
-    return 'Заказ в шт или м² — кратно 1 м длины. Резка по длине — кратно 1 м. '
+    return 'Заказ в шт или м² — кратно 1 м длины. Резка по длине — кратно 0,1 м. '
         . 'Резы всегда оплачиваются по тарифу. '
         . 'Рез пополам (2 куска) — 1 рез. '
         . 'Больше резов — дополнительно +10% только на резанные куски. '
@@ -531,7 +630,7 @@ function getBasicSheetCuttingTipText()
 
 function getBasicSheetHalfPiecesCuttingTipText()
 {
-    return 'Заказ в шт или м² — кратно 1 м длины. Резка по длине — кратно 1 м. '
+    return 'Заказ в шт или м² — кратно 1 м длины. Резка по длине — кратно 0,1 м. '
         . 'Резы всегда оплачиваются по тарифу. '
         . 'Наценок (+10%) нет ни за неполную штуку, ни за сложную резку — только стоимость резов.';
 }
@@ -546,6 +645,16 @@ function getBasicSheetDimensionsTipText()
     return 'Длина и ширина листа заданы производителем. Количество — в штуках или м², кратно 1 м длины.';
 }
 
+function snapCutLengthMeters($meters)
+{
+    $meters = (float)$meters;
+    if ($meters <= 0) {
+        return 0.0;
+    }
+
+    return round($meters / 0.1) * 0.1;
+}
+
 function parseCutLengthsFromPlanSegment($segment)
 {
     $segment = trim((string)$segment);
@@ -555,9 +664,9 @@ function parseCutLengthsFromPlanSegment($segment)
 
     $lengths = [];
     foreach (preg_split('/\s*\+\s*/u', $segment) ?: [] as $part) {
-        $part = trim($part);
-        if (preg_match('/^(\d+)/', $part, $matches)) {
-            $value = (int)$matches[1];
+        $part = trim(str_replace(',', '.', $part));
+        if (preg_match('/^(\d+(?:\.\d+)?)/', $part, $matches)) {
+            $value = snapCutLengthMeters($matches[1]);
             if ($value > 0) {
                 $lengths[] = $value;
             }
@@ -1299,12 +1408,28 @@ function getHalfPiecesCuttingLegendText($isSheet = false)
 {
     return $isSheet
         ? 'Кратно 1 м длины · без наценки за кусок · только резы'
-        : 'Режется кратно 1 метру без наценки';
+        : 'Режется кратно 0,1 м без наценки';
 }
 
 function isWeightFrom500Product($value)
 {
     return isOnlyPiecesProduct($value);
+}
+
+/** Порог «заказ по весу» из свойств товара: 500 / 1000 / null. */
+function getProductMinBulkWeightKg(array $properties)
+{
+    $min = null;
+
+    if (isWeightFrom500Product($properties['SHT_M_VES_OT500_KG']['VALUE'] ?? '')) {
+        $min = 500;
+    }
+
+    if (isWeightFrom500Product($properties['SHT_M_VES_OT_1000_KG']['VALUE'] ?? '')) {
+        $min = max((int)$min, 1000);
+    }
+
+    return $min;
 }
 
 function getMinBulkWeightKg()
@@ -1314,23 +1439,35 @@ function getMinBulkWeightKg()
 
 function getWeightFrom500TipText($minBulkWeight = null)
 {
-    $min = $minBulkWeight ?? getMinBulkWeightKg();
+    $min = (int)($minBulkWeight ?? getMinBulkWeightKg());
 
-    return 'До ' . $min . ' кг — заказ только целыми штуками. От ' . $min . ' кг — можно указать вес с точностью до грамм.';
+    return 'До ' . $min . ' кг — заказ штуками или метрами. От ' . $min . ' кг — можно указать вес с точностью до грамм.';
 }
 
 function getWeightFrom500PiecesTipText($minBulkWeight = null)
 {
-    $min = $minBulkWeight ?? getMinBulkWeightKg();
+    $min = (int)($minBulkWeight ?? getMinBulkWeightKg());
 
-    return 'Вес считается из штук. Чтобы заказать от ' . $min . ' кг по весу — кликните в поле и введите значение.';
+    return 'Вес считается из штук или метров. Чтобы заказать от ' . $min . ' кг по весу — кликните в поле веса и введите значение.';
 }
 
 function getWeightFrom500BulkTipText($minBulkWeight = null)
 {
-    $min = $minBulkWeight ?? getMinBulkWeightKg();
+    $min = (int)($minBulkWeight ?? getMinBulkWeightKg());
 
     return 'Заказ по весу от ' . $min . ' кг. Метры и штуки пересчитываются автоматически.';
+}
+
+function formatBulkWeightBadgeLabel($minBulkWeight)
+{
+    return (int)$minBulkWeight . '+';
+}
+
+function getBulkWeightLegendText($minBulkWeight)
+{
+    $min = (int)$minBulkWeight;
+
+    return 'От ' . $min . ' кг можно заказать по весу';
 }
 
 function formatBasketQtyNumber($value, $decimals = 2)
@@ -1352,9 +1489,13 @@ function getBasketItemQuantityDisplay($productId, $metersQuantity)
     $weightPerMeter = getProductWeightPerMeterKg($productId, $iblockId);
     $width = floatval(getPropVal($iblockId, $productId, 'SHIRINA_RASCHET'));
     $onlyPieces = isOnlyPiecesProduct(getPropVal($iblockId, $productId, 'TOLKO_SHT'));
+    $halfPieces = isHalfPiecesProduct(getPropVal($iblockId, $productId, 'TOLKO_SHT_I_0_5_SHT'));
+    $basicSheet = isBasicSheetProduct($productId, $iblockId);
 
     if ($onlyPieces && $lengthPerPiece > 0) {
         $metersQty = snapOnlyPiecesMetersQuantity($metersQty, $lengthPerPiece);
+    } elseif ($halfPieces && $lengthPerPiece > 0) {
+        $metersQty = snapHalfPiecesMetersQuantity($metersQty, $lengthPerPiece);
     }
 
     $pieces = $lengthPerPiece > 0 ? $metersQty / $lengthPerPiece : null;
@@ -1370,13 +1511,16 @@ function getBasketItemQuantityDisplay($productId, $metersQuantity)
 
     $piecesFormatted = '';
     if ($pieces !== null) {
-        $halfPieces = isHalfPiecesProduct(getPropVal($iblockId, $productId, 'TOLKO_SHT_I_0_5_SHT'));
         $isSheet = isSheetProduct($width);
-        $basicSheet = isBasicSheetProduct($productId, $iblockId);
         $wholeSheetPieces = $isSheet && !$halfPieces && !$basicSheet;
 
         if ($onlyPieces) {
             $piecesFormatted = (string)max(1, (int)round($pieces));
+        } elseif ($halfPieces) {
+            $snappedPieces = snapHalfPiecesValue($pieces);
+            $piecesFormatted = abs($snappedPieces - round($snappedPieces)) < 0.01
+                ? (string)(int)round($snappedPieces)
+                : formatBasketQtyNumber($snappedPieces, 1);
         } elseif ($basicSheet && $width > 0 && $lengthPerPiece > 0) {
             $piecesFormatted = formatBasketQtyNumber(
                 snapBasicSheetPiecesByWidthMeter($pieces, $lengthPerPiece, $width),
@@ -1384,10 +1528,6 @@ function getBasketItemQuantityDisplay($productId, $metersQuantity)
             );
         } elseif ($wholeSheetPieces) {
             $piecesFormatted = (string)max(1, (int)round($pieces));
-        } elseif ($halfPieces) {
-            $piecesFormatted = abs($pieces - round($pieces)) < 0.01
-                ? (string)(int)round($pieces)
-                : formatBasketQtyNumber($pieces, 2);
         } else {
             $piecesFormatted = abs($pieces - round($pieces)) < 0.01
                 ? (string)(int)round($pieces)
@@ -1412,17 +1552,63 @@ function getSquareMeterSurchargePercent($sectionCode)
     return null;
 }
 
-function formatCatalogPriceHeaderHtml($priceName, $xmlId, $isSquareMeter, $sectionCode = '')
+function formatCatalogColumnHeaderHtml($title, $formula = '')
 {
-    if (!$isSquareMeter) {
-        return htmlspecialcharsbx($priceName);
+    $title = trim((string)$title);
+    $formula = trim((string)$formula);
+    $html = '<span class="product-table_th-title">' . $title . '</span>';
+    if ($formula !== '') {
+        $html .= '<span class="product-table_th-formula">' . htmlspecialcharsbx($formula) . '</span>';
     }
 
-    $isPlusPrice = strpos($priceName, '+') !== false || $xmlId === 'PER_METER_PLUS20';
-    $surcharge = $isPlusPrice ? getSquareMeterSurchargePercent($sectionCode) : null;
-    $coef = $surcharge
-        ? '<span class="price-header__coef">+' . $surcharge . '%</span>'
-        : '';
+    return $html;
+}
 
-    return '<span class="price-header">Цена за м<sup>2</sup>' . $coef . '</span>';
+function formatCatalogPriceHeaderHtml($priceName, $xmlId, $isSquareMeter, $sectionCode = '')
+{
+    $xmlId = (string)$xmlId;
+    $priceName = (string)$priceName;
+    $isPlusPrice = $xmlId === 'PER_METER_PLUS20' || strpos($priceName, '+') !== false;
+
+    if ($xmlId === 'PRICE_PER_KG') {
+        return formatCatalogColumnHeaderHtml('Цена за кг', '1–1000 × Коэффициент_Расчет');
+    }
+
+    if ($xmlId === 'PER_METER') {
+        if ($isSquareMeter) {
+            return '<span class="product-table_th-title"><span class="price-header">Цена за м<sup>2</sup></span></span>'
+                . '<span class="product-table_th-formula">' . htmlspecialcharsbx('1–1000 × Коэффициент_Расчет') . '</span>';
+        }
+
+        return formatCatalogColumnHeaderHtml(
+            htmlspecialcharsbx($priceName !== '' ? $priceName : 'Цена за метр'),
+            '1–1000 × Коэффициент_Расчет'
+        );
+    }
+
+    if ($isPlusPrice) {
+        $surcharge = $isSquareMeter ? getSquareMeterSurchargePercent($sectionCode) : 20;
+        if ($isSquareMeter) {
+            $coef = $surcharge
+                ? '<span class="price-header__coef">+' . $surcharge . '%</span>'
+                : '';
+            $formula = $surcharge
+                ? ('цена за м² × 1,' . (int)$surcharge)
+                : 'цена за м² × 1,2';
+
+            return '<span class="product-table_th-title"><span class="price-header">Цена за м<sup>2</sup>' . $coef . '</span></span>'
+                . '<span class="product-table_th-formula">' . htmlspecialcharsbx($formula) . '</span>';
+        }
+
+        return formatCatalogColumnHeaderHtml(
+            htmlspecialcharsbx($priceName !== '' ? $priceName : 'Цена за метр +20%'),
+            'цена за метр × 1,2'
+        );
+    }
+
+    if ($isSquareMeter) {
+        return '<span class="product-table_th-title"><span class="price-header">Цена за м<sup>2</sup></span></span>';
+    }
+
+    return formatCatalogColumnHeaderHtml(htmlspecialcharsbx($priceName));
 }

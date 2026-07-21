@@ -27,6 +27,15 @@ if ($productId <= 0 || $quantity <= 0) {
 
 ensureCatalogProductOrderable($productId);
 
+$lengthPerPiece = (float)getPropVal(36, $productId, 'DLINA_RASCHET');
+if ($lengthPerPiece > 0) {
+    if (isOnlyPiecesProduct(getPropVal(36, $productId, 'TOLKO_SHT'))) {
+        $quantity = snapOnlyPiecesMetersQuantity($quantity, $lengthPerPiece);
+    } elseif (isHalfPiecesProduct(getPropVal(36, $productId, 'TOLKO_SHT_I_0_5_SHT'))) {
+        $quantity = snapHalfPiecesMetersQuantity($quantity, $lengthPerPiece);
+    }
+}
+
 if (isCustomPrice(36, $productId)) {
     PriceUpdater::syncProductPrices($productId);
 }

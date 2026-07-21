@@ -31,21 +31,24 @@ if(count($arResult['ITEMS'])) :
     <thead>
         <tr>
             <th>Наименование товара</th>
-            <th class="product-table_col-steel">Марка стали</th>
+            <th class="product-table_col-steel"><?=formatCatalogColumnHeaderHtml('Марка стали', 'свойство Марка (сайт)')?></th>
             <?php foreach ($arResult['CATALOG_PRICE'] as $price): ?>
                 <th class="product-table_col-price"><?=$price['NAME_HTML'] ?? htmlspecialcharsbx($price['NAME'])?></th>
             <?php endforeach; ?>
             <?php if (!empty($arResult['SHOW_WEIGHT_COLUMN'])): ?>
-            <th class="product-table_col-qty"<?=!empty($arResult['EDITABLE_WEIGHT_COLUMN']) ? ' data-tip="Укажите вес заказа в кг — метры и штуки пересчитаются автоматически"' : ' data-tip="Вес погонного метра, кг"'?>><?=!empty($arResult['EDITABLE_WEIGHT_COLUMN']) ? 'Вес, кг' : 'Вес'?></th>
+            <th class="product-table_col-qty" data-tip="Вес заказа в кг. Ввод доступен при свойствах «шт, м, вес от 500/1000 кг»"><?=formatCatalogColumnHeaderHtml(
+                'Вес, кг',
+                'Коэффициент_Расчет × Ширина_Расчет × Длина_Расчет'
+            )?></th>
             <?php endif; ?>
-            <th class="product-table_col-qty">Длина (метры)</th>
+            <th class="product-table_col-qty"><?=formatCatalogColumnHeaderHtml('Длина (метры)', 'метры = штуки × Длина_Расчет')?></th>
             <?php if (!empty($arResult['SHOW_WIDTH_COLUMN'])): ?>
-            <th class="product-table_col-qty">Ширина (метры)</th>
+            <th class="product-table_col-qty"><?=formatCatalogColumnHeaderHtml('Ширина (метры)', 'свойство Ширина_Расчет')?></th>
             <?php endif; ?>
             <?php if (!empty($arResult['HAS_BASIC_SHEET_ROWS'])): ?>
-            <th class="product-table_col-qty" data-tip="Кратно 1 м длины листа">м²</th>
+            <th class="product-table_col-qty" data-tip="Кратно 1 м длины листа"><?=formatCatalogColumnHeaderHtml('м²', 'длина × Ширина_Расчет')?></th>
             <?php endif; ?>
-            <th class="product-table_col-qty">Штуки</th>
+            <th class="product-table_col-qty"><?=formatCatalogColumnHeaderHtml('Штуки', 'штуки = метры ÷ Длина_Расчет')?></th>
             <th>Купить</th>
         </tr>
     </thead>
@@ -62,8 +65,8 @@ if(count($arResult['ITEMS'])) :
             $weightPerPiece = getProductPieceWeightKg((int)$arItem['ID'], (int)$arItem['IBLOCK_ID']);
             $initialWeightKg = $weightPerPiece > 0 ? round($weightPerPiece, 2) : '';
             $weightValue = $weightPerMeter > 0 ? (string)$weightPerMeter : '';
-            $piecesStep = $onlyPieces || $basicSheet ? '1' : '0.1';
-            $piecesMin = $onlyPieces || $basicSheet ? '1' : '0.1';
+            $piecesStep = $onlyPieces || ($basicSheet && !$halfPieces) ? '1' : ($halfPieces ? '0.5' : '0.1');
+            $piecesMin = $onlyPieces || ($basicSheet && !$halfPieces) ? '1' : ($halfPieces ? '0.5' : '0.1');
             $lockedTitle = 'Продажа только целыми штуками. Метры и ширина заданы производителем.';
             $basicSheetTip = ($basicSheet && $halfPieces)
                 ? getBasicSheetHalfPiecesCuttingTipText()
@@ -72,7 +75,7 @@ if(count($arResult['ITEMS'])) :
             $sheetAreaPerPiece = ($basicSheet && $metersInPiece && $widthValue)
                 ? round(floatval($metersInPiece) * floatval($widthValue), 3)
                 : 0;
-            $basicSheetSteps = ($basicSheet && $metersInPiece && $widthValue)
+            $basicSheetSteps = ($basicSheet && !$halfPieces && $metersInPiece && $widthValue)
                 ? getBasicSheetWidthMeterSteps($metersInPiece, $widthValue)
                 : null;
             if ($basicSheetSteps) {
@@ -82,16 +85,22 @@ if(count($arResult['ITEMS'])) :
             $halfPiecesCuttingTip = ($basicSheet && $halfPieces)
                 ? getBasicSheetHalfPiecesCuttingTipText()
                 : ($isSheet ? getSheetCuttingTipText() : getFreeCuttingTipText());
-            $weightEditable = !empty($arResult['EDITABLE_WEIGHT_COLUMN']) && $weightPerMeter > 0;
-            $weightFrom500 = !empty($arItem['WEIGHT_FROM_500']);
-            $minBulkWeight = getMinBulkWeightKg();
-            $weightFrom500Tip = getWeightFrom500TipText($minBulkWeight);
-            if ($weightFrom500) {
+            $weightFromBulk = !empty($arItem['WEIGHT_FROM_BULK']);
+            $weightInputAllowed = $weightFromBulk && $weightPerMeter > 0;
+            $minBulkWeight = (int)($arItem['MIN_BULK_WEIGHT'] ?? 0);
+            $weightFromBulkTip = $weightFromBulk ? getWeightFrom500TipText($minBulkWeight) : '';
+            $bulkBadgeLabel = $weightFromBulk ? formatBulkWeightBadgeLabel($minBulkWeight) : '';
+            $displayWeightKg = $initialWeightKg !== '' ? $initialWeightKg : '—';
+            if ($weightFromBulk && $onlyPieces) {
                 $piecesStep = '1';
                 $piecesMin = '1';
             }
+            $lockSheetMeters = $onlyPieces || ($basicSheet && !$halfPieces);
+            $halfSheetAreaStep = ($basicSheet && $halfPieces && $sheetAreaPerPiece > 0)
+                ? round($sheetAreaPerPiece * 0.5, 3)
+                : 0;
         ?>
-        <tr data-price="<?=$arItem['RETAIL_PRICE']?>" data-length="<?=$metersInPiece?>" data-width="<?=$widthValue?>" data-only-pieces="<?=$onlyPieces ? '1' : '0'?>" data-half-pieces="<?=$halfPieces ? '1' : '0'?>" data-basic-sheet="<?=$basicSheet ? '1' : '0'?>"<?=$onlyPieces ? ' class="product-table_row--only-pieces"' : ''?><?=$weightEditable ? ' data-weight-editable="1" data-weight-per-meter="' . htmlspecialcharsbx($weightPerMeter) . '"' : ''?><?=$weightFrom500 ? ' data-weight-from-500="1" data-min-bulk-weight="' . $minBulkWeight . '" data-weight-per-piece="' . htmlspecialcharsbx($weightPerPiece) . '" data-order-mode="pieces"' : ''?>>
+        <tr data-price="<?=$arItem['RETAIL_PRICE']?>" data-length="<?=$metersInPiece?>" data-width="<?=$widthValue?>" data-only-pieces="<?=$onlyPieces ? '1' : '0'?>" data-half-pieces="<?=$halfPieces ? '1' : '0'?>" data-basic-sheet="<?=($basicSheet && !$halfPieces) ? '1' : '0'?>"<?=$onlyPieces ? ' class="product-table_row--only-pieces"' : ''?><?=$weightPerMeter > 0 ? ' data-weight-per-meter="' . htmlspecialcharsbx($weightPerMeter) . '"' : ''?><?=$weightInputAllowed ? ' data-weight-editable="1"' : ''?><?=$weightFromBulk ? ' data-weight-from-bulk="1" data-weight-from-500="1" data-min-bulk-weight="' . $minBulkWeight . '" data-weight-per-piece="' . htmlspecialcharsbx($weightPerPiece) . '" data-order-mode="pieces"' : ''?>>
             <td class="product-table_first-cell">
                 <button type="button" class="product-availability-marker" title="В наличии на складе." aria-label="В наличии на складе.">
                     <span class="product-availability-marker__tip" aria-hidden="true">В наличии на складе.</span>
@@ -101,9 +110,9 @@ if(count($arResult['ITEMS'])) :
                 <button type="button" class="product-hint product-hint--lock" data-tip="<?=$lockedTitle?>" aria-label="<?=$lockedTitle?>">
                     <span class="product-hint__icon--lock" aria-hidden="true"></span>
                 </button>
-                <?php elseif ($weightFrom500): ?>
-                <button type="button" class="product-hint product-hint--bulk" data-tip="<?=$weightFrom500Tip?>" aria-label="<?=$weightFrom500Tip?>">
-                    <span class="product-hint__label">500+</span>
+                <?php elseif ($weightFromBulk && $minBulkWeight >= 1000): ?>
+                <button type="button" class="product-hint product-hint--bulk" data-tip="<?=$weightFromBulkTip?>" aria-label="<?=$weightFromBulkTip?>">
+                    <span class="product-hint__label"><?=$bulkBadgeLabel?></span>
                 </button>
                 <?php elseif ($basicSheet && $halfPieces): ?>
                 <button type="button" class="product-hint product-hint--cut-free" data-tip="<?=$basicSheetTip?>" aria-label="<?=$basicSheetTip?>">
@@ -138,21 +147,30 @@ if(count($arResult['ITEMS'])) :
             </td>
             <td class="product-table_cell-steel"><?=htmlspecialcharsbx($arItem['STEEL_GRADE'] ?? '')?></td>
             <?php foreach ($arResult['CATALOG_PRICE'] as $price): ?>
-                <td><?=$arItem["ITEM_ALL_PRICES"][0]["PRICES"][$price['CATALOG_GROUP_ID']]['PRINT_PRICE'] ?? 0?></td>
+                <td><?php
+                    if (!empty($price['IS_PRICE_PER_KG'])) {
+                        echo $arItem['PRINT_PRICE_PER_KG'] ?? '—';
+                    } else {
+                        echo $arItem['ITEM_ALL_PRICES'][0]['PRICES'][$price['CATALOG_GROUP_ID']]['PRINT_PRICE'] ?? 0;
+                    }
+                ?></td>
             <?php endforeach; ?>
             <?php if (!empty($arResult['SHOW_WEIGHT_COLUMN'])): ?>
             <td class="product-table_cell-qty product-table_cell-weight">
-                <?php if ($weightEditable): ?>
-                <div class="product-table_field"<?=$weightFrom500 ? ' data-tip="' . htmlspecialcharsbx(getWeightFrom500PiecesTipText($minBulkWeight)) . '"' : ' data-tip="Вес шт = Коэф. × Ширина × Длина · ' . $weightPerMeter . ' кг/м"'?>>
-                    <input type="number" class="product-table-input product-table-input_weight" min="0.01" step="<?=$weightFrom500 ? '0.001' : '0.01'?>" placeholder="0" name="weight_kg" value="<?=$initialWeightKg?>" data-weight-per-meter="<?=$weightPerMeter?>"<?=$weightFrom500 ? ' data-tip-pieces="' . htmlspecialcharsbx(getWeightFrom500PiecesTipText($minBulkWeight)) . '" data-tip-bulk="' . htmlspecialcharsbx(getWeightFrom500BulkTipText($minBulkWeight)) . '"' : ''?>>
+                <?php if ($weightInputAllowed): ?>
+                <div class="product-table_field" data-tip="<?=htmlspecialcharsbx(getWeightFrom500PiecesTipText($minBulkWeight))?>">
+                    <input type="number" class="product-table-input product-table-input_weight" min="0.01" step="0.001" placeholder="0" name="weight_kg" value="<?=$initialWeightKg?>" data-weight-per-meter="<?=$weightPerMeter?>" data-tip-pieces="<?=htmlspecialcharsbx(getWeightFrom500PiecesTipText($minBulkWeight))?>" data-tip-bulk="<?=htmlspecialcharsbx(getWeightFrom500BulkTipText($minBulkWeight))?>">
                 </div>
                 <?php else: ?>
-                <span data-tip="Вес погонного метра, кг"><?=htmlspecialcharsbx($weightValue)?></span>
+                <div class="product-table_field product-table_field--restricted" data-tip="Вес шт = Коэффициент_Расчет × Ширина_Расчет × Длина_Расчет<?=$weightPerMeter > 0 ? ' · ' . $weightPerMeter . ' кг/м' : ''?>">
+                    <span class="product-table_field-value" data-weight-display><?=htmlspecialcharsbx((string)$displayWeightKg)?></span>
+                    <input type="hidden" name="weight_kg" value="<?=htmlspecialcharsbx((string)$initialWeightKg)?>" data-weight-per-meter="<?=htmlspecialcharsbx((string)$weightPerMeter)?>">
+                </div>
                 <?php endif; ?>
             </td>
             <?php endif; ?>
-            <td class="product-table_cell-qty<?=($onlyPieces || $basicSheet) ? ' product-table_cell--locked' : ''?>">
-                <?php if ($onlyPieces || $basicSheet): ?>
+            <td class="product-table_cell-qty<?=$lockSheetMeters ? ' product-table_cell--locked' : ''?>">
+                <?php if ($lockSheetMeters): ?>
                 <div class="product-table_field product-table_field--restricted" data-tip="<?=$basicSheet ? $basicSheetDimensionsTip : $lockedTitle?>">
                     <?php if ($onlyPieces): ?>
                     <span class="product-hint__icon--lock" aria-hidden="true"></span>
@@ -162,7 +180,7 @@ if(count($arResult['ITEMS'])) :
                 </div>
                 <?php else: ?>
                 <div class="product-table_field">
-                    <input type="number" class="product-table-input" min="1" step="<?=$isSheet ? '0.1' : '1'?>" placeholder="0" name="meters" value="<?=$metersInPiece?>" data-meters-in-one-piece="<?=$metersInPiece?>">
+                    <input type="number" class="product-table-input" min="<?=$halfPieces && $metersInPiece ? htmlspecialcharsbx(round((float)$metersInPiece * 0.5, 3)) : '0.1'?>" step="<?=$halfPieces && $metersInPiece ? htmlspecialcharsbx(round((float)$metersInPiece * 0.5, 3)) : '0.1'?>" placeholder="0" name="meters" value="<?=$metersInPiece?>" data-meters-in-one-piece="<?=$metersInPiece?>">
                 </div>
                 <?php endif; ?>
             </td>
@@ -184,8 +202,12 @@ if(count($arResult['ITEMS'])) :
             </td>
             <?php endif; ?>
             <?php if (!empty($arResult['HAS_BASIC_SHEET_ROWS'])): ?>
-            <td class="product-table_cell-qty<?=$basicSheet ? '' : ' product-table_cell--locked'?>">
-                <?php if ($basicSheet && $basicSheetSteps): ?>
+            <td class="product-table_cell-qty<?=($basicSheet || ($halfPieces && $sheetAreaPerPiece > 0)) ? '' : ' product-table_cell--locked'?>">
+                <?php if ($basicSheet && $halfPieces && $halfSheetAreaStep > 0): ?>
+                <div class="product-table_field" data-tip="м² = штуки × площадь листа · шаг 0,5 шт">
+                    <input type="number" class="product-table-input product-table-input_area" min="<?=$halfSheetAreaStep?>" step="<?=$halfSheetAreaStep?>" placeholder="0" name="area_m2" value="<?=$sheetAreaPerPiece?>" data-area-step="<?=$halfSheetAreaStep?>" data-full-area="<?=$sheetAreaPerPiece?>">
+                </div>
+                <?php elseif ($basicSheet && $basicSheetSteps): ?>
                 <div class="product-table_field" data-tip="<?=htmlspecialcharsbx(getBasicSheetPiecesTipText())?>">
                     <input type="number" class="product-table-input product-table-input_area" min="<?=$basicSheetSteps['AREA_STEP']?>" step="<?=$basicSheetSteps['AREA_STEP']?>" placeholder="0" name="area_m2" value="<?=$basicSheetSteps['AREA_STEP']?>" data-area-step="<?=$basicSheetSteps['AREA_STEP']?>" data-full-area="<?=$basicSheetSteps['FULL_AREA']?>">
                 </div>
@@ -213,14 +235,15 @@ if(count($arResult['ITEMS'])) :
     <div class="col-md-6">
         <div class="product-hint-legend product-hint-legend--stock">Наличие товара на складе</div>
         <div class="product-hint-legend product-hint-legend--limited">Количество ограничено, уточняйте у менеджера</div>
-        <?php if (!empty($arResult['HAS_WEIGHT_FROM_500_ROWS'])): ?>
-        <div class="product-hint-legend product-hint-legend--badge product-hint-legend--bulk" data-tip="<?=htmlspecialcharsbx(getWeightFrom500TipText())?>">
-            <span class="product-hint-legend__badge product-hint product-hint--bulk" aria-hidden="true"><span class="product-hint__label">500+</span></span>
-            <span class="product-hint-legend__text">От 500 кг можно заказать по весу</span>
+        <?php if (!empty($arResult['BULK_WEIGHT_THRESHOLDS'])): ?>
+            <?php ksort($arResult['BULK_WEIGHT_THRESHOLDS']); ?>
+            <?php foreach (array_keys($arResult['BULK_WEIGHT_THRESHOLDS']) as $bulkThreshold): ?>
+                <?php if ((int)$bulkThreshold < 1000) { continue; } ?>
+        <div class="product-hint-legend product-hint-legend--badge product-hint-legend--bulk" data-tip="<?=htmlspecialcharsbx(getWeightFrom500TipText($bulkThreshold))?>">
+            <span class="product-hint-legend__badge product-hint product-hint--bulk" aria-hidden="true"><span class="product-hint__label"><?=formatBulkWeightBadgeLabel($bulkThreshold)?></span></span>
+            <span class="product-hint-legend__text"><?=htmlspecialcharsbx(getBulkWeightLegendText($bulkThreshold))?></span>
         </div>
-        <?php endif; ?>
-        <?php if (!empty($arResult['EDITABLE_WEIGHT_COLUMN']) && empty($arResult['HAS_WEIGHT_FROM_500_ROWS'])): ?>
-        <div class="product-hint-legend product-hint-legend--neutral">Вес в кг: метры = кг ÷ вес пог.м, штуки = метры ÷ длина прутка</div>
+            <?php endforeach; ?>
         <?php endif; ?>
         <?php if (!empty($arResult['HAS_ONLY_PIECES_ROWS'])): ?>
         <div class="product-hint-legend product-hint-legend--badge product-hint-legend--lock" data-tip="Продажа только целыми штуками. Метры и ширина заданы производителем.">

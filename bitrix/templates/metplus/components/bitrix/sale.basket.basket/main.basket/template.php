@@ -232,39 +232,58 @@ if (empty($arResult['ERROR_MESSAGE']))
 
             function parseCutLengthTokens(raw) {
                 return String(raw || '')
-                    .replace(/,/g, ' ')
+                    .replace(/,/g, '.')
                     .replace(/\+/g, ' ')
                     .split(/\s+/)
                     .map(function(v) { return v.trim(); })
                     .filter(Boolean);
             }
 
+            var CUT_LENGTH_STEP = 0.1;
+
+            function snapCutLengthMeters(value) {
+                var n = parseFloat(value);
+                if (isNaN(n) || n <= 0) {
+                    return 0;
+                }
+                return Math.round(n / CUT_LENGTH_STEP) * CUT_LENGTH_STEP;
+            }
+
+            function isCutLengthStepValid(value) {
+                var n = parseFloat(value);
+                if (isNaN(n) || n <= 0) {
+                    return false;
+                }
+                var scaled = n / CUT_LENGTH_STEP;
+                return Math.abs(scaled - Math.round(scaled)) < 1e-6;
+            }
+
             function validateCutLengths(raw) {
                 var tokens = parseCutLengthTokens(raw);
                 var lengths = [];
-                var hasFraction = false;
                 var hasInvalid = false;
 
                 tokens.forEach(function(token) {
-                    if (/^\d+$/.test(token)) {
-                        var n = parseInt(token, 10);
-                        if (n > 0) {
-                            lengths.push(n);
-                        } else {
-                            hasInvalid = true;
-                        }
+                    // черновик при вводе «1.» — не ошибка
+                    if (/^\d+\.$/.test(token)) {
                         return;
                     }
-                    if (/^\d+[.,]\d+$/.test(token)) {
-                        hasFraction = true;
+                    if (!/^\d+(\.\d+)?$/.test(token)) {
+                        hasInvalid = true;
                         return;
                     }
-                    hasInvalid = true;
+                    var n = parseFloat(token);
+                    if (isNaN(n) || n <= 0) {
+                        hasInvalid = true;
+                        return;
+                    }
+                    // шаг 0,1 м — дробные округляем при blur через normalizeCutLengthsText
+                    lengths.push(snapCutLengthMeters(n));
                 });
 
                 return {
                     lengths: lengths,
-                    hasFraction: hasFraction,
+                    hasFraction: false,
                     hasInvalid: hasInvalid
                 };
             }
@@ -277,8 +296,8 @@ if (empty($arResult['ERROR_MESSAGE']))
             // иначе курсор/черновик (пробел, «+» перед цифрой) сбрасываются.
             function sanitizeCutLengthsInput(raw) {
                 return String(raw || '')
-                    .replace(/,/g, ' ')
-                    .replace(/[^\d\s+]/g, '');
+                    .replace(/,/g, '.')
+                    .replace(/[^\d\s+.]/g, '');
             }
 
             function setInputValuePreserveCaret($input, nextValue) {
@@ -305,7 +324,7 @@ if (empty($arResult['ERROR_MESSAGE']))
                         j++;
                         continue;
                     }
-                    if (/[^\d\s+]/.test(prev.charAt(i)) || prev.charAt(i) === ',') {
+                    if (/[^\d\s+.]/.test(prev.charAt(i)) || prev.charAt(i) === ',') {
                         removedBefore++;
                         i++;
                         continue;
@@ -334,12 +353,19 @@ if (empty($arResult['ERROR_MESSAGE']))
                     if (isNaN(n) || n <= 0) {
                         return null;
                     }
-                    return String(Math.round(n));
+                    return formatCutLength(snapCutLengthMeters(n));
                 }).filter(function(v) { return v !== null; }).join(' + ');
             }
 
             function formatCutLength(value) {
-                return String(Math.round(value));
+                var n = snapCutLengthMeters(value);
+                if (!(n > 0)) {
+                    return '0';
+                }
+                if (Math.abs(n - Math.round(n)) < 1e-9) {
+                    return String(Math.round(n));
+                }
+                return n.toFixed(1);
             }
 
             function formatMeters(value) {
@@ -769,6 +795,13 @@ if (empty($arResult['ERROR_MESSAGE']))
                 var freeCutting = String($item.attr('data-free-cutting') || '0') === '1';
                 var length = parseFloat($item.attr('data-length-per-piece') || '0') || 0;
                 var baseUnit = parseFloat($item.attr('data-base-meter-price') || '0') || 0;
+                if (baseUnit <= 0) {
+                    var itemId = $item.attr('data-id') || $item.data('id') || '';
+                    var priceEl = itemId ? document.getElementById('basket-item-price-' + itemId) : null;
+                    if (priceEl) {
+                        baseUnit = parseMoneyFromText(priceEl.textContent || priceEl.innerText || '') || 0;
+                    }
+                }
                 var percent = 10;
                 var pipeIncompletePercent = (!isSheet && !freeCutting) ? 20 : 0;
                 var surchargeUnit = roundMoney(baseUnit * (1 + percent / 100));
@@ -1151,13 +1184,13 @@ if (empty($arResult['ERROR_MESSAGE']))
                     if (cutsState.hasFraction) {
                         fractionError = true;
                         hasInvalidPart = true;
-                        errors.push('Партия ' + (index + 1) + ': длины кусков — только целые метры');
+                        errors.push('Партия ' + (index + 1) + ': длины кусков — кратно 0,1 м (например 1.2 3.5)');
                     }
 
                     if ((isIncomplete || qty > 0) && !lengths.length && String($cuts.val() || '').trim() !== '') {
                         pieceError = true;
                         hasInvalidPart = true;
-                        errors.push('Партия ' + (index + 1) + ': укажите длины кусков целыми числами');
+                        errors.push('Партия ' + (index + 1) + ': укажите длины кусков кратно 0,1 м');
                     }
 
                     $part.toggleClass('is-invalid', lengthError || pieceError || typeError || fractionError);

@@ -182,7 +182,8 @@ foreach ($this->basketItems as $row)
         }
         $rowData['DEFAULT_CUT_PRICE'] = $defaultCutPrice;
         $rowData['BASE_METER_PRICE'] = 0;
-        if ($rowData['BASIC_SHEET'] || $rowData['IS_SHEET']) {
+        // Базовая цена за метр (тип 17) — для расчёта металла/наценок в мастере резки (листы и трубы)
+        if ($rowData['BASKET_LENGTH_PER_PIECE'] > 0 || $rowData['IS_SHEET']) {
             $baseMeterRow = function_exists('fetchCatalogPriceRow') ? fetchCatalogPriceRow((int)$row['PRODUCT_ID'], 17) : null;
             if ($baseMeterRow) {
                 $rowData['BASE_METER_PRICE'] = (float)$baseMeterRow['PRICE'];

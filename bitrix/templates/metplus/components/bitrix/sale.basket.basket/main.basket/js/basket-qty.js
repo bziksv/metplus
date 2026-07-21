@@ -20,12 +20,16 @@
 
 	function getPiecesStep(itemData)
 	{
+		if (isHalfPiecesItem(itemData)) {
+			return 0.5;
+		}
+
 		if (isBasicSheetWidthMeterItem(itemData)) {
 			var steps = getBasicSheetWidthSteps(itemData);
 			return steps ? steps.piecesStep : 1;
 		}
 
-		if (isWholeSheetItem(itemData)) {
+		if (isWholeSheetItem(itemData) || isOnlyPiecesItem(itemData)) {
 			return 1;
 		}
 
@@ -147,6 +151,12 @@
 		return !!(itemData && itemData.ONLY_PIECES);
 	}
 
+	function isHalfPiecesItem(itemData)
+	{
+		// «Только шт и 0,5 шт» — шаг 0.5 шт (в т.ч. листы с этим свойством)
+		return !!(itemData && itemData.HALF_PIECES && !isOnlyPiecesItem(itemData));
+	}
+
 	function enrichItemDataById(itemData)
 	{
 		if (!itemData) {
@@ -163,6 +173,14 @@
 
 	function snapPiecesValue(pieces, itemData)
 	{
+		if (isHalfPiecesItem(itemData)) {
+			pieces = parseFloat(pieces);
+			if (isNaN(pieces) || pieces < 0.5) {
+				return 0.5;
+			}
+			return Math.round(pieces * 2) / 2;
+		}
+
 		if (isBasicSheetWidthMeterItem(itemData)) {
 			var steps = getBasicSheetWidthSteps(itemData);
 			if (!steps) {
@@ -173,7 +191,17 @@
 			return parseFloat((widthUnits * steps.piecesStep).toFixed(6));
 		}
 
-		var step = getPiecesStep(itemData);
+		if (isOnlyPiecesItem(itemData)) {
+			pieces = parseFloat(pieces);
+			if (isNaN(pieces) || pieces <= 0) {
+				return 1;
+			}
+			if (Math.abs(pieces - Math.round(pieces)) < 1e-6) {
+				return Math.max(1, Math.round(pieces));
+			}
+			return Math.max(1, Math.ceil(pieces));
+		}
+
 		if (pieces < 1) {
 			return 1;
 		}
@@ -183,6 +211,13 @@
 
 	function formatPiecesDisplay(pieces, itemData)
 	{
+		if (isHalfPiecesItem(itemData)) {
+			var half = snapPiecesValue(pieces, itemData);
+			return Math.abs(half - Math.round(half)) < 0.01
+				? String(Math.round(half))
+				: formatQtyNumber(half, 1);
+		}
+
 		if (isBasicSheetWidthMeterItem(itemData)) {
 			return formatQtyNumber(snapPiecesValue(pieces, itemData), 3);
 		}
@@ -204,8 +239,15 @@
 
 	function isPipeMeterStepItem(itemData)
 	{
-		// прутки/трубы: метры только целыми (кроме «ТОЛЬКО ШТ» — там шаг = длина штуки)
-		return !!(itemData && !itemData.IS_SHEET && !isWholeSheetItem(itemData) && !isOnlyPiecesItem(itemData));
+		// прутки/трубы: метры только целыми
+		// (кроме «ТОЛЬКО ШТ» и «0,5 шт» — там шаг = длина / пол-длины штуки)
+		return !!(
+			itemData
+			&& !itemData.IS_SHEET
+			&& !isWholeSheetItem(itemData)
+			&& !isOnlyPiecesItem(itemData)
+			&& !isHalfPiecesItem(itemData)
+		);
 	}
 
 	function snapMetersForItem(metersQty, itemData)
@@ -217,9 +259,10 @@
 			return metersQty;
 		}
 
-		if (isFreeMeterCuttingItem(itemData))
+		if (isHalfPiecesItem(itemData) && lengthPerPiece > 0)
 		{
-			return Math.max(1, Math.round(metersQty));
+			var halfPieces = Math.max(0.5, Math.round((metersQty / lengthPerPiece) * 2) / 2);
+			return parseFloat((halfPieces * lengthPerPiece).toFixed(5));
 		}
 
 		if (isBasicSheetWidthMeterItem(itemData) && lengthPerPiece > 0)
@@ -237,13 +280,21 @@
 
 		if (isOnlyPiecesItem(itemData) && lengthPerPiece > 0)
 		{
-			var onlyPieces = Math.max(1, Math.round(metersQty / lengthPerPiece));
+			var rawPieces = metersQty / lengthPerPiece;
+			var onlyPieces = Math.abs(rawPieces - Math.round(rawPieces)) < 1e-6
+				? Math.max(1, Math.round(rawPieces))
+				: Math.max(1, Math.ceil(rawPieces));
 			return parseFloat((onlyPieces * lengthPerPiece).toFixed(5));
+		}
+
+		if (isFreeMeterCuttingItem(itemData))
+		{
+			return Math.max(1, Math.round(metersQty));
 		}
 
 		if (isPipeMeterStepItem(itemData))
 		{
-			return Math.max(1, Math.round(metersQty));
+			return Math.max(0.1, Math.round(metersQty * 10) / 10);
 		}
 
 		return metersQty;
@@ -445,7 +496,7 @@
 				return;
 			}
 
-			if (!itemData.HALF_PIECES && !isBasicSheetWidthMeterItem(itemData) && !isWholeSheetItem(itemData) && !isOnlyPiecesItem(itemData) && !isPipeMeterStepItem(itemData) && !isFreeMeterCuttingItem(itemData))
+			if (!itemData.HALF_PIECES && !isBasicSheetWidthMeterItem(itemData) && !isWholeSheetItem(itemData) && !isOnlyPiecesItem(itemData) && !isHalfPiecesItem(itemData) && !isPipeMeterStepItem(itemData) && !isFreeMeterCuttingItem(itemData))
 			{
 				return;
 			}
@@ -561,6 +612,15 @@
 			var currentQty = getCurrentQuantity(itemData);
 			var nextQty;
 
+			// «0,5 шт» (в т.ч. лист) — шаг по полштуки, не 1 м длины
+			if (isHalfPiecesItem(itemData) && lengthPerPiece > 0) {
+				var halfStep = getPiecesStep(itemData);
+				var halfPiecesNext = currentQty / lengthPerPiece + (delta * halfStep);
+				halfPiecesNext = snapPiecesValue(halfPiecesNext, itemData);
+				setQuantityByMeters(itemData, halfPiecesNext * lengthPerPiece);
+				return;
+			}
+
 			if (isBasicSheetWidthMeterItem(itemData)) {
 				var basicSteps = getBasicSheetWidthSteps(itemData);
 				var width = parseFloat(itemData.BASKET_WIDTH) || 0;
@@ -619,7 +679,7 @@
 				var lengthPerPiece = parseFloat(itemData.BASKET_LENGTH_PER_PIECE) || 0;
 				var bump = (lengthPerPiece > 0 && (isWholeSheetItem(itemData) || isOnlyPiecesItem(itemData)))
 					? lengthPerPiece
-					: 1;
+					: ((lengthPerPiece > 0 && isHalfPiecesItem(itemData)) ? (lengthPerPiece * 0.5) : 1);
 				nextQty = parseFloat((currentQty + (deltaKg > 0 ? bump : -bump)).toFixed(5));
 				snapped = finalizeQuantity(itemData, nextQty);
 			}
