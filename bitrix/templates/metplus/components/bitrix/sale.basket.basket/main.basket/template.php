@@ -690,6 +690,109 @@ if (empty($arResult['ERROR_MESSAGE']))
                 return lengths.length - 1;
             }
 
+            function calcPartRemainderMeters(partStock, sum) {
+                var stock = parseFloat(partStock) || 0;
+                var used = parseFloat(sum) || 0;
+                if (!(stock > 0)) {
+                    return 0;
+                }
+                var rem = Math.round((stock - used) * 1000) / 1000;
+                if (rem <= 0.0001) {
+                    return 0;
+                }
+                return snapCutLengthMeters(rem);
+            }
+
+            function setPartRemainderBadge($part, remainder, opts) {
+                opts = opts || {};
+                var $badge = $part.find('[data-entity="cutting-part-remainder"]');
+                if (!$badge.length) {
+                    return;
+                }
+                var rem = Math.max(0, parseFloat(remainder) || 0);
+                var showZero = !!opts.showZero;
+                if (rem > 0.0001) {
+                    $badge
+                        .prop('hidden', false)
+                        .removeClass('is-zero')
+                        .text('остаток ' + formatCutLength(rem) + ' м');
+                } else if (showZero) {
+                    $badge
+                        .prop('hidden', false)
+                        .addClass('is-zero')
+                        .text('без остатка');
+                } else {
+                    $badge.prop('hidden', true).removeClass('is-zero').text('');
+                }
+            }
+
+            function clearPartRemainderAutofillMark($part) {
+                $part
+                    .removeClass('is-remainder-warn')
+                    .removeAttr('data-remainder-autofilled')
+                    .removeAttr('data-remainder-autofilled-m');
+            }
+
+            /**
+             * Добавляет остаток последним куском во все партии с «зависанием».
+             * Возвращает число затронутых строк.
+             */
+            function autofillCuttingPartRemainders(id) {
+                var $item = $('#basket-item-' + id);
+                var $plan = $('#basket-item-' + id + '-cutting').find('[data-entity="cutting-plan"][data-id="' + id + '"]');
+                if (!$plan.length || !$item.length) {
+                    return 0;
+                }
+
+                var stock = parseFloat($item.attr('data-length-per-piece') || '0') || 0;
+                var availableInfo = getAvailablePieces($item);
+                var remnantMeters = getRemnantMeters($item, availableInfo);
+                var changed = 0;
+
+                $plan.find('[data-entity="cutting-part"]').each(function() {
+                    var $part = $(this);
+                    var isIncomplete = getPartTarget($part) === 'incomplete';
+                    var partStock = isIncomplete ? remnantMeters : stock;
+                    var $cuts = $part.find('[data-entity="cutting-part-cuts"]');
+                    var lengths = parseCutLengths($cuts.val());
+                    if (!lengths.length || !(partStock > 0)) {
+                        return;
+                    }
+                    var sum = lengths.reduce(function(acc, v) { return acc + v; }, 0);
+                    if (sum - partStock > 0.0001) {
+                        return;
+                    }
+                    var rem = calcPartRemainderMeters(partStock, sum);
+                    if (!(rem > 0.0001)) {
+                        return;
+                    }
+                    // не раздувать сверх длины
+                    if (sum + rem - partStock > 0.0001) {
+                        rem = Math.round((partStock - sum) * 10) / 10;
+                        if (!(rem > 0.0001)) {
+                            return;
+                        }
+                    }
+
+                    var next = normalizeCutLengthsText(
+                        lengths.map(formatCutLength).concat([formatCutLength(rem)]).join(' + ')
+                    );
+                    $cuts.val(next);
+                    $part
+                        .addClass('is-remainder-warn')
+                        .attr('data-remainder-autofilled', '1')
+                        .attr('data-remainder-autofilled-m', formatCutLength(rem));
+                    changed += 1;
+                });
+
+                if (changed > 0) {
+                    refreshCuttingPlan(id);
+                    saveCuttingPlan(id, { immediate: true });
+                }
+
+                return changed;
+            }
+
             function parseMoneyFromText(text) {
                 var s = String(text || '').replace(/\s/g, '');
                 var m = s.match(/([\d.,]+)/);
@@ -1200,6 +1303,8 @@ if (empty($arResult['ERROR_MESSAGE']))
                     $cuts.toggleClass('is-invalid', lengthError || pieceError || fractionError);
 
                     if (!lengths.length) {
+                        setPartRemainderBadge($part, 0);
+                        $part.toggleClass('is-remainder-warn', false);
                         if (!isIncomplete && qty <= 0) {
                             $preview.html('<span class="cutting-part__preview-empty">Укажите число штук и длины кусков</span>');
                         } else {
@@ -1228,7 +1333,18 @@ if (empty($arResult['ERROR_MESSAGE']))
                     totalCuts += cutsTotal;
                     totalCost += partCost;
 
-                    var remainder = partStock > 0 ? Math.max(0, partStock - sum) : null;
+                    var remainder = partStock > 0 ? calcPartRemainderMeters(partStock, sum) : 0;
+                    var wasAutofilled = $part.attr('data-remainder-autofilled') === '1';
+                    var autofilledM = String($part.attr('data-remainder-autofilled-m') || '');
+                    var remainderWarn = lengths.length > 0 && remainder > 0.0001 && !lengthError;
+                    $part.toggleClass(
+                        'is-remainder-warn',
+                        remainderWarn && !pieceError && !typeError && !fractionError
+                    );
+                    setPartRemainderBadge($part, remainder, {
+                        showZero: lengths.length > 0 && partStock > 0 && !lengthError
+                    });
+
                     var chips = lengths.map(function(len) {
                         return '<span class="cutting-chip">' + formatCutLength(len) + ' м</span>';
                     }).join('<span class="cutting-chip-sep">+</span>');
@@ -1236,8 +1352,12 @@ if (empty($arResult['ERROR_MESSAGE']))
                     var meta = '<span class="cutting-chip cutting-chip--type">' + typeName + '</span> · '
                         + (isIncomplete ? 'с неполной: ' : 'с одной штуки: ') + chips
                         + ' = <strong>' + formatCutLength(sum) + ' м</strong>';
-                    if (remainder !== null) {
-                        meta += ', остаток: <strong>' + formatCutLength(remainder) + ' м</strong>';
+                    if (wasAutofilled && autofilledM) {
+                        meta = '<span class="cutting-part__remainder-note cutting-part__remainder-note--ok">Добавлен остаток '
+                            + autofilledM + ' м — проверьте куски</span>' + meta;
+                    } else if (remainder > 0.0001 && !lengthError) {
+                        meta = '<span class="cutting-part__remainder-note">Не забудьте остаток '
+                            + formatCutLength(remainder) + ' м</span>' + meta;
                     }
                     if (!isIncomplete && qty <= 0) {
                         meta += '<br><em>0 шт — партия не учитывается, укажите число штук</em>';
@@ -1912,10 +2032,12 @@ if (empty($arResult['ERROR_MESSAGE']))
                     var $parts = $('[data-entity="cutting-parts"][data-id="' + id + '"]');
                     var $plan = $('#basket-item-' + id + '-cutting').find('[data-entity="cutting-plan"]');
                     var $tpl = $parts.find('[data-entity="cutting-part"]').first().clone();
-                    $tpl.removeClass('is-invalid is-incomplete-target');
+                    $tpl.removeClass('is-invalid is-incomplete-target is-remainder-warn');
                     $tpl.find('input').val('').removeClass('is-invalid');
                     $tpl.find('[data-entity="cutting-part-qty"]').val('1');
                     $tpl.find('[data-entity="cutting-part-preview"]').empty();
+                    $tpl.find('[data-entity="cutting-part-remainder"]').prop('hidden', true).text('').removeClass('is-zero');
+                    clearPartRemainderAutofillMark($tpl);
                     applyPartTargetUi($tpl, 'full');
                     $parts.append($tpl);
                     $('[data-entity="cutting-target-full"][data-id="' + id + '"]').addClass('is-active');
@@ -1936,9 +2058,11 @@ if (empty($arResult['ERROR_MESSAGE']))
                         return;
                     }
                     var $tpl = $parts.find('[data-entity="cutting-part"]').first().clone();
-                    $tpl.removeClass('is-invalid');
+                    $tpl.removeClass('is-invalid is-remainder-warn');
                     $tpl.find('input').val('').removeClass('is-invalid');
                     $tpl.find('[data-entity="cutting-part-preview"]').empty();
+                    $tpl.find('[data-entity="cutting-part-remainder"]').prop('hidden', true).text('').removeClass('is-zero');
+                    clearPartRemainderAutofillMark($tpl);
                     applyPartTargetUi($tpl, 'incomplete');
                     $parts.append($tpl);
                     $('[data-entity="cutting-target-incomplete"][data-id="' + id + '"]').addClass('is-active');
@@ -1985,6 +2109,7 @@ if (empty($arResult['ERROR_MESSAGE']))
             $(document).on("input" + cuttingNs, "#basket-root [data-entity='cutting-part-qty'], #basket-root [data-entity='cutting-part-cuts'], #basket-root [data-entity='cutting-part-type']", function() {
                     if ($(this).is('[data-entity="cutting-part-cuts"]')) {
                         var $cuts = $(this);
+                        clearPartRemainderAutofillMark($cuts.closest('[data-entity="cutting-part"]'));
                         var sanitized = sanitizeCutLengthsInput($cuts.val());
                         if ($cuts.val() !== sanitized) {
                             setInputValuePreserveCaret($cuts, sanitized);
@@ -2170,6 +2295,7 @@ if (empty($arResult['ERROR_MESSAGE']))
                 refreshPlan: refreshCuttingPlan,
                 open: openCuttingPlan,
                 syncPartsToSelectedTarget: syncPartsToSelectedTarget,
+                autofillRemainders: autofillCuttingPartRemainders,
                 rememberStep: setCuttingWizardStepStored,
                 getStoredStep: getCuttingWizardStepStored,
                 restoreUi: restoreAllCuttingUi,

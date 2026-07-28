@@ -189,10 +189,9 @@
 					$(searchField).appendTo($(form));
 					$(btn).appendTo($(form));
 					$(form).appendTo($(firstTh));
+					// одна ячейка на всю ширину — иначе поиск раздувает колонку «Наименование»
+					firstTh.attr("colspan", columnCount);
 					$(firstTh).appendTo($(searchHeader));
-					for (var columnIndex = 1; columnIndex < columnCount; columnIndex++) {
-						$("<th>").addClass("product-table_head-spacer").appendTo($(searchHeader));
-					}
 				} else {
 					var n=0;
 					$(elm).find("td").first().parent().find("td").each(function() {

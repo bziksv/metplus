@@ -64,6 +64,9 @@ class PriceUpdater {
         }
 
         $price = (float) $basePrice["PRICE"];
+        if ($price <= 0) {
+            return 0;
+        }
 
         return $price * $coefficient;
     }
@@ -114,7 +117,10 @@ class PriceUpdater {
 
     private static function getCoefficientRaschet($propValues)
     {
-        return (float) ($propValues["KOEFFITSENT_RASCHET"] ?? 0);
+        $coefficient = (float) ($propValues["KOEFFITSENT_RASCHET"] ?? 0);
+
+        // Нет коэффициента из 1С — как в весе (getWeightCalcFactor): считаем 1
+        return $coefficient > 0 ? $coefficient : 1.0;
     }
 
     private static function updateMeasure($productId, $measureId, $ratioValue)

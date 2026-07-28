@@ -145,7 +145,7 @@ if ($isFilter)
                         ?>
 
                         <? if(intval($arCurSection['ELEMENT_CNT']) > 0): ?>
-                        <div class="catalog-section-header">
+                        <div class="catalog-smart-filter-host" hidden aria-hidden="true">
                             <?$APPLICATION->IncludeComponent("bitrix:catalog.smart.filter", "filter", array(
                                     "IBLOCK_TYPE" => $arParams["IBLOCK_TYPE"],
                                     "IBLOCK_ID" => $arParams["IBLOCK_ID"],

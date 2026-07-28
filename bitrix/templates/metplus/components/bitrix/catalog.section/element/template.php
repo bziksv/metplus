@@ -27,6 +27,23 @@ if(count($arResult['ITEMS'])) :
 
 <p>Уважаемый покупатель! Конечная цена товара увеличивается, если вы выбираете нестандартный метраж. Вы можете покупать товар поштучно по обычной цене.</p>
 
+<div class="product-table-smart-search" data-product-table-search>
+    <label class="product-table-smart-search__label" for="product-table-smart-search-input">Поиск по таблице</label>
+    <div class="product-table-smart-search__field">
+        <span class="product-table-smart-search__icon" aria-hidden="true"></span>
+        <input
+            id="product-table-smart-search-input"
+            class="product-table-smart-search__input"
+            type="search"
+            placeholder="Название, марка стали, размер…"
+            autocomplete="off"
+            enterkeyhint="search"
+        >
+        <button type="button" class="product-table-smart-search__clear" hidden aria-label="Очистить поиск">&times;</button>
+    </div>
+    <div class="product-table-smart-search__meta" aria-live="polite"></div>
+</div>
+
 <table class="product-table" id="product-table">
     <thead>
         <tr>
@@ -124,7 +141,7 @@ if(count($arResult['ITEMS'])) :
                 </button>
                 <?php elseif ($halfPieces): ?>
                 <button type="button" class="product-hint product-hint--cut-free" data-tip="<?=$halfPiecesCuttingTip?>" aria-label="<?=$halfPiecesCuttingTip?>">
-                    <span class="product-hint__label">1м</span>
+                    <span class="product-hint__label"><?=getHalfPiecesOrderBadgeLabel()?></span>
                 </button>
                 <?php endif; ?>
                 <span class="product-availability">В наличии на складе.</span>
@@ -265,7 +282,7 @@ if(count($arResult['ITEMS'])) :
         <?php endif; ?>
         <?php if (!empty($arResult['HAS_HALF_PIECES_FREE_ROWS'])): ?>
         <div class="product-hint-legend product-hint-legend--badge product-hint-legend--cut-free" data-tip="<?=htmlspecialcharsbx(getFreeCuttingTipText())?>">
-            <span class="product-hint-legend__badge product-hint product-hint--cut-free" aria-hidden="true"><span class="product-hint__label">1м</span></span>
+            <span class="product-hint-legend__badge product-hint product-hint--cut-free" aria-hidden="true"><span class="product-hint__label"><?=getHalfPiecesOrderBadgeLabel()?></span></span>
             <span class="product-hint-legend__text"><?=htmlspecialcharsbx(getHalfPiecesCuttingLegendText(false))?></span>
         </div>
         <?php endif; ?>

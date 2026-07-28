@@ -4,41 +4,280 @@
     white-space: nowrap;
 }
 
+.catalog_right-column {
+    min-width: 0;
+    overflow-x: hidden;
+    padding-left: 15px;
+    flex: 76% 0 0 !important;
+    max-width: 76% !important;
+}
+
+.catalog_left-column {
+    padding-right: 15px;
+    flex: 24% 0 0 !important;
+    max-width: 24% !important;
+}
+
+/* Старый accordion «Фильтр» скрыт — вместо него умный поиск над таблицей */
+.catalog-section-header,
+.catalog_right-column .bx-filter,
+.catalog_right-column .filter-box {
+    display: none !important;
+}
+
+/* Умный поиск над таблицей товаров */
+.product-table-smart-search {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem 1rem;
+    margin: 0 0 1rem;
+}
+
+.product-table-smart-search__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.product-table-smart-search__field {
+    position: relative;
+    flex: 1 1 16rem;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    height: 2.75rem;
+    padding: 0 0.75rem 0 2.65rem;
+    border: 1px solid #c9d6e2;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(7, 62, 113, 0.04);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.product-table-smart-search__field:focus-within {
+    border-color: #3ebbf3;
+    box-shadow: 0 0 0 3px rgba(62, 187, 243, 0.2);
+}
+
+.product-table-smart-search__icon {
+    position: absolute;
+    left: 0.9rem;
+    top: 50%;
+    width: 1.05rem;
+    height: 1.05rem;
+    margin-top: -0.525rem;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b8299' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") center / contain no-repeat;
+    pointer-events: none;
+}
+
+.product-table-smart-search__input {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    margin: 0;
+    padding: 0 2rem 0 0;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: #2f3b45;
+    outline: none;
+}
+
+.product-table-smart-search__input::placeholder {
+    color: #8aa0b3;
+    font-weight: 400;
+}
+
+.product-table-smart-search__clear {
+    position: absolute;
+    right: 0.45rem;
+    top: 50%;
+    width: 1.7rem;
+    height: 1.7rem;
+    margin-top: -0.85rem;
+    border: 0;
+    border-radius: 50%;
+    background: #e8eef4;
+    color: #4a5d73;
+    font-size: 1.15rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.product-table-smart-search__clear:hover {
+    background: #d7e3ee;
+}
+
+.product-table-smart-search__meta {
+    flex: 0 0 auto;
+    min-height: 1.25em;
+    font-size: 0.8125rem;
+    color: #6b8299;
+    white-space: nowrap;
+}
+
+/* Сайдбар каталога: плотнее, чтобы таблица шире */
+.sidebar-catalog_content {
+    padding: 0.85em 0.9em;
+}
+
+.sidebar-catalog .sidebar-title {
+    font-size: 1.2rem;
+    margin-bottom: 0.65em;
+}
+
+.sidebar-catalog .catalog-menu_item {
+    margin-bottom: 0.55em;
+}
+
+.sidebar-catalog .catalog-menu_item .menu-icon {
+    margin-right: 0.55em;
+}
+
+.sidebar-catalog .catalog-submenu {
+    padding-left: 1.85em;
+    margin-top: 4px;
+}
+
+.sidebar-catalog .price-list_box {
+    margin-top: 1.5em;
+}
+
+.sidebar-catalog .price-list_box + * br,
+.sidebar-catalog .tablet-hidden br {
+    display: none;
+}
+
+.sidebar-catalog .tablet-hidden > div > br {
+    display: none;
+}
+
+.sidebar-catalog .tablet-hidden .price-list_box + div,
+.sidebar-catalog .tablet-hidden > div > div {
+    margin-top: 0.75em;
+}
+
+/* Таблица на всю ширину колонки, без гориз. скролла */
+.product-table {
+    width: 100% !important;
+    max-width: 100%;
+    table-layout: fixed;
+    --product-name-col-w: 180px;
+}
+
+.product-table col.product-table_col-name {
+    width: var(--product-name-col-w);
+}
+
+.product-table td {
+    padding: 0.45em 0.25em;
+}
+
+.product-table th:last-child,
+.product-table td:last-child {
+    padding-left: 0.2em;
+    padding-right: 0.35em;
+    white-space: nowrap;
+}
+
+/* Наименование: ширина только из colgroup / --product-name-col-w */
+.product-table thead tr:first-child th:first-child,
+.product-table tbody td:first-child,
+.product-table th:first-child,
+.product-table td:first-child,
+.product-table_first-cell {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    white-space: normal !important;
+    vertical-align: middle;
+    padding-left: 1.35em;
+    padding-right: 0.35em;
+    box-sizing: border-box;
+}
+
+.product-table_first-cell .product-item_name {
+    padding-left: 0;
+    position: relative;
+    display: inline;
+    max-width: none;
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: normal;
+    line-height: 1.25;
+    vertical-align: middle;
+}
+
 .product-table th.product-table_col-qty,
 .product-table td.product-table_cell-qty {
     text-align: center;
     overflow: visible;
-    min-width: 5.5em;
+    min-width: 0;
+    padding-left: 0.12em;
+    padding-right: 0.12em;
 }
 
 .product-table tbody td.product-table_cell-qty {
     vertical-align: middle;
-    padding: 0.75em 0.5em;
+    padding: 0.4em 0.12em;
+}
+
+.product-table th.product-table_col-price,
+.product-table td.product-table_col-price,
+.product-table td.product-table_cell-price {
+    min-width: 0;
+    padding-left: 0.15em;
+    padding-right: 0.15em;
+    white-space: nowrap;
+    font-size: 0.875rem;
+}
+
+.product-table th.product-table_col-steel,
+.product-table td.product-table_col-steel,
+.product-table td.product-table_cell-steel {
+    min-width: 0;
+    padding-left: 0.15em;
+    padding-right: 0.15em;
+    white-space: normal;
+    line-height: 1.15;
+    font-size: 0.75rem;
 }
 
 /* Шапка таблицы: заголовки + поиск под «Наименование» */
 .product-table thead tr:first-child th {
     vertical-align: bottom;
-    padding: 1em 0.75em 0.55em;
-    line-height: 1.2;
+    padding: 0.65em 0.25em 0.35em;
+    line-height: 1.1;
     text-align: center;
-    white-space: nowrap;
+    white-space: normal;
+    font-size: 0.8125rem;
 }
 
 .product-table thead tr:first-child th:first-child {
     text-align: left;
-    padding-left: 1.8em;
+    padding-left: 1.5em;
+    white-space: normal;
 }
 
 .product-table thead tr:first-child th.product-table_col-qty,
 .product-table thead tr:first-child th.product-table_col-steel,
 .product-table thead tr:first-child th.product-table_col-price,
 .product-table thead tr:first-child th:last-child {
-    padding-bottom: 0.55em;
+    padding-bottom: 0.45em;
 }
 
 .product-table thead tr.product-table_search-row th {
-    padding: 0.2em 0.75em 1em;
+    padding: 0.2em 0.5em 0.85em;
     background: #073E71;
     vertical-align: top;
     font-weight: 800;
@@ -46,21 +285,17 @@
     border: none;
 }
 
-.product-table thead tr.product-table_search-row th:first-child {
-    padding-left: 1.8em;
-    width: 40%;
-}
-
-/* Чтобы “Наименование товара” и поиск были шире */
-@media only screen and (min-width: 1025px) {
-    .product-table thead tr:first-child th:first-child,
-    .product-table td:first-child {
-        width: 40%;
-    }
+.product-table thead tr.product-table_search-row th:first-child,
+.product-table thead tr.product-table_search-row th.product-table_form-search {
+    padding-left: 1.5em;
+    padding-right: 1.5em;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
 }
 
 .product-table thead tr.product-table_search-row th.product-table_head-spacer {
-    padding-bottom: 1em;
+    padding-bottom: 0.85em;
 }
 
 .product-table_form-search {
@@ -244,12 +479,6 @@
 }
 
 /* убираем "встроенный" маркер из main.css */
-.product-table_first-cell .product-item_name {
-    padding-left: 0;
-    position: relative;
-    display: inline-block;
-    vertical-align: middle;
-}
 .product-table_first-cell .product-item_name:after {
     content: none !important;
 }
@@ -258,8 +487,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 5.25em;
-    min-height: 2.15em;
+    width: 3.15em;
+    min-height: 2em;
     box-sizing: border-box;
     position: relative;
 }
@@ -644,14 +873,18 @@ button.product-hint {
 
 .product-table th.product-table_col-steel,
 .product-table td.product-table_cell-steel {
-    min-width: 5em;
+    min-width: 3.5em;
     text-align: center;
     white-space: nowrap;
+    padding-left: 0.35em;
+    padding-right: 0.35em;
 }
 
 .product-table th.product-table_col-price {
-    min-width: 6.5em;
+    min-width: 5em;
     text-align: center;
+    padding-left: 0.35em;
+    padding-right: 0.35em;
 }
 
 .product-table th .price-header {
@@ -668,13 +901,13 @@ button.product-hint {
 
 .product-table th .product-table_th-formula {
     display: block;
-    margin-top: 4px;
-    font-size: 10px;
+    margin-top: 3px;
+    font-size: 9px;
     font-weight: 500;
-    line-height: 1.25;
+    line-height: 1.2;
     opacity: 0.78;
     white-space: normal;
-    max-width: 11em;
+    max-width: 8em;
     margin-left: auto;
     margin-right: auto;
 }
@@ -682,7 +915,7 @@ button.product-hint {
 .product-table th.product-table_col-steel .product-table_th-formula,
 .product-table th.product-table_col-price .product-table_th-formula,
 .product-table th.product-table_col-qty .product-table_th-formula {
-    max-width: 12em;
+    max-width: 8.5em;
 }
 
 .product-table th .price-header sup {
@@ -1237,11 +1470,74 @@ button.product-hint {
     background: #fff7f7;
 }
 
+.cutting-part.is-remainder-warn {
+    /* без жёлтой заливки всей карточки — акцент только на кусках/остатке */
+}
+
+.cutting-part.is-remainder-warn .cutting-part__cuts-wrap .cutting-part__input {
+    border-color: #e35d5d;
+    background: #fff8f8;
+    box-shadow: 0 0 0 2px rgba(196, 48, 48, 0.12);
+}
+
 .cutting-part__row {
     display: grid;
-    grid-template-columns: 110px minmax(180px, 1.2fr) minmax(160px, 1.4fr) 32px;
+    grid-template-columns: 110px minmax(180px, 1.2fr) minmax(200px, 1.6fr) 32px;
     gap: 10px;
     align-items: end;
+}
+
+.cutting-part__cuts-wrap {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    min-width: 0;
+}
+
+.cutting-part__cuts-wrap .cutting-part__input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.cutting-part__remainder {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 0 10px;
+    border: 1px solid #c43030;
+    background: #c43030;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    box-sizing: border-box;
+    border-radius: 0;
+}
+
+.cutting-part__remainder.is-zero {
+    border-color: #2f7d4a;
+    background: #2f7d4a;
+    color: #fff;
+}
+
+.cutting-part__remainder-note {
+    display: block;
+    margin-top: 6px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #c43030;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.cutting-part__remainder-note--ok {
+    color: #475569;
+    font-weight: 500;
 }
 
 .cutting-part__select {

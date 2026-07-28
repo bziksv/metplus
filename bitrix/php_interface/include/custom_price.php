@@ -84,7 +84,6 @@ function customBasketPriceTypeHandler($productId, $quantity = 1, $arUserGroups =
 
     try {
         $length = getLengthProduct($ID_BLOCK, $productId);
-        $half = $length / 2;
         $isBasicSheet = isBasicSheetProduct($productId, $ID_BLOCK);
 
         $allowsFreeMeterCutting = productAllowsFreeMeterCutting($productId, $ID_BLOCK);
@@ -103,8 +102,14 @@ function customBasketPriceTypeHandler($productId, $quantity = 1, $arUserGroups =
         }
 
         $baseUnit = (float)$basePrice['PRICE'];
+        // Листы: тип 17 = ₽/м², QUANTITY в корзине = длина (м) → в Bitrix нужна ₽/пог.м
+        $sheetWidth = getProductSheetWidthMeters($productId, $ID_BLOCK);
+        $isSheet = $sheetWidth > 0;
+        $baseUnitBasket = $isSheet
+            ? catalogSheetPriceToBasketMeterPrice($productId, $baseUnit, $ID_BLOCK)
+            : $baseUnit;
 
-        // Базовый лист: целые / резанные(+10% при сложной) / неполная(+10%) / резы → цена за м
+        // Базовый лист: целые / резанные(+10% при сложной) / неполная(+10%) / резы → цена за пог.м
         if ($isBasicSheet) {
             $breakdown = buildBasicSheetPositionBreakdown($productId, $quantity, $ID_BLOCK);
             if ($breakdown) {
@@ -117,7 +122,9 @@ function customBasketPriceTypeHandler($productId, $quantity = 1, $arUserGroups =
                 }
                 $notes = (string)$breakdown['NOTE'];
                 if ($cutsFee > 0.0001) {
-                    $notes = 'С резкой · ' . formatBasketMoney($unitPrice) . ' ₽/м';
+                    $notes = 'С резкой · ' . formatBasketMoney(
+                        $isSheet ? basketMeterPriceToCatalogSheetPrice($productId, $unitPrice, $ID_BLOCK) : $unitPrice
+                    ) . ($isSheet ? ' ₽/м²' : ' ₽/м');
                 }
 
                 return buildCustomOptimalPriceResult(
@@ -129,41 +136,50 @@ function customBasketPriceTypeHandler($productId, $quantity = 1, $arUserGroups =
 
             return buildCustomOptimalPriceResult(
                 $basePrice,
-                $baseUnit,
-                'Цена за метр'
+                $baseUnitBasket,
+                $isSheet ? 'Цена за м²' : 'Цена за метр'
             );
         }
 
-        // Трубы/арматура: не кратно 0,5 шт → +20% только на кусок
+        // Трубы/арматура без «0,5 шт»: не кратно полной штуке → вся позиция +20%
+        $meterStep = getPipeMeterSurchargeStepMeters($length);
         if (
             !$allowsFreeMeterCutting
-            && quantityNeedsMeterSurcharge($quantity, $half)
+            && quantityNeedsMeterSurcharge($quantity, $meterStep)
         ) {
-            $split = splitQuantityForPieceSurcharge($quantity, $half);
             $plus20 = fetchCatalogPriceRow($productId, $pricePerMeterPlus20Id);
             $surchargeUnit = $plus20
                 ? (float)$plus20['PRICE']
                 : round($baseUnit * 1.2, 2);
+            if ($isSheet) {
+                $surchargeUnit = catalogSheetPriceToBasketMeterPrice($productId, $surchargeUnit, $ID_BLOCK);
+            }
             $source = $plus20 ?: $basePrice;
-
-            $price = blendMeterPriceWithPieceSurcharge(
-                $baseUnit,
-                $surchargeUnit,
-                $split['base_meters'],
-                $split['surcharge_meters']
-            );
+            $split = [
+                'base_meters' => 0.0,
+                'surcharge_meters' => $quantity,
+                'base_steps' => 0,
+            ];
 
             return buildCustomOptimalPriceResult(
                 $source,
-                $price,
-                formatPieceSurchargePriceNote($split, $length, 20, $baseUnit, $surchargeUnit, $price)
+                $surchargeUnit,
+                formatPieceSurchargePriceNote(
+                    $split,
+                    $length,
+                    20,
+                    $isSheet ? $baseUnit : $baseUnitBasket,
+                    $isSheet ? basketMeterPriceToCatalogSheetPrice($productId, $surchargeUnit, $ID_BLOCK) : $surchargeUnit,
+                    $isSheet ? basketMeterPriceToCatalogSheetPrice($productId, $surchargeUnit, $ID_BLOCK) : $surchargeUnit
+                )
             );
         }
 
+        // Листы «только шт» и прочие: ₽/пог.м = ₽/м² × ширина
         return buildCustomOptimalPriceResult(
             $basePrice,
-            $baseUnit,
-            'Цена за метр'
+            $baseUnitBasket,
+            $isSheet ? 'Цена за м²' : 'Цена за метр'
         );
     } finally {
         $running = false;

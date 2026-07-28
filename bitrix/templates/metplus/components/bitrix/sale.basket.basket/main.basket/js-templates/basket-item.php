@@ -209,7 +209,10 @@ use Bitrix\Main\Localization\Loc;
                                 </label>
                                 <label class="cutting-part__field cutting-part__field--wide">
                                     <span class="cutting-part__label">Куски, м <span class="cutting-part__label-hint">(режем кратно 0.1 м)</span></span>
-                                    <input class="cutting-part__input" type="text" placeholder="например: 1.2 3.5 2" data-entity="cutting-part-cuts" inputmode="decimal">
+                                    <span class="cutting-part__cuts-wrap">
+                                        <input class="cutting-part__input" type="text" placeholder="например: 1.2 3.5 2" data-entity="cutting-part-cuts" inputmode="decimal">
+                                        <span class="cutting-part__remainder" data-entity="cutting-part-remainder" hidden></span>
+                                    </span>
                                 </label>
                                 <button type="button" class="cutting-part__remove" data-entity="cutting-part-remove" aria-label="Удалить партию">×</button>
                             </div>

@@ -25,6 +25,16 @@ function getCoefficientProduct($ID_BLOCK, $ID)
 }
 
 /**
+ * Коэффициент для цены/веса: пустой из 1С → 1 (как в getWeightCalcFactor).
+ */
+function getCoefficientProductForCalc($ID_BLOCK, $ID)
+{
+    $coefficient = getCoefficientProduct($ID_BLOCK, $ID);
+
+    return $coefficient > 0 ? $coefficient : 1.0;
+}
+
+/**
  * ID типа цен «1-1000» (базовая из 1С).
  */
 function getBaseCatalogPriceTypeId()
@@ -44,7 +54,7 @@ function getProductPricePerKg($productId, $iblockId = 36)
 
     $coefficient = (float)getPropVal($iblockId, $productId, 'KOEFFITSENT_RASCHET');
     if ($coefficient <= 0) {
-        return null;
+        $coefficient = 1.0;
     }
 
     $baseRow = function_exists('fetchCatalogPriceRow')
@@ -131,7 +141,25 @@ function getProductWeightPerMeterKg($productId, $iblockId = 36)
 
 function isCustomPrice($ID_BLOCK, $ID)
 {
-    return getCoefficientProduct($ID_BLOCK, $ID) > 0 && getLengthProduct($ID_BLOCK, $ID) > 0;
+    // Длина есть + база 1-1000 → считаем ₽/м даже без KOEFF (тогда KOEFF=1)
+    if (getLengthProduct($ID_BLOCK, $ID) <= 0) {
+        return false;
+    }
+
+    if (getCoefficientProduct($ID_BLOCK, $ID) > 0) {
+        return true;
+    }
+
+    if (!CModule::IncludeModule('catalog')) {
+        return false;
+    }
+
+    $base = CPrice::GetList([], [
+        'PRODUCT_ID' => (int)$ID,
+        'CATALOG_GROUP_ID' => getBaseCatalogPriceTypeId(),
+    ])->Fetch();
+
+    return $base && (float)$base['PRICE'] > 0;
 }
 
 /**
@@ -232,6 +260,7 @@ function getImageWebpSrc($src, $quality = 82)
 
 /**
  * Разрешает заказ товара каталога при нулевом остатке (B2B: заказ под поставку).
+ * Всегда отключает учёт остатка — AVAILABLE=Y сам по себе не снимает QUANTITY_TRACE=D/Y.
  */
 function ensureCatalogProductOrderable($productId, $iblockId = 36)
 {
@@ -259,7 +288,11 @@ function ensureCatalogProductOrderable($productId, $iblockId = 36)
         return false;
     }
 
-    if (($product['AVAILABLE'] ?? 'N') === 'Y') {
+    $trace = (string)($product['QUANTITY_TRACE'] ?? 'N');
+    $canBuyZero = (string)($product['CAN_BUY_ZERO'] ?? 'N');
+    $available = (string)($product['AVAILABLE'] ?? 'N');
+
+    if ($trace === 'N' && $canBuyZero === 'Y' && $available === 'Y') {
         return true;
     }
 
@@ -415,6 +448,17 @@ function isHalfPiecesProduct($value)
     return isOnlyPiecesProduct($value);
 }
 
+/**
+ * Шаг наценки +20% для труб/арматуры без флага «0,5 шт»:
+ * кратно полной штуке (Длина_Расчет). Иначе вся позиция +20%.
+ */
+function getPipeMeterSurchargeStepMeters($lengthPerPiece)
+{
+    $length = (float)$lengthPerPiece;
+
+    return $length > 0 ? $length : 1.0;
+}
+
 function productAllowsFreeMeterCutting($productId, $iblockId = 36)
 {
     if (isSheetProduct(getPropVal($iblockId, $productId, 'SHIRINA_RASCHET'))) {
@@ -526,12 +570,53 @@ function getIncompletePieceCutNotice($fraction, $cutPrice = 0)
 
 function getFreeCuttingTipText()
 {
-    return 'Товар режется кратно 0,1 м без наценки. Длины кусков — кратно 0,1 м (например 1.2 3.5).';
+    return 'Кратно 0,5 шт. в заказе (0,5 / 1 / 1,5 / 2…).';
+}
+
+function getHalfPiecesOrderBadgeLabel()
+{
+    return '0,5';
 }
 
 function isSheetProduct($width)
 {
     return floatval($width) > 0;
+}
+
+/**
+ * Ширина листа для расчёта, м (0 = не лист).
+ */
+function getProductSheetWidthMeters($productId, $iblockId = 36)
+{
+    $width = floatval(getPropVal($iblockId, (int)$productId, 'SHIRINA_RASCHET'));
+
+    return isSheetProduct($width) ? $width : 0.0;
+}
+
+/**
+ * В каталоге для листов тип 17 = ₽/м² (кг × коэфф.).
+ * В корзине QUANTITY хранится в погонных метрах длины → для Bitrix нужна ₽/пог.м = ₽/м² × ширина.
+ */
+function catalogSheetPriceToBasketMeterPrice($productId, $catalogUnitPrice, $iblockId = 36)
+{
+    $price = round((float)$catalogUnitPrice, 2);
+    $width = getProductSheetWidthMeters($productId, $iblockId);
+    if ($width <= 0) {
+        return $price;
+    }
+
+    return round($price * $width, 2);
+}
+
+function basketMeterPriceToCatalogSheetPrice($productId, $basketMeterPrice, $iblockId = 36)
+{
+    $price = round((float)$basketMeterPrice, 2);
+    $width = getProductSheetWidthMeters($productId, $iblockId);
+    if ($width <= 0) {
+        return $price;
+    }
+
+    return round($price / $width, 2);
 }
 
 function isBasicSheetProduct($productId, $iblockId = 36)
@@ -797,7 +882,8 @@ function buildBasicSheetPositionBreakdown($productId, $quantity, $iblockId = 36,
         return null;
     }
 
-    $baseUnit = (float)$basePriceRow['PRICE'];
+    // В каталоге ₽/м²; дальше считаем в ₽/пог.м (× ширина), т.к. $quantity — длина
+    $baseUnit = catalogSheetPriceToBasketMeterPrice($productId, (float)$basePriceRow['PRICE'], $iblockId);
     $percent = getBasicSheetSurchargePercent();
     $surchargeUnit = round($baseUnit * (1 + $percent / 100), 2);
     $skipAllSurcharge = basicSheetSkipsIncompletePieceSurcharge($productId, $iblockId);
@@ -1131,15 +1217,20 @@ function buildPieceSurchargeBreakdown(array $split, $lengthPerPiece, $percent, $
         ];
     }
     if ($surchargeMeters > 0.0001) {
+        $label = $baseMeters > 0.0001 ? ('Кусок ' . $surchargePiecesText . ' шт') : 'Весь объём';
         $lines[] = [
-            'TEXT' => 'Кусок ' . $surchargePiecesText . ' шт — +' . $percent . '% ('
+            'TEXT' => $label . ' — +' . $percent . '% ('
                 . formatBasketMoney($surchargeUnitPrice) . '/м)',
         ];
     }
 
-    $note = 'Наценка +' . $percent . '% только на кусок';
-    if ($blendedPrice > 0) {
-        $note .= ' · средняя ' . formatBasketMoney($blendedPrice) . '/м';
+    if ($baseMeters <= 0.0001) {
+        $note = 'Наценка +' . $percent . '% (не кратно шт)';
+    } else {
+        $note = 'Наценка +' . $percent . '% только на кусок';
+        if ($blendedPrice > 0) {
+            $note .= ' · средняя ' . formatBasketMoney($blendedPrice) . '/м';
+        }
     }
 
     $plainLines = [];
@@ -1264,26 +1355,20 @@ function resolveBasketPieceSurchargeData(array $rowData)
         return null;
     }
 
-    $half = $length / 2;
-    if (!quantityNeedsMeterSurcharge($quantity, $half)) {
-        return null;
-    }
-
-    $split = splitQuantityForPieceSurcharge($quantity, $half);
-    if ($split['surcharge_meters'] <= 0.0001) {
+    $meterStep = getPipeMeterSurchargeStepMeters($length);
+    if (!quantityNeedsMeterSurcharge($quantity, $meterStep)) {
         return null;
     }
 
     $plus20 = fetchCatalogPriceRow($productId, 18);
     $surchargeUnit = $plus20 ? (float)$plus20['PRICE'] : round($baseUnit * 1.2, 2);
-    $blended = blendMeterPriceWithPieceSurcharge(
-        $baseUnit,
-        $surchargeUnit,
-        $split['base_meters'],
-        $split['surcharge_meters']
-    );
+    $split = [
+        'base_meters' => 0.0,
+        'surcharge_meters' => $quantity,
+        'base_steps' => 0,
+    ];
 
-    return buildPieceSurchargeBreakdown($split, $length, 20, $baseUnit, $surchargeUnit, $blended);
+    return buildPieceSurchargeBreakdown($split, $length, 20, $baseUnit, $surchargeUnit, $surchargeUnit);
 }
 
 function resolveBasketSurchargePercent(array $rowData)
@@ -1318,6 +1403,8 @@ function applyBasketCustomPriceDisplay(array &$rowData)
 
     $currency = (string)$rowData['CURRENCY'];
     $quantity = (float)$rowData['QUANTITY'];
+    $sheetWidth = (float)($rowData['BASKET_WIDTH'] ?? getProductSheetWidthMeters($productId));
+    $isSheet = isSheetProduct($sheetWidth);
 
     if (isBasicSheetProduct($productId)) {
         $planText = !empty($rowData['CUTTING_ENABLED'])
@@ -1325,20 +1412,24 @@ function applyBasketCustomPriceDisplay(array &$rowData)
             : '';
         $breakdown = buildBasicSheetPositionBreakdown($productId, $quantity, 36, $planText);
         if ($breakdown) {
-            $blended = (float)$breakdown['BLENDED_PRICE'];
+            $blended = (float)$breakdown['BLENDED_PRICE']; // ₽/пог.м
             $cutsFee = (float)($breakdown['CUTS_FEE'] ?? 0);
             $grandTotal = (float)($breakdown['GRAND_TOTAL'] ?? 0);
             // сумма позиции = металл + наценки + резы (как шаг «Итого»)
             $sum = $grandTotal > 0
                 ? \Bitrix\Sale\PriceMaths::roundPrecision($grandTotal)
                 : \Bitrix\Sale\PriceMaths::roundPrecision($blended * $quantity);
-            $price = $quantity > 0.0001 ? round($sum / $quantity, 2) : $blended;
+            $priceMeter = $quantity > 0.0001 ? round($sum / $quantity, 2) : $blended;
+            // В UI для листа показываем ₽/м² (как в каталоге)
+            $priceShow = $isSheet
+                ? basketMeterPriceToCatalogSheetPrice($productId, $priceMeter)
+                : $priceMeter;
             $rowData['NOTES'] = $cutsFee > 0.0001
-                ? ('С резкой · ' . formatBasketMoney($price) . ' ₽/м')
+                ? ('С резкой · ' . formatBasketMoney($priceShow) . ($isSheet ? ' ₽/м²' : ' ₽/м'))
                 : (string)$breakdown['NOTE'];
-            $rowData['PRICE'] = $price;
-            $rowData['PRICE_FORMATED'] = CCurrencyLang::CurrencyFormat($price, $currency, true);
-            $rowData['FULL_PRICE'] = $price;
+            $rowData['PRICE'] = $priceShow;
+            $rowData['PRICE_FORMATED'] = CCurrencyLang::CurrencyFormat($priceShow, $currency, true);
+            $rowData['FULL_PRICE'] = $priceShow;
             $rowData['FULL_PRICE_FORMATED'] = $rowData['PRICE_FORMATED'];
             $rowData['DISCOUNT_PRICE'] = 0;
             $rowData['SHOW_DISCOUNT_PRICE'] = false;
@@ -1374,24 +1465,49 @@ function applyBasketCustomPriceDisplay(array &$rowData)
     $pieceData = resolveBasketPieceSurchargeData($rowData);
 
     if ($pieceData) {
-        $price = (float)$pieceData['BLENDED_PRICE'];
+        $priceMeter = (float)$pieceData['BLENDED_PRICE'];
+        $priceShow = $isSheet
+            ? basketMeterPriceToCatalogSheetPrice($productId, $priceMeter)
+            : $priceMeter;
         $rowData['NOTES'] = $pieceData['NOTE'];
         $rowData['SURCHARGE_BREAKDOWN'] = $pieceData;
         $rowData['SURCHARGE_BREAKDOWN_LINES'] = $pieceData['LINES'];
         $rowData['HAS_PIECE_SURCHARGE'] = true;
 
-        $rowData['PRICE'] = $price;
-        $rowData['PRICE_FORMATED'] = CCurrencyLang::CurrencyFormat($price, $currency, true);
-        $rowData['FULL_PRICE'] = $price;
+        $rowData['PRICE'] = $priceShow;
+        $rowData['PRICE_FORMATED'] = CCurrencyLang::CurrencyFormat($priceShow, $currency, true);
+        $rowData['FULL_PRICE'] = $priceShow;
         $rowData['FULL_PRICE_FORMATED'] = $rowData['PRICE_FORMATED'];
         $rowData['DISCOUNT_PRICE'] = 0;
         $rowData['SHOW_DISCOUNT_PRICE'] = false;
 
-        $sum = \Bitrix\Sale\PriceMaths::roundPrecision($price * $quantity);
+        $sum = \Bitrix\Sale\PriceMaths::roundPrecision($priceMeter * $quantity);
         $rowData['SUM_PRICE'] = $sum;
         $rowData['SUM_PRICE_FORMATED'] = CCurrencyLang::CurrencyFormat($sum, $currency, true);
 
         return;
+    }
+
+    // Листы без наценки (в т.ч. «только шт»): сумма = ₽/м² × площадь
+    if ($isSheet && $sheetWidth > 0 && $quantity > 0) {
+        $catalogRow = fetchCatalogPriceRow($productId, 17);
+        if ($catalogRow) {
+            $priceM2 = round((float)$catalogRow['PRICE'], 2);
+            $linear = catalogSheetPriceToBasketMeterPrice($productId, $priceM2);
+            $sum = \Bitrix\Sale\PriceMaths::roundPrecision($linear * $quantity);
+            $rowData['PRICE'] = $priceM2;
+            $rowData['PRICE_FORMATED'] = CCurrencyLang::CurrencyFormat($priceM2, $currency, true);
+            $rowData['FULL_PRICE'] = $priceM2;
+            $rowData['FULL_PRICE_FORMATED'] = $rowData['PRICE_FORMATED'];
+            $rowData['DISCOUNT_PRICE'] = 0;
+            $rowData['SHOW_DISCOUNT_PRICE'] = false;
+            $rowData['SUM_PRICE'] = $sum;
+            $rowData['SUM_PRICE_FORMATED'] = CCurrencyLang::CurrencyFormat($sum, $currency, true);
+            $rowData['HAS_PIECE_SURCHARGE'] = false;
+            $rowData['SURCHARGE_BREAKDOWN_LINES'] = [];
+            $rowData['NOTES'] = 'Цена за м²';
+            return;
+        }
     }
 
     $rowData['HAS_PIECE_SURCHARGE'] = false;
@@ -1408,7 +1524,7 @@ function getHalfPiecesCuttingLegendText($isSheet = false)
 {
     return $isSheet
         ? 'Кратно 1 м длины · без наценки за кусок · только резы'
-        : 'Режется кратно 0,1 м без наценки';
+        : 'Кратно 0,5 шт. в заказе';
 }
 
 function isWeightFrom500Product($value)

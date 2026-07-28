@@ -558,6 +558,8 @@ jQuery(document).ready(function($) {
       return false;
     }
 
+    var fromStep = parseInt($plan.attr('data-wizard-step'), 10) || 1;
+
     // шаг 1 → 2: партии = только выбранная цель (не добавлять вторую к дефолтной целой)
     if (toStep === 2 && $(this).is('[data-entity="cutting-wizard-next"]')) {
       if (window.MetplusBasketCutting && typeof window.MetplusBasketCutting.syncPartsToSelectedTarget === 'function') {
@@ -566,6 +568,15 @@ jQuery(document).ready(function($) {
           window.MetplusBasketCutting.refreshPlan(id);
         }
       }
+    }
+
+    // уход с «Как режем» / на «Итого»: закрыть остатки последним куском
+    if (
+      (fromStep === 2 || toStep === 3)
+      && window.MetplusBasketCutting
+      && typeof window.MetplusBasketCutting.autofillRemainders === 'function'
+    ) {
+      window.MetplusBasketCutting.autofillRemainders(id);
     }
 
     metplusSetCuttingWizardStep($plan, toStep);
@@ -579,6 +590,16 @@ jQuery(document).ready(function($) {
     e.preventDefault();
     var $plan = $(this).closest('[data-entity="cutting-plan"]');
     var step = parseInt($(this).attr('data-wizard-tab'), 10) || 1;
+    var fromStep = parseInt($plan.attr('data-wizard-step'), 10) || 1;
+    var id = $plan.attr('data-id') || $plan.data('id');
+    if (
+      id
+      && (fromStep === 2 || step === 3)
+      && window.MetplusBasketCutting
+      && typeof window.MetplusBasketCutting.autofillRemainders === 'function'
+    ) {
+      window.MetplusBasketCutting.autofillRemainders(id);
+    }
     metplusSetCuttingWizardStep($plan, step);
     return false;
   });
@@ -767,10 +788,102 @@ jQuery(document).ready(function($) {
     sortColumn: 1,
     nColumns: $("#product-table thead tr:first-child th").length || 8,
     sortable: false,
-    searchable: true,
+    searchable: false,
     globalSearch: true,
-    inputPlaceholder: "Введите название или марку стали",
   });
+
+  /**
+   * Умный поиск над таблицей: фильтр по названию / марке / ячейкам строки.
+   */
+  (function initProductTableSmartSearch() {
+    var $table = $('#product-table');
+    var $wrap = $('[data-product-table-search]');
+    if (!$table.length || !$wrap.length) {
+      return;
+    }
+    var $input = $wrap.find('.product-table-smart-search__input');
+    var $clear = $wrap.find('.product-table-smart-search__clear');
+    var $meta = $wrap.find('.product-table-smart-search__meta');
+    var $rows = $table.find('tbody tr');
+    var total = $rows.length;
+    var timer = null;
+
+    function normalize(str) {
+      return String(str || '')
+        .toLowerCase()
+        .replace(/ё/g, 'е')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function rowHaystack($row) {
+      var cached = $row.data('searchText');
+      if (typeof cached === 'string') {
+        return cached;
+      }
+      var clone = $row.clone();
+      clone.find('.product-item_popup, script, style').remove();
+      cached = normalize(clone.text());
+      $row.data('searchText', cached);
+      return cached;
+    }
+
+    function applyFilter() {
+      var q = normalize($input.val());
+      $clear.prop('hidden', !q);
+      var visible = 0;
+      if (!q) {
+        $rows.show();
+        visible = total;
+        $meta.text('');
+        if (typeof window.syncProductNameColumnWidth === 'function') {
+          window.syncProductNameColumnWidth();
+        }
+        return;
+      }
+      var tokens = q.split(' ').filter(Boolean);
+      $rows.each(function() {
+        var hay = rowHaystack($(this));
+        var ok = tokens.every(function(token) {
+          return hay.indexOf(token) !== -1;
+        });
+        $(this).toggle(ok);
+        if (ok) {
+          visible++;
+        }
+      });
+      if (visible === 0) {
+        $meta.text('Ничего не найдено');
+      } else if (visible === total) {
+        $meta.text('');
+      } else {
+        $meta.text('Найдено: ' + visible + ' из ' + total);
+      }
+      if (typeof window.syncProductNameColumnWidth === 'function') {
+        window.syncProductNameColumnWidth();
+      }
+    }
+
+    $input.on('input', function() {
+      clearTimeout(timer);
+      timer = setTimeout(applyFilter, 120);
+    });
+    $input.on('keydown', function(e) {
+      if (e.key === 'Escape') {
+        $input.val('');
+        applyFilter();
+        $input.blur();
+      }
+    });
+    $clear.on('click', function() {
+      $input.val('').focus();
+      applyFilter();
+    });
+    $wrap.find('form').on('submit', function(e) {
+      e.preventDefault();
+      applyFilter();
+    });
+  })();
 
   $(document).on('click', '[data-tip]', function(e) {
     e.stopPropagation();
@@ -1597,6 +1710,99 @@ jQuery(document).ready(function($) {
     if (isOnlyPiecesRow($input.closest('tr'))) {
       $input.val($input.data('width-default'));
     }
+  });
+
+  /**
+   * Ширина колонки «Наименование» = длина самого длинного названия, max 300px.
+   * Если длиннее — название переносится на 2+ строки.
+   */
+  window.syncProductNameColumnWidth = function syncProductNameColumnWidth() {
+    var $tables = $('.product-table');
+    if (!$tables.length) {
+      return;
+    }
+    var probe = document.createElement('span');
+    probe.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;white-space:nowrap;';
+    document.body.appendChild(probe);
+
+    $tables.each(function() {
+      var $table = $(this);
+      var maxText = 0;
+      var sampleEl = $table.find('tbody .product-item_name').not('.product-item_popup .product-item_name').get(0);
+      if (sampleEl) {
+        var cs = window.getComputedStyle(sampleEl);
+        probe.style.font = cs.font;
+        probe.style.letterSpacing = cs.letterSpacing;
+      }
+      $table.find('tbody .product-item_name').each(function() {
+        if ($(this).closest('.product-item_popup').length) {
+          return;
+        }
+        probe.textContent = (this.textContent || '').replace(/\s+/g, ' ').trim();
+        if (probe.textContent) {
+          maxText = Math.max(maxText, probe.offsetWidth);
+        }
+      });
+      // заголовок «Наименование…» — не уже, чем подпись
+      var $head = $table.find('thead tr:first-child th:first-child');
+      if ($head.length) {
+        var headCs = window.getComputedStyle($head.get(0));
+        probe.style.font = headCs.font;
+        probe.style.letterSpacing = headCs.letterSpacing;
+        probe.style.fontWeight = headCs.fontWeight;
+        probe.textContent = ($head.textContent || '').replace(/\s+/g, ' ').trim();
+        maxText = Math.max(maxText, Math.min(probe.offsetWidth, 160));
+        if (sampleEl) {
+          var nameCs = window.getComputedStyle(sampleEl);
+          probe.style.font = nameCs.font;
+          probe.style.letterSpacing = nameCs.letterSpacing;
+        }
+      }
+      var extras = 40;
+      var nameW = Math.min(300, Math.max(80, Math.ceil(maxText)));
+      var colW = nameW + extras;
+      $table.css('--product-name-col-w', colW + 'px');
+
+      var colCount = $table.find('thead tr:first-child th').length || 1;
+      var $colgroup = $table.children('colgroup.product-table_cols');
+      if (!$colgroup.length) {
+        $colgroup = $('<colgroup class="product-table_cols"/>');
+        $table.prepend($colgroup);
+      }
+      $colgroup.empty();
+      $('<col class="product-table_col-name"/>').css('width', colW + 'px').appendTo($colgroup);
+      for (var i = 1; i < colCount; i++) {
+        $('<col/>').appendTo($colgroup);
+      }
+
+      // если таблица шире контейнера — ужимаем колонку названия (текст переносится)
+      var parentEl = ($table.closest('.catalog_right-column').get(0)) || $table.parent().get(0);
+      var tableEl = $table.get(0);
+      var guard = 0;
+      while (parentEl && colW > 140 && guard++ < 60) {
+        var lastCell = tableEl.querySelector('tbody tr td:last-child');
+        if (!lastCell) {
+          break;
+        }
+        var parentRight = parentEl.getBoundingClientRect().right;
+        var lastRight = lastCell.getBoundingClientRect().right;
+        if (lastRight <= parentRight + 1) {
+          break;
+        }
+        colW -= 6;
+        $table.css('--product-name-col-w', colW + 'px');
+        $colgroup.find('col.product-table_col-name').css('width', colW + 'px');
+      }
+    });
+
+    document.body.removeChild(probe);
+  };
+
+  window.syncProductNameColumnWidth();
+  var nameColResizeTimer;
+  $(window).on('resize', function() {
+    clearTimeout(nameColResizeTimer);
+    nameColResizeTimer = setTimeout(window.syncProductNameColumnWidth, 120);
   });
 });
 
