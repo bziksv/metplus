@@ -47,26 +47,23 @@ if(count($arResult['ITEMS'])) :
 <table class="product-table" id="product-table">
     <thead>
         <tr>
-            <th>Наименование товара</th>
-            <th class="product-table_col-steel"><?=formatCatalogColumnHeaderHtml('Марка стали', 'свойство Марка (сайт)')?></th>
+            <th>Наименование</th>
+            <th class="product-table_col-steel"><?=formatCatalogColumnHeaderHtml('Марка')?></th>
             <?php foreach ($arResult['CATALOG_PRICE'] as $price): ?>
                 <th class="product-table_col-price"><?=$price['NAME_HTML'] ?? htmlspecialcharsbx($price['NAME'])?></th>
             <?php endforeach; ?>
             <?php if (!empty($arResult['SHOW_WEIGHT_COLUMN'])): ?>
-            <th class="product-table_col-qty" data-tip="Вес заказа в кг. Ввод доступен при свойствах «шт, м, вес от 500/1000 кг»"><?=formatCatalogColumnHeaderHtml(
-                'Вес, кг',
-                'Коэффициент_Расчет × Ширина_Расчет × Длина_Расчет'
-            )?></th>
+            <th class="product-table_col-qty"><?=formatCatalogColumnHeaderHtml('Вес', 'кг')?></th>
             <?php endif; ?>
-            <th class="product-table_col-qty"><?=formatCatalogColumnHeaderHtml('Длина (метры)', 'метры = штуки × Длина_Расчет')?></th>
+            <th class="product-table_col-qty"><?=formatCatalogColumnHeaderHtml('Длина', 'м')?></th>
             <?php if (!empty($arResult['SHOW_WIDTH_COLUMN'])): ?>
-            <th class="product-table_col-qty"><?=formatCatalogColumnHeaderHtml('Ширина (метры)', 'свойство Ширина_Расчет')?></th>
+            <th class="product-table_col-qty"><?=formatCatalogColumnHeaderHtml('Ширина', 'м')?></th>
             <?php endif; ?>
             <?php if (!empty($arResult['HAS_BASIC_SHEET_ROWS'])): ?>
-            <th class="product-table_col-qty" data-tip="Кратно 1 м длины листа"><?=formatCatalogColumnHeaderHtml('м²', 'длина × Ширина_Расчет')?></th>
+            <th class="product-table_col-qty"><?=formatCatalogColumnHeaderHtml('м²')?></th>
             <?php endif; ?>
-            <th class="product-table_col-qty"><?=formatCatalogColumnHeaderHtml('Штуки', 'штуки = метры ÷ Длина_Расчет')?></th>
-            <th>Купить</th>
+            <th class="product-table_col-qty"><?=formatCatalogColumnHeaderHtml('Шт')?></th>
+            <th class="product-table_col-buy"><span class="sr-only">Купить</span></th>
         </tr>
     </thead>
 
@@ -164,7 +161,7 @@ if(count($arResult['ITEMS'])) :
             </td>
             <td class="product-table_cell-steel"><?=htmlspecialcharsbx($arItem['STEEL_GRADE'] ?? '')?></td>
             <?php foreach ($arResult['CATALOG_PRICE'] as $price): ?>
-                <td><?php
+                <td class="product-table_cell-price"><?php
                     if (!empty($price['IS_PRICE_PER_KG'])) {
                         echo $arItem['PRINT_PRICE_PER_KG'] ?? '—';
                     } else {
@@ -238,8 +235,8 @@ if(count($arResult['ITEMS'])) :
                     <input type="number" class="product-table-input" min="<?=$piecesMin?>" step="<?=$piecesStep?>" placeholder="0" name="pieces" value="<?=$basicSheetSteps ? $basicSheetSteps['PIECE_STEP'] : 1?>" data-meters-in-one-piece="<?=$metersInPiece?>">
                 </div>
             </td>
-            <td>
-                <a href="javascript:void(0)" class="add-to-cart-action product-item_cart-btn main-btn" id="<?=$arItem['ID']?>">
+            <td class="product-table_col-buy">
+                <a href="javascript:void(0)" class="add-to-cart-action product-item_cart-btn main-btn" id="<?=$arItem['ID']?>" title="В корзину" aria-label="В корзину">
                     <span class="glipf-cart"></span>
                 </a>
             </td>
@@ -248,8 +245,8 @@ if(count($arResult['ITEMS'])) :
     </tbody>
 </table>
 
-<div class="row">
-    <div class="col-md-6">
+<div class="row product-table-legend-row">
+    <div class="col-12">
         <div class="product-hint-legend product-hint-legend--stock">Наличие товара на складе</div>
         <div class="product-hint-legend product-hint-legend--limited">Количество ограничено, уточняйте у менеджера</div>
         <?php if (!empty($arResult['BULK_WEIGHT_THRESHOLDS'])): ?>
@@ -286,10 +283,8 @@ if(count($arResult['ITEMS'])) :
             <span class="product-hint-legend__text"><?=htmlspecialcharsbx(getHalfPiecesCuttingLegendText(false))?></span>
         </div>
         <?php endif; ?>
-    </div>
-    <div class="col-md-6">
         <?php if($arParams["DISPLAY_BOTTOM_PAGER"]):?>
-            <?=$arResult["NAV_STRING"]?>
+            <div class="product-table-pager"><?=$arResult["NAV_STRING"]?></div>
         <?php endif;?>
     </div>
 </div>

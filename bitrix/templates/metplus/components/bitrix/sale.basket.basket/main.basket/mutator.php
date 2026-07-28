@@ -587,13 +587,17 @@ foreach ($this->basketItems as $row)
 		$rowData['LABEL_VALUES'] = $labels;
 	}
 
+	$sumForDisplay = (float)($rowData['SUM_PRICE'] ?? $rowData['SUM_VALUE'] ?? 0);
+	$rowData['SUM_PRICE'] = roundBasketMoneyTenths($sumForDisplay);
+	$rowData['SUM_PRICE_FORMATED'] = formatBasketSumMoney($sumForDisplay);
+
 	$result['BASKET_ITEM_RENDER_DATA'][] = $rowData;
 }
 
 $totalData = array(
 	'DISABLE_CHECKOUT' => (int)$result['ORDERABLE_BASKET_ITEMS_COUNT'] === 0,
-	'PRICE' => $result['allSum'],
-	'PRICE_FORMATED' => $result['allSum_FORMATED'],
+	'PRICE' => roundBasketMoneyTenths($result['allSum']),
+	'PRICE_FORMATED' => formatBasketSumMoney($result['allSum']),
 	'PRICE_WITHOUT_DISCOUNT_FORMATED' => $result['PRICE_WITHOUT_DISCOUNT'],
 	'CURRENCY' => $result['CURRENCY']
 );

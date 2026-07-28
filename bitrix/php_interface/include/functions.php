@@ -1272,6 +1272,22 @@ function formatBasketMoney($value)
     return number_format((float)$value, 2, '.', ' ');
 }
 
+/**
+ * Математическое округление денег до 0,1 ₽.
+ */
+function roundBasketMoneyTenths($value)
+{
+    return round((float)$value, 1, PHP_ROUND_HALF_UP);
+}
+
+/**
+ * Сумма позиции / итог корзины: до 0,1 ₽.
+ */
+function formatBasketSumMoney($value)
+{
+    return number_format(roundBasketMoneyTenths($value), 1, '.', ' ') . ' ₽';
+}
+
 function basicSheetQuantityNeedsPlus10($productId, $quantity, $iblockId = 36)
 {
     if (!isBasicSheetProduct($productId, $iblockId)) {
@@ -1434,8 +1450,8 @@ function applyBasketCustomPriceDisplay(array &$rowData)
             $rowData['DISCOUNT_PRICE'] = 0;
             $rowData['SHOW_DISCOUNT_PRICE'] = false;
 
-            $rowData['SUM_PRICE'] = $sum;
-            $rowData['SUM_PRICE_FORMATED'] = CCurrencyLang::CurrencyFormat($sum, $currency, true);
+            $rowData['SUM_PRICE'] = roundBasketMoneyTenths($sum);
+            $rowData['SUM_PRICE_FORMATED'] = formatBasketSumMoney($sum);
 
             $hasDetail = !empty($breakdown['HAS_SURCHARGE']) || ((float)($breakdown['CUTS_FEE'] ?? 0) > 0.0001);
             if ($hasDetail) {
@@ -1482,8 +1498,8 @@ function applyBasketCustomPriceDisplay(array &$rowData)
         $rowData['SHOW_DISCOUNT_PRICE'] = false;
 
         $sum = \Bitrix\Sale\PriceMaths::roundPrecision($priceMeter * $quantity);
-        $rowData['SUM_PRICE'] = $sum;
-        $rowData['SUM_PRICE_FORMATED'] = CCurrencyLang::CurrencyFormat($sum, $currency, true);
+        $rowData['SUM_PRICE'] = roundBasketMoneyTenths($sum);
+        $rowData['SUM_PRICE_FORMATED'] = formatBasketSumMoney($sum);
 
         return;
     }
@@ -1501,8 +1517,8 @@ function applyBasketCustomPriceDisplay(array &$rowData)
             $rowData['FULL_PRICE_FORMATED'] = $rowData['PRICE_FORMATED'];
             $rowData['DISCOUNT_PRICE'] = 0;
             $rowData['SHOW_DISCOUNT_PRICE'] = false;
-            $rowData['SUM_PRICE'] = $sum;
-            $rowData['SUM_PRICE_FORMATED'] = CCurrencyLang::CurrencyFormat($sum, $currency, true);
+            $rowData['SUM_PRICE'] = roundBasketMoneyTenths($sum);
+            $rowData['SUM_PRICE_FORMATED'] = formatBasketSumMoney($sum);
             $rowData['HAS_PIECE_SURCHARGE'] = false;
             $rowData['SURCHARGE_BREAKDOWN_LINES'] = [];
             $rowData['NOTES'] = 'Цена за м²';
@@ -1668,13 +1684,13 @@ function getSquareMeterSurchargePercent($sectionCode)
     return null;
 }
 
-function formatCatalogColumnHeaderHtml($title, $formula = '')
+function formatCatalogColumnHeaderHtml($title, $unit = '')
 {
     $title = trim((string)$title);
-    $formula = trim((string)$formula);
+    $unit = trim((string)$unit);
     $html = '<span class="product-table_th-title">' . $title . '</span>';
-    if ($formula !== '') {
-        $html .= '<span class="product-table_th-formula">' . htmlspecialcharsbx($formula) . '</span>';
+    if ($unit !== '') {
+        $html .= '<span class="product-table_th-unit">' . $unit . '</span>';
     }
 
     return $html;
@@ -1687,43 +1703,34 @@ function formatCatalogPriceHeaderHtml($priceName, $xmlId, $isSquareMeter, $secti
     $isPlusPrice = $xmlId === 'PER_METER_PLUS20' || strpos($priceName, '+') !== false;
 
     if ($xmlId === 'PRICE_PER_KG') {
-        return formatCatalogColumnHeaderHtml('Цена за кг', '1–1000 × Коэффициент_Расчет');
+        return formatCatalogColumnHeaderHtml('₽ / кг');
     }
 
     if ($xmlId === 'PER_METER') {
         if ($isSquareMeter) {
-            return '<span class="product-table_th-title"><span class="price-header">Цена за м<sup>2</sup></span></span>'
-                . '<span class="product-table_th-formula">' . htmlspecialcharsbx('1–1000 × Коэффициент_Расчет') . '</span>';
+            return '<span class="product-table_th-title"><span class="price-header">₽ / м<sup>2</sup></span></span>';
         }
 
-        return formatCatalogColumnHeaderHtml(
-            htmlspecialcharsbx($priceName !== '' ? $priceName : 'Цена за метр'),
-            '1–1000 × Коэффициент_Расчет'
-        );
+        return formatCatalogColumnHeaderHtml('₽ / м');
     }
 
     if ($isPlusPrice) {
         $surcharge = $isSquareMeter ? getSquareMeterSurchargePercent($sectionCode) : 20;
         if ($isSquareMeter) {
             $coef = $surcharge
-                ? '<span class="price-header__coef">+' . $surcharge . '%</span>'
+                ? ' <span class="price-header__coef">+' . $surcharge . '%</span>'
                 : '';
-            $formula = $surcharge
-                ? ('цена за м² × 1,' . (int)$surcharge)
-                : 'цена за м² × 1,2';
 
-            return '<span class="product-table_th-title"><span class="price-header">Цена за м<sup>2</sup>' . $coef . '</span></span>'
-                . '<span class="product-table_th-formula">' . htmlspecialcharsbx($formula) . '</span>';
+            return '<span class="product-table_th-title"><span class="price-header">₽ / м<sup>2</sup>' . $coef . '</span></span>';
         }
 
         return formatCatalogColumnHeaderHtml(
-            htmlspecialcharsbx($priceName !== '' ? $priceName : 'Цена за метр +20%'),
-            'цена за метр × 1,2'
+            htmlspecialcharsbx($priceName !== '' ? $priceName : '₽ / м +20%')
         );
     }
 
     if ($isSquareMeter) {
-        return '<span class="product-table_th-title"><span class="price-header">Цена за м<sup>2</sup></span></span>';
+        return '<span class="product-table_th-title"><span class="price-header">₽ / м<sup>2</sup></span></span>';
     }
 
     return formatCatalogColumnHeaderHtml(htmlspecialcharsbx($priceName));

@@ -54,6 +54,8 @@ $this->addExternalJs($templateFolder.'/js/action-pool.js');
 $this->addExternalJs($templateFolder.'/js/filter.js');
 $this->addExternalJs($templateFolder.'/js/component.js');
 $this->addExternalJs($templateFolder.'/js/basket-qty.js');
+$this->addExternalJs($templateFolder.'/js/basket-tour.js');
+$this->addExternalCss($templateFolder.'/css/basket-tour.css');
 
 $mobileColumns = isset($arParams['COLUMNS_LIST_MOBILE'])
 	? $arParams['COLUMNS_LIST_MOBILE']
@@ -116,6 +118,15 @@ if (empty($arResult['ERROR_MESSAGE']))
         </div>
 
         <div class="cart-content_body">
+            <div class="basket-toolbar" data-entity="basket-toolbar">
+                <button type="button" class="basket-tour-start" data-entity="basket-tour-start">
+                    <span class="basket-tour-start__icon" aria-hidden="true">?</span>
+                    <span>Как пользоваться корзиной и сделать резку товаров?</span>
+                </button>
+                <button type="button" class="basket-clear-btn" data-entity="basket-clear">
+                    Очистить корзину
+                </button>
+            </div>
             <div class="wrapper_cart-table">
                 <table class="cart-table" id="basket-item-table">
                     <tr>
@@ -678,8 +689,11 @@ if (empty($arResult['ERROR_MESSAGE']))
             }
 
             function formatMoney(value) {
-                var n = Math.round(Number(value) || 0);
-                return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ₽';
+                // математическое округление до 0,1 ₽
+                var n = Math.round((Number(value) || 0) * 10) / 10;
+                var parts = n.toFixed(1).split('.');
+                parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+                return parts.join('.') + ' ₽';
             }
 
             function getCutCount(lengths) {
