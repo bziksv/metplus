@@ -1715,6 +1715,7 @@ jQuery(document).ready(function($) {
   /**
    * Ширина колонки «Наименование» = длина самого длинного названия, max 300px.
    * Если длиннее — название переносится на 2+ строки.
+   * Считаем только видимые строки (умный поиск скрывает остальные).
    */
   window.syncProductNameColumnWidth = function syncProductNameColumnWidth() {
     var $tables = $('.product-table');
@@ -1727,14 +1728,21 @@ jQuery(document).ready(function($) {
 
     $tables.each(function() {
       var $table = $(this);
+      var $visibleRows = $table.find('tbody tr').filter(':visible');
       var maxText = 0;
-      var sampleEl = $table.find('tbody .product-item_name').not('.product-item_popup .product-item_name').get(0);
+      var sampleEl = $visibleRows.find('.product-item_name').not('.product-item_popup .product-item_name').get(0);
+      if (!sampleEl) {
+        sampleEl = $table.find('tbody .product-item_name').not('.product-item_popup .product-item_name').get(0);
+      }
       if (sampleEl) {
         var cs = window.getComputedStyle(sampleEl);
         probe.style.font = cs.font;
         probe.style.letterSpacing = cs.letterSpacing;
       }
-      $table.find('tbody .product-item_name').each(function() {
+      var $names = $visibleRows.length
+        ? $visibleRows.find('.product-item_name')
+        : $table.find('tbody .product-item_name');
+      $names.each(function() {
         if ($(this).closest('.product-item_popup').length) {
           return;
         }
@@ -1759,7 +1767,7 @@ jQuery(document).ready(function($) {
         }
       }
       var extras = 40;
-      var nameW = Math.min(300, Math.max(80, Math.ceil(maxText)));
+      var nameW = Math.min(300, Math.max(80, Math.ceil(maxText || 80)));
       var colW = nameW + extras;
       $table.css('--product-name-col-w', colW + 'px');
 
@@ -1780,7 +1788,9 @@ jQuery(document).ready(function($) {
       var tableEl = $table.get(0);
       var guard = 0;
       while (parentEl && colW > 140 && guard++ < 60) {
-        var lastCell = tableEl.querySelector('tbody tr td:last-child');
+        // только видимая строка: у display:none getBoundingClientRect = 0
+        var lastCell = ($visibleRows.first().find('td:last-child').get(0))
+          || tableEl.querySelector('tbody tr td:last-child');
         if (!lastCell) {
           break;
         }
