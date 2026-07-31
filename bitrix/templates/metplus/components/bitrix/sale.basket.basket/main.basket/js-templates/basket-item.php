@@ -10,7 +10,7 @@ use Bitrix\Main\Localization\Loc;
 ?>
 <script id="basket-item-template" type="text/html">
 
-	<tr class="basket-items-list-item-container{{#IS_CUTTING}} basket-items-list-item-container--cutting{{/IS_CUTTING}}" id="basket-item-{{ID}}" data-entity="basket-item" data-id="{{ID}}" data-length-per-piece="{{BASKET_LENGTH_PER_PIECE}}" data-basket-width="{{BASKET_WIDTH}}" data-cutting-stock="{{BASKET_CUTTING_STOCK}}" data-display-pieces="{{DISPLAY_PIECES}}" data-base-meter-price="{{BASE_METER_PRICE}}" data-is-sheet="{{#IS_SHEET}}1{{/IS_SHEET}}{{^IS_SHEET}}0{{/IS_SHEET}}" data-only-pieces="{{#ONLY_PIECES}}1{{/ONLY_PIECES}}{{^ONLY_PIECES}}0{{/ONLY_PIECES}}" data-half-pieces="{{#HALF_PIECES}}1{{/HALF_PIECES}}{{^HALF_PIECES}}0{{/HALF_PIECES}}" data-basic-sheet="{{#BASIC_SHEET}}1{{/BASIC_SHEET}}{{^BASIC_SHEET}}0{{/BASIC_SHEET}}" data-whole-sheet-pieces="{{#WHOLE_SHEET_PIECES}}1{{/WHOLE_SHEET_PIECES}}{{^WHOLE_SHEET_PIECES}}0{{/WHOLE_SHEET_PIECES}}" data-free-cutting="{{#FREE_CUTTING_1M}}1{{/FREE_CUTTING_1M}}{{^FREE_CUTTING_1M}}0{{/FREE_CUTTING_1M}}" data-half-piece-cut="{{#HALF_PIECE_CUT}}1{{/HALF_PIECE_CUT}}{{^HALF_PIECE_CUT}}0{{/HALF_PIECE_CUT}}" data-default-cut-price="{{DEFAULT_CUT_PRICE}}">
+	<tr class="basket-items-list-item-container{{#IS_CUTTING}} basket-items-list-item-container--cutting{{/IS_CUTTING}}" id="basket-item-{{ID}}" data-entity="basket-item" data-id="{{ID}}" data-length-per-piece="{{BASKET_LENGTH_PER_PIECE}}" data-basket-width="{{BASKET_WIDTH}}" data-cutting-stock="{{BASKET_CUTTING_STOCK}}" data-display-pieces="{{DISPLAY_PIECES}}" data-base-meter-price="{{BASE_METER_PRICE}}" data-is-sheet="{{#IS_SHEET}}1{{/IS_SHEET}}{{^IS_SHEET}}0{{/IS_SHEET}}" data-only-pieces="{{#ONLY_PIECES}}1{{/ONLY_PIECES}}{{^ONLY_PIECES}}0{{/ONLY_PIECES}}" data-half-pieces="{{#HALF_PIECES}}1{{/HALF_PIECES}}{{^HALF_PIECES}}0{{/HALF_PIECES}}" data-no-surcharge-1m="{{#NO_SURCHARGE_1M}}1{{/NO_SURCHARGE_1M}}{{^NO_SURCHARGE_1M}}0{{/NO_SURCHARGE_1M}}" data-basic-sheet="{{#BASIC_SHEET}}1{{/BASIC_SHEET}}{{^BASIC_SHEET}}0{{/BASIC_SHEET}}" data-whole-sheet-pieces="{{#WHOLE_SHEET_PIECES}}1{{/WHOLE_SHEET_PIECES}}{{^WHOLE_SHEET_PIECES}}0{{/WHOLE_SHEET_PIECES}}" data-free-cutting="{{#FREE_CUTTING_1M}}1{{/FREE_CUTTING_1M}}{{^FREE_CUTTING_1M}}0{{/FREE_CUTTING_1M}}" data-half-piece-cut="{{#HALF_PIECE_CUT}}1{{/HALF_PIECE_CUT}}{{^HALF_PIECE_CUT}}0{{/HALF_PIECE_CUT}}" data-default-cut-price="{{DEFAULT_CUT_PRICE}}">
 
 		{{^SHOW_RESTORE}}
 
@@ -33,12 +33,12 @@ use Bitrix\Main\Localization\Loc;
                 {{#IS_CUTTING}}
                 <div class="basket-item-cutting-actions">
                     {{#BASIC_SHEET}}
-                    {{#HALF_PIECES}}
+                    {{#SKIP_SHEET_SURCHARGE}}
                     <span class="cutting-plan-notice">Заказ в шт или м² — кратно 1 м длины. Резы всегда оплачиваются. Наценок (+10%) нет — ни за неполную, ни за сложную резку</span>
-                    {{/HALF_PIECES}}
-                    {{^HALF_PIECES}}
+                    {{/SKIP_SHEET_SURCHARGE}}
+                    {{^SKIP_SHEET_SURCHARGE}}
                     <span class="cutting-plan-notice">Заказ в шт или м² — кратно 1 м длины. Резы всегда оплачиваются. Больше резов — дополнительно +10% на резанные. Неполная штука — +10% на кусок и 1 рез</span>
-                    {{/HALF_PIECES}}
+                    {{/SKIP_SHEET_SURCHARGE}}
                     {{/BASIC_SHEET}}
                     {{#IS_SHEET}}
                     {{^BASIC_SHEET}}
@@ -285,12 +285,12 @@ use Bitrix\Main\Localization\Loc;
                 <!-- оригинал: подсказки (скрыты в новом) -->
                 <div class="cutting-plan__hint cutting-plan__hint--legacy">
                     {{#BASIC_SHEET}}
-                    {{#HALF_PIECES}}
+                    {{#SKIP_SHEET_SURCHARGE}}
                     Заказ в шт или м² — кратно 1 м длины. Резы всегда оплачиваются по тарифу. Наценок (+10%) нет ни за неполную штуку, ни за сложную резку.
-                    {{/HALF_PIECES}}
-                    {{^HALF_PIECES}}
+                    {{/SKIP_SHEET_SURCHARGE}}
+                    {{^SKIP_SHEET_SURCHARGE}}
                     Заказ в шт или м² — кратно 1 м длины. Резы всегда оплачиваются. Больше резов — +10% на резанные. Неполная — +10% и 1 рез.
-                    {{/HALF_PIECES}}
+                    {{/SKIP_SHEET_SURCHARGE}}
                     {{/BASIC_SHEET}}
                     {{#FREE_CUTTING_1M}}
                     {{^BASIC_SHEET}}

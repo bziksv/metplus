@@ -1175,7 +1175,8 @@ if (empty($arResult['ERROR_MESSAGE']))
                 }
 
                 var basicSheet = String($item.attr('data-basic-sheet') || '0') === '1';
-                var halfPiecesFlag = String($item.attr('data-half-pieces') || '0') === '1';
+                var halfPiecesFlag = String($item.attr('data-half-pieces') || '0') === '1'
+                    || String($item.attr('data-no-surcharge-1m') || '0') === '1';
                 var availableInfo = getAvailablePieces($item);
                 var availableFull = availableInfo.full;
                 var stock = getStockLength($item);
@@ -1845,8 +1846,9 @@ if (empty($arResult['ERROR_MESSAGE']))
                     return false;
                 }
 
-                // Флаг «Только шт и 0,5 шт» — без +10% за неполную штуку
-                if (String($item.attr('data-half-pieces') || '0') === '1') {
+                // «Только шт и 0,5 шт» / «Кратно 1м без наценки» — без +10% за неполную штуку
+                if (String($item.attr('data-half-pieces') || '0') === '1'
+                    || String($item.attr('data-no-surcharge-1m') || '0') === '1') {
                     return false;
                 }
 

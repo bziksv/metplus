@@ -361,13 +361,20 @@ function isSquareMeterSection($sectionCode)
 
 function shouldShowPlusPriceColumn($sectionCode)
 {
-    return isSquareMeterSection($sectionCode);
+    // Колонку «₽/м² +10%» в каталоге не показываем (+10% только в корзине при резке/неполной)
+    return false;
 }
 
 function isWeightSection($sectionCode)
 {
     // колонка «Вес, кг» показывается во всех разделах каталога
     return true;
+}
+
+/** Разделы, где колонку «₽ / кг» показываем как «₽ / тонна» (×1000). */
+function isPricePerTonSection($sectionCode)
+{
+    return in_array((string)$sectionCode, ['stal_armaturnaya_a3', 'stal_kruglaya'], true);
 }
 
 function isOnlyPiecesProduct($value)
@@ -449,6 +456,20 @@ function isHalfPiecesProduct($value)
 }
 
 /**
+ * Свойство «Кратно 1м без наценки» (KRATNO_1M_BEZ_NATSENKI):
+ * заказ кратно 1 м длины, без +10% за неполную/сложную резку — только оплата резов.
+ */
+function isKratno1mBezNatsenkiProduct($value)
+{
+    return isOnlyPiecesProduct($value);
+}
+
+function productHasKratno1mBezNatsenki($productId, $iblockId = 36)
+{
+    return isKratno1mBezNatsenkiProduct(getPropVal($iblockId, $productId, 'KRATNO_1M_BEZ_NATSENKI'));
+}
+
+/**
  * Шаг наценки +20% для труб/арматуры без флага «0,5 шт»:
  * кратно полной штуке (Длина_Расчет). Иначе вся позиция +20%.
  */
@@ -465,7 +486,12 @@ function productAllowsFreeMeterCutting($productId, $iblockId = 36)
         return false;
     }
 
-    return isHalfPiecesProduct(getPropVal($iblockId, $productId, 'TOLKO_SHT_I_0_5_SHT'));
+    if (isHalfPiecesProduct(getPropVal($iblockId, $productId, 'TOLKO_SHT_I_0_5_SHT'))) {
+        return true;
+    }
+
+    // «Кратно 1м без наценки» — без +20% за некратный метраж
+    return productHasKratno1mBezNatsenki($productId, $iblockId);
 }
 
 function getIncompletePieceFraction($quantity, $lengthPerPiece)
@@ -634,7 +660,9 @@ function isBasicSheetProduct($productId, $iblockId = 36)
 }
 
 /**
- * Лист с флагом «Только шт и 0,5 шт»: без любых +10% (неполная / сложная резка), только оплата резов.
+ * Лист без +10% за неполную/сложную резку (только резы):
+ * — «Только шт и 0,5 шт» (TOLKO_SHT_I_0_5_SHT)
+ * — «Кратно 1м без наценки» (KRATNO_1M_BEZ_NATSENKI)
  */
 function basicSheetSkipsIncompletePieceSurcharge($productId, $iblockId = 36)
 {
@@ -642,7 +670,11 @@ function basicSheetSkipsIncompletePieceSurcharge($productId, $iblockId = 36)
         return false;
     }
 
-    return isHalfPiecesProduct(getPropVal($iblockId, $productId, 'TOLKO_SHT_I_0_5_SHT'));
+    if (isHalfPiecesProduct(getPropVal($iblockId, $productId, 'TOLKO_SHT_I_0_5_SHT'))) {
+        return true;
+    }
+
+    return productHasKratno1mBezNatsenki($productId, $iblockId);
 }
 
 /** @deprecated alias — то же, что basicSheetSkipsIncompletePieceSurcharge */
@@ -1703,7 +1735,9 @@ function formatCatalogPriceHeaderHtml($priceName, $xmlId, $isSquareMeter, $secti
     $isPlusPrice = $xmlId === 'PER_METER_PLUS20' || strpos($priceName, '+') !== false;
 
     if ($xmlId === 'PRICE_PER_KG') {
-        return formatCatalogColumnHeaderHtml('₽ / кг');
+        $label = isPricePerTonSection($sectionCode) ? '₽ / тонна' : '₽ / кг';
+
+        return formatCatalogColumnHeaderHtml($label);
     }
 
     if ($xmlId === 'PER_METER') {

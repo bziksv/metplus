@@ -65,6 +65,8 @@ foreach ($this->basketItems as $row)
         'IS_CUTTING' => false,
         'ONLY_PIECES' => false,
         'HALF_PIECES' => false,
+        'NO_SURCHARGE_1M' => false,
+        'SKIP_SHEET_SURCHARGE' => false,
         'BASIC_SHEET' => false,
         'WHOLE_SHEET_PIECES' => false,
         'IS_SHEET' => false,
@@ -86,14 +88,17 @@ foreach ($this->basketItems as $row)
     if ($row['PRODUCT_ID'] > 0) {
         $onlyPieces = isOnlyPiecesProduct(getPropVal(36, $row['PRODUCT_ID'], 'TOLKO_SHT'));
         $halfPieces = isHalfPiecesProduct(getPropVal(36, $row['PRODUCT_ID'], 'TOLKO_SHT_I_0_5_SHT'));
+        $noSurcharge1m = productHasKratno1mBezNatsenki($row['PRODUCT_ID'], 36);
         $rowData['ONLY_PIECES'] = $onlyPieces;
         $rowData['HALF_PIECES'] = $halfPieces;
+        $rowData['NO_SURCHARGE_1M'] = $noSurcharge1m;
         $rowData['BASKET_WIDTH'] = floatval(getPropVal(36, $row['PRODUCT_ID'], 'SHIRINA_RASCHET'));
         $rowData['IS_SHEET'] = isSheetProduct($rowData['BASKET_WIDTH']);
-        // Лист: шаг кратно 1 м длины. Флаг 0,5 шт → без +10% за кусок (только резы)
+        // Лист: шаг кратно 1 м длины. «0,5 шт» / «Кратно 1м без наценки» → без +10% (только резы)
         $rowData['BASIC_SHEET'] = $rowData['IS_SHEET'] && !$onlyPieces;
+        $rowData['SKIP_SHEET_SURCHARGE'] = $rowData['BASIC_SHEET'] && ($halfPieces || $noSurcharge1m);
         $rowData['WHOLE_SHEET_PIECES'] = $rowData['IS_SHEET'] && !$halfPieces && !$rowData['BASIC_SHEET'];
-        $rowData['FREE_CUTTING_1M'] = $halfPieces && !$rowData['IS_SHEET'];
+        $rowData['FREE_CUTTING_1M'] = ($halfPieces || $noSurcharge1m) && !$rowData['IS_SHEET'];
 
         $cuttingServices = getProductCuttingServices($row['PRODUCT_ID']);
         $rowData['IS_CUTTING'] = count($cuttingServices) > 0 && !$onlyPieces;

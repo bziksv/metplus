@@ -71,6 +71,7 @@ if(count($arResult['ITEMS'])) :
         <?php foreach ($arResult['ITEMS'] as $arItem):
             $onlyPieces = !empty($arItem['ONLY_PIECES']);
             $halfPieces = !empty($arItem['HALF_PIECES']);
+            $noSurcharge1m = !empty($arItem['NO_SURCHARGE_1M']);
             $isSheet = !empty($arItem['IS_SHEET']);
             $basicSheet = !empty($arItem['BASIC_SHEET']);
             $metersInPiece = $arItem['PROPERTIES']['DLINA_RASCHET']['VALUE'];
@@ -79,16 +80,18 @@ if(count($arResult['ITEMS'])) :
             $weightPerPiece = getProductPieceWeightKg((int)$arItem['ID'], (int)$arItem['IBLOCK_ID']);
             $initialWeightKg = $weightPerPiece > 0 ? round($weightPerPiece, 2) : '';
             $weightValue = $weightPerMeter > 0 ? (string)$weightPerMeter : '';
+            $sheetNoSurcharge = $basicSheet && ($halfPieces || $noSurcharge1m);
             $piecesStep = $onlyPieces || ($basicSheet && !$halfPieces) ? '1' : ($halfPieces ? '0.5' : '0.1');
             $piecesMin = $onlyPieces || ($basicSheet && !$halfPieces) ? '1' : ($halfPieces ? '0.5' : '0.1');
             $lockedTitle = 'Продажа только целыми штуками. Метры и ширина заданы производителем.';
-            $basicSheetTip = ($basicSheet && $halfPieces)
+            $basicSheetTip = $sheetNoSurcharge
                 ? getBasicSheetHalfPiecesCuttingTipText()
                 : getBasicSheetCuttingTipText();
             $basicSheetDimensionsTip = getBasicSheetDimensionsTipText();
             $sheetAreaPerPiece = ($basicSheet && $metersInPiece && $widthValue)
                 ? round(floatval($metersInPiece) * floatval($widthValue), 3)
                 : 0;
+            // «Кратно 1м без наценки» — шаг 1 м (как обычный лист), не 0,5 шт
             $basicSheetSteps = ($basicSheet && !$halfPieces && $metersInPiece && $widthValue)
                 ? getBasicSheetWidthMeterSteps($metersInPiece, $widthValue)
                 : null;
@@ -96,7 +99,7 @@ if(count($arResult['ITEMS'])) :
                 $piecesStep = $basicSheetSteps['PIECE_STEP'];
                 $piecesMin = $basicSheetSteps['PIECE_STEP'];
             }
-            $halfPiecesCuttingTip = ($basicSheet && $halfPieces)
+            $halfPiecesCuttingTip = $sheetNoSurcharge
                 ? getBasicSheetHalfPiecesCuttingTipText()
                 : ($isSheet ? getSheetCuttingTipText() : getFreeCuttingTipText());
             $weightFromBulk = !empty($arItem['WEIGHT_FROM_BULK']);
@@ -114,7 +117,7 @@ if(count($arResult['ITEMS'])) :
                 ? round($sheetAreaPerPiece * 0.5, 3)
                 : 0;
         ?>
-        <tr data-price="<?=$arItem['RETAIL_PRICE']?>" data-length="<?=$metersInPiece?>" data-width="<?=$widthValue?>" data-only-pieces="<?=$onlyPieces ? '1' : '0'?>" data-half-pieces="<?=$halfPieces ? '1' : '0'?>" data-basic-sheet="<?=($basicSheet && !$halfPieces) ? '1' : '0'?>"<?=$onlyPieces ? ' class="product-table_row--only-pieces"' : ''?><?=$weightPerMeter > 0 ? ' data-weight-per-meter="' . htmlspecialcharsbx($weightPerMeter) . '"' : ''?><?=$weightInputAllowed ? ' data-weight-editable="1"' : ''?><?=$weightFromBulk ? ' data-weight-from-bulk="1" data-weight-from-500="1" data-min-bulk-weight="' . $minBulkWeight . '" data-weight-per-piece="' . htmlspecialcharsbx($weightPerPiece) . '" data-order-mode="pieces"' : ''?>>
+        <tr data-price="<?=$arItem['RETAIL_PRICE']?>" data-length="<?=$metersInPiece?>" data-width="<?=$widthValue?>" data-only-pieces="<?=$onlyPieces ? '1' : '0'?>" data-half-pieces="<?=$halfPieces ? '1' : '0'?>" data-no-surcharge-1m="<?=$noSurcharge1m ? '1' : '0'?>" data-basic-sheet="<?=($basicSheet && !$halfPieces) ? '1' : '0'?>"<?=$onlyPieces ? ' class="product-table_row--only-pieces"' : ''?><?=$weightPerMeter > 0 ? ' data-weight-per-meter="' . htmlspecialcharsbx($weightPerMeter) . '"' : ''?><?=$weightInputAllowed ? ' data-weight-editable="1"' : ''?><?=$weightFromBulk ? ' data-weight-from-bulk="1" data-weight-from-500="1" data-min-bulk-weight="' . $minBulkWeight . '" data-weight-per-piece="' . htmlspecialcharsbx($weightPerPiece) . '" data-order-mode="pieces"' : ''?>>
             <td class="product-table_first-cell">
                 <button type="button" class="product-availability-marker" title="В наличии на складе." aria-label="В наличии на складе.">
                     <span class="product-availability-marker__tip" aria-hidden="true">В наличии на складе.</span>
@@ -128,7 +131,7 @@ if(count($arResult['ITEMS'])) :
                 <button type="button" class="product-hint product-hint--bulk" data-tip="<?=$weightFromBulkTip?>" aria-label="<?=$weightFromBulkTip?>">
                     <span class="product-hint__label"><?=$bulkBadgeLabel?></span>
                 </button>
-                <?php elseif ($basicSheet && $halfPieces): ?>
+                <?php elseif ($sheetNoSurcharge): ?>
                 <button type="button" class="product-hint product-hint--cut-free" data-tip="<?=$basicSheetTip?>" aria-label="<?=$basicSheetTip?>">
                     <span class="product-hint__label">1м</span>
                 </button>
@@ -136,9 +139,9 @@ if(count($arResult['ITEMS'])) :
                 <button type="button" class="product-hint product-hint--cut-paid" data-tip="<?=$basicSheetTip?>" aria-label="<?=$basicSheetTip?>">
                     <span class="product-hint__label">1м</span>
                 </button>
-                <?php elseif ($halfPieces): ?>
+                <?php elseif ($halfPieces || $noSurcharge1m): ?>
                 <button type="button" class="product-hint product-hint--cut-free" data-tip="<?=$halfPiecesCuttingTip?>" aria-label="<?=$halfPiecesCuttingTip?>">
-                    <span class="product-hint__label"><?=getHalfPiecesOrderBadgeLabel()?></span>
+                    <span class="product-hint__label"><?=$noSurcharge1m && !$halfPieces ? '1м' : getHalfPiecesOrderBadgeLabel()?></span>
                 </button>
                 <?php endif; ?>
                 <span class="product-availability">В наличии на складе.</span>

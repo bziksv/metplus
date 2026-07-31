@@ -55,6 +55,12 @@ foreach ($arResult['ITEMS'] as &$arItem) {
             $arItem['PROPERTIES']['TOLKO_SHT_I_0_5_SHT'] = $halfPiecesProp;
         }
     }
+    if (empty($arItem['PROPERTIES']['KRATNO_1M_BEZ_NATSENKI']['VALUE'])) {
+        $kratno1mProp = getProp($iblockId, $arItem['ID'], 'KRATNO_1M_BEZ_NATSENKI');
+        if ($kratno1mProp) {
+            $arItem['PROPERTIES']['KRATNO_1M_BEZ_NATSENKI'] = $kratno1mProp;
+        }
+    }
 
     if (empty($arItem['PROPERTIES']['_5_MARKASAYT_ILI_RAZMER_SETKI']['VALUE'])) {
         $steelGradeProp = getProp($iblockId, $arItem['ID'], '_5_MARKASAYT_ILI_RAZMER_SETKI');
@@ -66,10 +72,11 @@ foreach ($arResult['ITEMS'] as &$arItem) {
     $arItem['STEEL_GRADE'] = trim((string)($arItem['PROPERTIES']['_5_MARKASAYT_ILI_RAZMER_SETKI']['VALUE'] ?? ''));
     $arItem['ONLY_PIECES'] = isOnlyPiecesProduct($arItem['PROPERTIES']['TOLKO_SHT']['VALUE'] ?? '');
     $arItem['HALF_PIECES'] = isHalfPiecesProduct($arItem['PROPERTIES']['TOLKO_SHT_I_0_5_SHT']['VALUE'] ?? '');
+    $arItem['NO_SURCHARGE_1M'] = isKratno1mBezNatsenkiProduct($arItem['PROPERTIES']['KRATNO_1M_BEZ_NATSENKI']['VALUE'] ?? '');
     $arItem['IS_SHEET'] = isSheetProduct($arItem['PROPERTIES']['SHIRINA_RASCHET']['VALUE'] ?? 0);
-    // Лист: шаг кратно 1 м длины. Флаг 0,5 шт на листе → без +10% за кусок (только резы)
+    // Лист: шаг кратно 1 м. «0,5 шт» / «Кратно 1м без наценки» → без +10% (только резы)
     $arItem['BASIC_SHEET'] = $arItem['IS_SHEET'] && !$arItem['ONLY_PIECES'];
-    $arItem['FREE_CUTTING_1M'] = $arItem['HALF_PIECES'] && !$arItem['IS_SHEET'];
+    $arItem['FREE_CUTTING_1M'] = ($arItem['HALF_PIECES'] || $arItem['NO_SURCHARGE_1M']) && !$arItem['IS_SHEET'];
     $arItem['MIN_BULK_WEIGHT'] = getProductMinBulkWeightKg($arItem['PROPERTIES']);
     $arItem['WEIGHT_FROM_500'] = ($arItem['MIN_BULK_WEIGHT'] === 500);
     $arItem['WEIGHT_FROM_1000'] = ($arItem['MIN_BULK_WEIGHT'] === 1000);
@@ -99,21 +106,50 @@ foreach ($arResult['ITEMS'] as &$arItem) {
         }
     }
 
+    if ($arItem['BASIC_SHEET'] && $arItem['NO_SURCHARGE_1M']) {
+        $arResult['HAS_HALF_PIECES_SHEET_ROWS'] = true;
+    }
+
     if ($arItem['BASIC_SHEET']) {
         $arResult['HAS_BASIC_SHEET_ROWS'] = true;
-        if (!$arItem['HALF_PIECES']) {
+        if (!$arItem['HALF_PIECES'] && !$arItem['NO_SURCHARGE_1M']) {
             $arResult['HAS_BASIC_SHEET_PAID_ROWS'] = true;
         }
     }
 
     $pricePerKg = getProductPricePerKg((int)$arItem['ID'], $iblockId);
     $arItem['PRICE_PER_KG'] = $pricePerKg;
-    if ($pricePerKg !== null && class_exists('CCurrencyLang')) {
-        $arItem['PRINT_PRICE_PER_KG'] = CCurrencyLang::CurrencyFormat($pricePerKg, 'RUB', true);
-    } elseif ($pricePerKg !== null) {
-        $arItem['PRINT_PRICE_PER_KG'] = number_format($pricePerKg, 2, '.', ' ') . ' руб.';
+    $priceForDisplay = $pricePerKg;
+    if ($priceForDisplay !== null && isPricePerTonSection($arParams['SECTION_CODE'] ?? '')) {
+        $priceForDisplay = round($priceForDisplay * 1000, 2);
+    }
+    if ($priceForDisplay !== null && class_exists('CCurrencyLang')) {
+        $arItem['PRINT_PRICE_PER_KG'] = CCurrencyLang::CurrencyFormat($priceForDisplay, 'RUB', true);
+    } elseif ($priceForDisplay !== null) {
+        $arItem['PRINT_PRICE_PER_KG'] = number_format($priceForDisplay, 2, '.', ' ') . ' руб.';
     } else {
         $arItem['PRINT_PRICE_PER_KG'] = '—';
+    }
+
+    // ₽/м (тип 17) иногда не создан после обмена 1С — считаем на лету: 1-1000 × KOEFF
+    $pricePerMeterTypeId = 17;
+    if ($pricePerKg !== null) {
+        if (!isset($arItem['ITEM_ALL_PRICES'][0]['PRICES']) || !is_array($arItem['ITEM_ALL_PRICES'][0]['PRICES'])) {
+            $arItem['ITEM_ALL_PRICES'][0]['PRICES'] = [];
+        }
+        $storedPerMeter = (float)($arItem['ITEM_ALL_PRICES'][0]['PRICES'][$pricePerMeterTypeId]['PRICE'] ?? 0);
+        if ($storedPerMeter <= 0) {
+            $printPerMeter = class_exists('CCurrencyLang')
+                ? CCurrencyLang::CurrencyFormat($pricePerKg, 'RUB', true)
+                : number_format($pricePerKg, 2, '.', ' ') . ' руб.';
+            $arItem['ITEM_ALL_PRICES'][0]['PRICES'][$pricePerMeterTypeId] = [
+                'PRICE' => $pricePerKg,
+                'BASE_PRICE' => $pricePerKg,
+                'PRINT_PRICE' => $printPerMeter,
+                'PRINT_BASE_PRICE' => $printPerMeter,
+                'CURRENCY' => 'RUB',
+            ];
+        }
     }
 
     $prices = $arItem['ITEM_ALL_PRICES'][0]['PRICES'] ?? null;
@@ -162,11 +198,13 @@ foreach ($arResult['CATALOG_PRICE'] as $id => &$arPrice) {
 unset($arPrice);
 
 // «Цена за кг» сразу после «Цена за метр»
+$sectionCode = $arParams['SECTION_CODE'] ?? '';
+$pricePerKgColumnName = isPricePerTonSection($sectionCode) ? 'Цена за тонну' : 'Цена за кг';
 $pricePerKgColumn = [
     'CATALOG_GROUP_ID' => 'PRICE_PER_KG',
-    'NAME' => 'Цена за кг',
+    'NAME' => $pricePerKgColumnName,
     'XML_ID' => 'PRICE_PER_KG',
-    'NAME_HTML' => formatCatalogPriceHeaderHtml('Цена за кг', 'PRICE_PER_KG', $isSquareMeter, $arParams['SECTION_CODE'] ?? ''),
+    'NAME_HTML' => formatCatalogPriceHeaderHtml($pricePerKgColumnName, 'PRICE_PER_KG', $isSquareMeter, $sectionCode),
     'IS_PRICE_PER_KG' => true,
 ];
 $orderedPrices = [];
