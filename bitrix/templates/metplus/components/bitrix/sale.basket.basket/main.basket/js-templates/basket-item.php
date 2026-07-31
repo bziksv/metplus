@@ -10,7 +10,7 @@ use Bitrix\Main\Localization\Loc;
 ?>
 <script id="basket-item-template" type="text/html">
 
-	<tr class="basket-items-list-item-container{{#IS_CUTTING}} basket-items-list-item-container--cutting{{/IS_CUTTING}}" id="basket-item-{{ID}}" data-entity="basket-item" data-id="{{ID}}" data-length-per-piece="{{BASKET_LENGTH_PER_PIECE}}" data-basket-width="{{BASKET_WIDTH}}" data-cutting-stock="{{BASKET_CUTTING_STOCK}}" data-display-pieces="{{DISPLAY_PIECES}}" data-base-meter-price="{{BASE_METER_PRICE}}" data-is-sheet="{{#IS_SHEET}}1{{/IS_SHEET}}{{^IS_SHEET}}0{{/IS_SHEET}}" data-only-pieces="{{#ONLY_PIECES}}1{{/ONLY_PIECES}}{{^ONLY_PIECES}}0{{/ONLY_PIECES}}" data-half-pieces="{{#HALF_PIECES}}1{{/HALF_PIECES}}{{^HALF_PIECES}}0{{/HALF_PIECES}}" data-no-surcharge-1m="{{#NO_SURCHARGE_1M}}1{{/NO_SURCHARGE_1M}}{{^NO_SURCHARGE_1M}}0{{/NO_SURCHARGE_1M}}" data-basic-sheet="{{#BASIC_SHEET}}1{{/BASIC_SHEET}}{{^BASIC_SHEET}}0{{/BASIC_SHEET}}" data-whole-sheet-pieces="{{#WHOLE_SHEET_PIECES}}1{{/WHOLE_SHEET_PIECES}}{{^WHOLE_SHEET_PIECES}}0{{/WHOLE_SHEET_PIECES}}" data-free-cutting="{{#FREE_CUTTING_1M}}1{{/FREE_CUTTING_1M}}{{^FREE_CUTTING_1M}}0{{/FREE_CUTTING_1M}}" data-half-piece-cut="{{#HALF_PIECE_CUT}}1{{/HALF_PIECE_CUT}}{{^HALF_PIECE_CUT}}0{{/HALF_PIECE_CUT}}" data-default-cut-price="{{DEFAULT_CUT_PRICE}}">
+	<tr class="basket-items-list-item-container{{#IS_CUTTING}} basket-items-list-item-container--cutting{{/IS_CUTTING}}" id="basket-item-{{ID}}" data-entity="basket-item" data-id="{{ID}}" data-length-per-piece="{{BASKET_LENGTH_PER_PIECE}}" data-basket-width="{{BASKET_WIDTH}}" data-cutting-stock="{{BASKET_CUTTING_STOCK}}" data-display-pieces="{{DISPLAY_PIECES}}" data-base-meter-price="{{BASE_METER_PRICE}}" data-is-sheet="{{#IS_SHEET}}1{{/IS_SHEET}}{{^IS_SHEET}}0{{/IS_SHEET}}" data-only-pieces="{{#ONLY_PIECES}}1{{/ONLY_PIECES}}{{^ONLY_PIECES}}0{{/ONLY_PIECES}}" data-half-pieces="{{#HALF_PIECES}}1{{/HALF_PIECES}}{{^HALF_PIECES}}0{{/HALF_PIECES}}" data-no-surcharge-1m="{{#NO_SURCHARGE_1M}}1{{/NO_SURCHARGE_1M}}{{^NO_SURCHARGE_1M}}0{{/NO_SURCHARGE_1M}}" data-no-length="{{#NO_LENGTH_PRODUCT}}1{{/NO_LENGTH_PRODUCT}}{{^NO_LENGTH_PRODUCT}}0{{/NO_LENGTH_PRODUCT}}" data-basic-sheet="{{#BASIC_SHEET}}1{{/BASIC_SHEET}}{{^BASIC_SHEET}}0{{/BASIC_SHEET}}" data-whole-sheet-pieces="{{#WHOLE_SHEET_PIECES}}1{{/WHOLE_SHEET_PIECES}}{{^WHOLE_SHEET_PIECES}}0{{/WHOLE_SHEET_PIECES}}" data-free-cutting="{{#FREE_CUTTING_1M}}1{{/FREE_CUTTING_1M}}{{^FREE_CUTTING_1M}}0{{/FREE_CUTTING_1M}}" data-half-piece-cut="{{#HALF_PIECE_CUT}}1{{/HALF_PIECE_CUT}}{{^HALF_PIECE_CUT}}0{{/HALF_PIECE_CUT}}" data-default-cut-price="{{DEFAULT_CUT_PRICE}}">
 
 		{{^SHOW_RESTORE}}
 
@@ -96,6 +96,12 @@ use Bitrix\Main\Localization\Loc;
             <td class="cart-table_col-area">
                 <span class="cart-table_mobile-text">м/м²</span>
                 <div class="basket-item-cell-inner">
+                    {{#NO_LENGTH_PRODUCT}}
+                    <span class="cart-table_qty-na" title="Для этого товара метры не используются — заказ только штуками">не используется</span>
+                    <input type="hidden" value="{{QUANTITY}}" data-value="{{QUANTITY}}" data-entity="basket-item-quantity-field"
+                        id="basket-item-quantity-{{ID}}" {{#NOT_AVAILABLE}} disabled="disabled"{{/NOT_AVAILABLE}}>
+                    {{/NO_LENGTH_PRODUCT}}
+                    {{^NO_LENGTH_PRODUCT}}
                     <div class="cart-table_area-cell">
                         <div class="wrapper-counter-btn" data-entity="basket-item-quantity-block">
                             <button type="button" class="counter-back" data-entity="basket-item-quantity-minus"></button>
@@ -112,12 +118,17 @@ use Bitrix\Main\Localization\Loc;
                         </div>
                         <span class="cart-table_qty-unit" data-entity="basket-item-area-unit-{{ID}}">{{DISPLAY_AREA_UNIT}}</span>
                     </div>
+                    {{/NO_LENGTH_PRODUCT}}
                 </div>
             </td>
 
             <td class="cart-table_col-weight">
                 <span class="cart-table_mobile-text">Вес, кг</span>
                 <div class="basket-item-cell-inner">
+                    {{#NO_LENGTH_PRODUCT}}
+                    <span class="cart-table_qty-value cart-table_qty-value--readonly" data-entity="basket-item-weight-{{ID}}">{{DISPLAY_WEIGHT}}</span>
+                    {{/NO_LENGTH_PRODUCT}}
+                    {{^NO_LENGTH_PRODUCT}}
                     <div class="wrapper-counter-btn" data-entity="basket-item-weight-block">
                         <button type="button" class="counter-back" data-entity="basket-item-weight-minus" aria-label="Уменьшить вес, кг"></button>
                         <input type="number" class="cart-table_qty-input" min="0" step="0.001" inputmode="decimal"
@@ -127,6 +138,7 @@ use Bitrix\Main\Localization\Loc;
                             {{#NOT_AVAILABLE}} disabled="disabled"{{/NOT_AVAILABLE}}>
                         <button type="button" class="counter-forward" data-entity="basket-item-weight-plus" aria-label="Увеличить вес, кг"></button>
                     </div>
+                    {{/NO_LENGTH_PRODUCT}}
                 </div>
             </td>
 

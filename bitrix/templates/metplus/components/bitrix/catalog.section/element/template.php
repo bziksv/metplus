@@ -55,7 +55,9 @@ if(count($arResult['ITEMS'])) :
             <?php if (!empty($arResult['SHOW_WEIGHT_COLUMN'])): ?>
             <th class="product-table_col-qty"><?=formatCatalogColumnHeaderHtml('Вес', 'кг')?></th>
             <?php endif; ?>
+            <?php if (!empty($arResult['SHOW_LENGTH_COLUMN'])): ?>
             <th class="product-table_col-qty"><?=formatCatalogColumnHeaderHtml('Длина', 'м')?></th>
+            <?php endif; ?>
             <?php if (!empty($arResult['SHOW_WIDTH_COLUMN'])): ?>
             <th class="product-table_col-qty"><?=formatCatalogColumnHeaderHtml('Ширина', 'м')?></th>
             <?php endif; ?>
@@ -99,9 +101,18 @@ if(count($arResult['ITEMS'])) :
                 $piecesStep = $basicSheetSteps['PIECE_STEP'];
                 $piecesMin = $basicSheetSteps['PIECE_STEP'];
             }
-            $halfPiecesCuttingTip = $sheetNoSurcharge
-                ? getBasicSheetHalfPiecesCuttingTipText()
-                : ($isSheet ? getSheetCuttingTipText() : getFreeCuttingTipText());
+            // Подсказка у бейджа: для «Кратно 1м без наценки» — свой текст, не «0,5 шт»
+            if ($noSurcharge1m && !$halfPieces) {
+                $halfPiecesCuttingTip = $isSheet
+                    ? getBasicSheetHalfPiecesCuttingTipText()
+                    : getKratno1mBezNatsenkiTipText();
+            } else {
+                $halfPiecesCuttingTip = $sheetNoSurcharge
+                    ? getBasicSheetHalfPiecesCuttingTipText()
+                    : ($isSheet ? getSheetCuttingTipText() : getFreeCuttingTipText());
+            }
+            $metersStep = ($noSurcharge1m && !$halfPieces && !$onlyPieces && !$basicSheet) ? '1' : null;
+            $metersMin = $metersStep ?: null;
             $weightFromBulk = !empty($arItem['WEIGHT_FROM_BULK']);
             $weightInputAllowed = $weightFromBulk && $weightPerMeter > 0;
             $minBulkWeight = (int)($arItem['MIN_BULK_WEIGHT'] ?? 0);
@@ -127,19 +138,20 @@ if(count($arResult['ITEMS'])) :
                 <button type="button" class="product-hint product-hint--lock" data-tip="<?=$lockedTitle?>" aria-label="<?=$lockedTitle?>">
                     <span class="product-hint__icon--lock" aria-hidden="true"></span>
                 </button>
-                <?php elseif ($weightFromBulk && $minBulkWeight >= 1000): ?>
+                <?php endif; ?>
+                <?php if ($weightFromBulk && $minBulkWeight > 0): ?>
                 <button type="button" class="product-hint product-hint--bulk" data-tip="<?=$weightFromBulkTip?>" aria-label="<?=$weightFromBulkTip?>">
                     <span class="product-hint__label"><?=$bulkBadgeLabel?></span>
                 </button>
-                <?php elseif ($sheetNoSurcharge): ?>
+                <?php elseif (!$onlyPieces && $sheetNoSurcharge): ?>
                 <button type="button" class="product-hint product-hint--cut-free" data-tip="<?=$basicSheetTip?>" aria-label="<?=$basicSheetTip?>">
                     <span class="product-hint__label">1м</span>
                 </button>
-                <?php elseif ($basicSheet): ?>
+                <?php elseif (!$onlyPieces && $basicSheet): ?>
                 <button type="button" class="product-hint product-hint--cut-paid" data-tip="<?=$basicSheetTip?>" aria-label="<?=$basicSheetTip?>">
                     <span class="product-hint__label">1м</span>
                 </button>
-                <?php elseif ($halfPieces || $noSurcharge1m): ?>
+                <?php elseif (!$onlyPieces && ($halfPieces || $noSurcharge1m)): ?>
                 <button type="button" class="product-hint product-hint--cut-free" data-tip="<?=$halfPiecesCuttingTip?>" aria-label="<?=$halfPiecesCuttingTip?>">
                     <span class="product-hint__label"><?=$noSurcharge1m && !$halfPieces ? '1м' : getHalfPiecesOrderBadgeLabel()?></span>
                 </button>
@@ -179,13 +191,20 @@ if(count($arResult['ITEMS'])) :
                     <input type="number" class="product-table-input product-table-input_weight" min="0.01" step="0.001" placeholder="0" name="weight_kg" value="<?=$initialWeightKg?>" data-weight-per-meter="<?=$weightPerMeter?>" data-tip-pieces="<?=htmlspecialcharsbx(getWeightFrom500PiecesTipText($minBulkWeight))?>" data-tip-bulk="<?=htmlspecialcharsbx(getWeightFrom500BulkTipText($minBulkWeight))?>">
                 </div>
                 <?php else: ?>
-                <div class="product-table_field product-table_field--restricted" data-tip="Вес шт = Коэффициент_Расчет × Ширина_Расчет × Длина_Расчет<?=$weightPerMeter > 0 ? ' · ' . $weightPerMeter . ' кг/м' : ''?>">
+                <div class="product-table_field product-table_field--restricted" data-tip="<?php
+                    if (empty($arResult['SHOW_LENGTH_COLUMN'])) {
+                        echo htmlspecialcharsbx('Вес = штуки × Коэффициент_Расчет' . ($weightPerPiece > 0 ? ' · ' . $weightPerPiece . ' кг/шт' : ''));
+                    } else {
+                        echo 'Вес шт = Коэффициент_Расчет × Ширина_Расчет × Длина_Расчет' . ($weightPerMeter > 0 ? ' · ' . $weightPerMeter . ' кг/м' : '');
+                    }
+                ?>">
                     <span class="product-table_field-value" data-weight-display><?=htmlspecialcharsbx((string)$displayWeightKg)?></span>
                     <input type="hidden" name="weight_kg" value="<?=htmlspecialcharsbx((string)$initialWeightKg)?>" data-weight-per-meter="<?=htmlspecialcharsbx((string)$weightPerMeter)?>">
                 </div>
                 <?php endif; ?>
             </td>
             <?php endif; ?>
+            <?php if (!empty($arResult['SHOW_LENGTH_COLUMN'])): ?>
             <td class="product-table_cell-qty<?=$lockSheetMeters ? ' product-table_cell--locked' : ''?>">
                 <?php if ($lockSheetMeters): ?>
                 <div class="product-table_field product-table_field--restricted" data-tip="<?=$basicSheet ? $basicSheetDimensionsTip : $lockedTitle?>">
@@ -197,10 +216,11 @@ if(count($arResult['ITEMS'])) :
                 </div>
                 <?php else: ?>
                 <div class="product-table_field">
-                    <input type="number" class="product-table-input" min="<?=$halfPieces && $metersInPiece ? htmlspecialcharsbx(round((float)$metersInPiece * 0.5, 3)) : '0.1'?>" step="<?=$halfPieces && $metersInPiece ? htmlspecialcharsbx(round((float)$metersInPiece * 0.5, 3)) : '0.1'?>" placeholder="0" name="meters" value="<?=$metersInPiece?>" data-meters-in-one-piece="<?=$metersInPiece?>">
+                    <input type="number" class="product-table-input" min="<?=$metersMin !== null ? $metersMin : ($halfPieces && $metersInPiece ? htmlspecialcharsbx(round((float)$metersInPiece * 0.5, 3)) : '0.1')?>" step="<?=$metersStep !== null ? $metersStep : ($halfPieces && $metersInPiece ? htmlspecialcharsbx(round((float)$metersInPiece * 0.5, 3)) : '0.1')?>" placeholder="0" name="meters" value="<?=$metersInPiece?>" data-meters-in-one-piece="<?=$metersInPiece?>">
                 </div>
                 <?php endif; ?>
             </td>
+            <?php endif; ?>
             <?php if (!empty($arResult['SHOW_WIDTH_COLUMN'])): ?>
             <td class="product-table_cell-qty<?=($onlyPieces || $basicSheet) ? ' product-table_cell--locked' : ''?>">
                 <?php if ($onlyPieces || $basicSheet): ?>
@@ -237,6 +257,9 @@ if(count($arResult['ITEMS'])) :
                 <div class="product-table_field">
                     <input type="number" class="product-table-input" min="<?=$piecesMin?>" step="<?=$piecesStep?>" placeholder="0" name="pieces" value="<?=$basicSheetSteps ? $basicSheetSteps['PIECE_STEP'] : 1?>" data-meters-in-one-piece="<?=$metersInPiece?>">
                 </div>
+                <?php if (empty($arResult['SHOW_LENGTH_COLUMN'])): ?>
+                <input type="hidden" name="meters" value="" data-meters-in-one-piece="">
+                <?php endif; ?>
             </td>
             <td class="product-table_col-buy">
                 <a href="javascript:void(0)" class="add-to-cart-action product-item_cart-btn main-btn" id="<?=$arItem['ID']?>" title="В корзину" aria-label="В корзину">
@@ -255,7 +278,7 @@ if(count($arResult['ITEMS'])) :
         <?php if (!empty($arResult['BULK_WEIGHT_THRESHOLDS'])): ?>
             <?php ksort($arResult['BULK_WEIGHT_THRESHOLDS']); ?>
             <?php foreach (array_keys($arResult['BULK_WEIGHT_THRESHOLDS']) as $bulkThreshold): ?>
-                <?php if ((int)$bulkThreshold < 1000) { continue; } ?>
+                <?php if ((int)$bulkThreshold < 500) { continue; } ?>
         <div class="product-hint-legend product-hint-legend--badge product-hint-legend--bulk" data-tip="<?=htmlspecialcharsbx(getWeightFrom500TipText($bulkThreshold))?>">
             <span class="product-hint-legend__badge product-hint product-hint--bulk" aria-hidden="true"><span class="product-hint__label"><?=formatBulkWeightBadgeLabel($bulkThreshold)?></span></span>
             <span class="product-hint-legend__text"><?=htmlspecialcharsbx(getBulkWeightLegendText($bulkThreshold))?></span>
@@ -284,6 +307,12 @@ if(count($arResult['ITEMS'])) :
         <div class="product-hint-legend product-hint-legend--badge product-hint-legend--cut-free" data-tip="<?=htmlspecialcharsbx(getFreeCuttingTipText())?>">
             <span class="product-hint-legend__badge product-hint product-hint--cut-free" aria-hidden="true"><span class="product-hint__label"><?=getHalfPiecesOrderBadgeLabel()?></span></span>
             <span class="product-hint-legend__text"><?=htmlspecialcharsbx(getHalfPiecesCuttingLegendText(false))?></span>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($arResult['HAS_KRATNO_1M_FREE_ROWS'])): ?>
+        <div class="product-hint-legend product-hint-legend--badge product-hint-legend--cut-free" data-tip="<?=htmlspecialcharsbx(getKratno1mBezNatsenkiTipText())?>">
+            <span class="product-hint-legend__badge product-hint product-hint--cut-free" aria-hidden="true"><span class="product-hint__label">1м</span></span>
+            <span class="product-hint-legend__text"><?=htmlspecialcharsbx(getKratno1mBezNatsenkiLegendText())?></span>
         </div>
         <?php endif; ?>
         <?php if($arParams["DISPLAY_BOTTOM_PAGER"]):?>

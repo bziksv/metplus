@@ -377,6 +377,12 @@ function isPricePerTonSection($sectionCode)
     return in_array((string)$sectionCode, ['stal_armaturnaya_a3', 'stal_kruglaya'], true);
 }
 
+/** Разделы без Длина_Расчет (мотки, электроды) — «₽ / шт» вместо «₽ / м». */
+function isPricePerPieceSection($sectionCode)
+{
+    return in_array((string)$sectionCode, ['provoloka_motok', 'elektrody'], true);
+}
+
 function isOnlyPiecesProduct($value)
 {
     if ($value === null || $value === '') {
@@ -597,6 +603,16 @@ function getIncompletePieceCutNotice($fraction, $cutPrice = 0)
 function getFreeCuttingTipText()
 {
     return 'Кратно 0,5 шт. в заказе (0,5 / 1 / 1,5 / 2…).';
+}
+
+function getKratno1mBezNatsenkiTipText()
+{
+    return 'Кратно 1 м в заказе. Без наценки +20% за некратный метраж.';
+}
+
+function getKratno1mBezNatsenkiLegendText()
+{
+    return 'Кратно 1 м · без наценки +20%';
 }
 
 function getHalfPiecesOrderBadgeLabel()
@@ -1645,6 +1661,28 @@ function formatBasketQtyNumber($value, $decimals = 2)
     return rtrim(rtrim($formatted, '0'), '.');
 }
 
+/**
+ * Товар без Длина_Расчет и без ширины (мотки и т.п.):
+ * в корзине QUANTITY = штуки, колонка м/м² не используется.
+ */
+function isNoLengthBasketProduct($productId, $iblockId = 36)
+{
+    $productId = (int)$productId;
+    if ($productId <= 0) {
+        return false;
+    }
+
+    if (floatval(getPropVal($iblockId, $productId, 'DLINA_RASCHET')) > 0) {
+        return false;
+    }
+
+    if (floatval(getPropVal($iblockId, $productId, 'SHIRINA_RASCHET')) > 0) {
+        return false;
+    }
+
+    return true;
+}
+
 function getBasketItemQuantityDisplay($productId, $metersQuantity)
 {
     $iblockId = 36;
@@ -1655,6 +1693,21 @@ function getBasketItemQuantityDisplay($productId, $metersQuantity)
     $onlyPieces = isOnlyPiecesProduct(getPropVal($iblockId, $productId, 'TOLKO_SHT'));
     $halfPieces = isHalfPiecesProduct(getPropVal($iblockId, $productId, 'TOLKO_SHT_I_0_5_SHT'));
     $basicSheet = isBasicSheetProduct($productId, $iblockId);
+    $noLength = isNoLengthBasketProduct($productId, $iblockId);
+
+    // Моток без длины: QUANTITY хранится в штуках
+    if ($noLength) {
+        $pieces = max(1, (int)round($metersQty));
+        $pieceWeight = getProductPieceWeightKg($productId, $iblockId);
+
+        return [
+            'PIECES' => (string)$pieces,
+            'AREA' => '',
+            'AREA_UNIT' => '',
+            'WEIGHT' => $pieceWeight > 0 ? formatBasketQtyNumber($pieces * $pieceWeight, 3) : '',
+            'NO_LENGTH' => true,
+        ];
+    }
 
     if ($onlyPieces && $lengthPerPiece > 0) {
         $metersQty = snapOnlyPiecesMetersQuantity($metersQty, $lengthPerPiece);
@@ -1704,6 +1757,7 @@ function getBasketItemQuantityDisplay($productId, $metersQuantity)
         'AREA' => formatBasketQtyNumber($areaValue, $width > 0 ? 3 : 2),
         'AREA_UNIT' => $areaUnit,
         'WEIGHT' => $weight !== null ? formatBasketQtyNumber($weight, 3) : '',
+        'NO_LENGTH' => false,
     ];
 }
 
@@ -1743,6 +1797,10 @@ function formatCatalogPriceHeaderHtml($priceName, $xmlId, $isSquareMeter, $secti
     if ($xmlId === 'PER_METER') {
         if ($isSquareMeter) {
             return '<span class="product-table_th-title"><span class="price-header">₽ / м<sup>2</sup></span></span>';
+        }
+
+        if (isPricePerPieceSection($sectionCode)) {
+            return formatCatalogColumnHeaderHtml('₽ / шт');
         }
 
         return formatCatalogColumnHeaderHtml('₽ / м');

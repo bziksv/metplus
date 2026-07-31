@@ -17,6 +17,7 @@ $arResult['BULK_WEIGHT_THRESHOLDS'] = [];
 $isSquareMeter = isSquareMeterSection($arParams['SECTION_CODE'] ?? '');
 $arResult['SHOW_WIDTH_COLUMN'] = $isSquareMeter;
 $arResult['SHOW_WEIGHT_COLUMN'] = true;
+$arResult['SHOW_LENGTH_COLUMN'] = !isPricePerPieceSection($arParams['SECTION_CODE'] ?? '');
 $arResult['EDITABLE_WEIGHT_COLUMN'] = false; // ввод веса — только у товаров с от 500/1000 кг
 $iblockId = (int)($arParams['IBLOCK_ID'] ?? 36);
 
@@ -106,6 +107,10 @@ foreach ($arResult['ITEMS'] as &$arItem) {
         }
     }
 
+    if ($arItem['NO_SURCHARGE_1M'] && !$arItem['HALF_PIECES'] && !$arItem['IS_SHEET']) {
+        $arResult['HAS_KRATNO_1M_FREE_ROWS'] = true;
+    }
+
     if ($arItem['BASIC_SHEET'] && $arItem['NO_SURCHARGE_1M']) {
         $arResult['HAS_HALF_PIECES_SHEET_ROWS'] = true;
     }
@@ -181,6 +186,15 @@ foreach ($arResult['CATALOG_PRICE'] as $id => &$arPrice) {
 
     if ($arGroup = $rsGroup->fetch()) {
         if ($arGroup['XML_ID'] === 'PER_METER_PLUS20' && !shouldShowPlusPriceColumn($arParams['SECTION_CODE'] ?? '')) {
+            unset($arResult['CATALOG_PRICE'][$id]);
+            continue;
+        }
+
+        // Моток / электроды: колонку ₽/м (₽/шт) не показываем — остаётся ₽/кг
+        if (
+            ($arGroup['XML_ID'] === 'PER_METER' || (int)$id === 17)
+            && isPricePerPieceSection($arParams['SECTION_CODE'] ?? '')
+        ) {
             unset($arResult['CATALOG_PRICE'][$id]);
             continue;
         }

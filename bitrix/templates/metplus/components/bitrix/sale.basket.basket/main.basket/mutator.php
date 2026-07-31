@@ -67,6 +67,7 @@ foreach ($this->basketItems as $row)
         'HALF_PIECES' => false,
         'NO_SURCHARGE_1M' => false,
         'SKIP_SHEET_SURCHARGE' => false,
+        'NO_LENGTH_PRODUCT' => false,
         'BASIC_SHEET' => false,
         'WHOLE_SHEET_PIECES' => false,
         'IS_SHEET' => false,
@@ -94,6 +95,7 @@ foreach ($this->basketItems as $row)
         $rowData['NO_SURCHARGE_1M'] = $noSurcharge1m;
         $rowData['BASKET_WIDTH'] = floatval(getPropVal(36, $row['PRODUCT_ID'], 'SHIRINA_RASCHET'));
         $rowData['IS_SHEET'] = isSheetProduct($rowData['BASKET_WIDTH']);
+        $rowData['NO_LENGTH_PRODUCT'] = isNoLengthBasketProduct($row['PRODUCT_ID'], 36);
         // Лист: шаг кратно 1 м длины. «0,5 шт» / «Кратно 1м без наценки» → без +10% (только резы)
         $rowData['BASIC_SHEET'] = $rowData['IS_SHEET'] && !$onlyPieces;
         $rowData['SKIP_SHEET_SURCHARGE'] = $rowData['BASIC_SHEET'] && ($halfPieces || $noSurcharge1m);
@@ -163,6 +165,9 @@ foreach ($this->basketItems as $row)
         $rowData['DISPLAY_AREA'] = $qtyDisplay['AREA'];
         $rowData['DISPLAY_AREA_UNIT'] = $qtyDisplay['AREA_UNIT'];
         $rowData['DISPLAY_WEIGHT'] = $qtyDisplay['WEIGHT'];
+        if (!empty($qtyDisplay['NO_LENGTH'])) {
+            $rowData['NO_LENGTH_PRODUCT'] = true;
+        }
 
         $defaultCutPrice = 0;
         foreach ($cuttingServices as $service) {

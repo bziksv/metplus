@@ -104,6 +104,11 @@
 		} else {
 			merged.ONLY_PIECES = false;
 		}
+		if (String(row.getAttribute('data-no-length') || '0') === '1') {
+			merged.NO_LENGTH_PRODUCT = true;
+		} else {
+			merged.NO_LENGTH_PRODUCT = false;
+		}
 		if (String(row.getAttribute('data-half-pieces') || '0') === '1') {
 			merged.HALF_PIECES = true;
 		} else {
@@ -149,6 +154,12 @@
 	function isOnlyPiecesItem(itemData)
 	{
 		return !!(itemData && itemData.ONLY_PIECES);
+	}
+
+	function isNoLengthItem(itemData)
+	{
+		// Моток и т.п.: нет Длина_Расчет — QUANTITY = штуки, м/м² не используется
+		return !!(itemData && itemData.NO_LENGTH_PRODUCT);
 	}
 
 	function isHalfPiecesItem(itemData)
@@ -306,6 +317,21 @@
 		var lengthPerPiece = parseFloat(itemData.BASKET_LENGTH_PER_PIECE) || 0;
 		var weightPerMeter = parseFloat(itemData.BASKET_WEIGHT_PER_METER) || 0;
 		var width = parseFloat(itemData.BASKET_WIDTH) || 0;
+
+		// Без длины: QUANTITY = штуки, колонка м/м² пустая («не используется» в разметке)
+		if (isNoLengthItem(itemData) || (lengthPerPiece <= 0 && width <= 0))
+		{
+			var pieceCount = Math.max(1, Math.round(meters));
+			var pieceWeight = weightPerMeter > 0 ? pieceCount * weightPerMeter : null;
+
+			return {
+				pieces: formatPiecesDisplay(pieceCount, itemData),
+				area: '',
+				areaUnit: '',
+				weight: pieceWeight !== null ? formatQtyNumber(pieceWeight, 3) : ''
+			};
+		}
+
 		var pieces = lengthPerPiece > 0 ? meters / lengthPerPiece : null;
 		var weight = weightPerMeter > 0 ? meters * weightPerMeter : null;
 		var areaValue;
@@ -583,13 +609,11 @@
 			}
 
 			var lengthPerPiece = parseFloat(itemData.BASKET_LENGTH_PER_PIECE) || 0;
-			if (lengthPerPiece <= 0)
+			if (lengthPerPiece <= 0 || isNoLengthItem(itemData))
 			{
-				var isQuantityFloat = component.isQuantityFloat ? component.isQuantityFloat(itemData) : true;
-				var measureRatio = isQuantityFloat ? parseFloat(itemData.MEASURE_RATIO) : parseInt(itemData.MEASURE_RATIO);
 				var current = getCurrentQuantity(itemData);
-				var next = parseFloat((current + (measureRatio * deltaPieces)).toFixed(5));
-				setQuantityByMeters(itemData, next);
+				var nextPieces = snapPiecesValue(current + deltaPieces, itemData);
+				setQuantityByMeters(itemData, nextPieces);
 				return;
 			}
 
@@ -604,6 +628,11 @@
 		{
 			var itemData = getItemDataByTargetSafe(target);
 			if (!itemData)
+			{
+				return;
+			}
+
+			if (isNoLengthItem(itemData))
 			{
 				return;
 			}
@@ -665,6 +694,18 @@
 			var weightPerMeter = parseFloat(itemData.BASKET_WEIGHT_PER_METER) || 0;
 			if (weightPerMeter <= 0)
 			{
+				return;
+			}
+
+			// Моток: вес = штуки × вес штуки → ±1 кг ≈ шаг по штукам
+			if (isNoLengthItem(itemData))
+			{
+				var currentPieces = getCurrentQuantity(itemData);
+				var nextPieces = snapPiecesValue(
+					currentPieces + (deltaKg > 0 ? 1 : -1),
+					itemData
+				);
+				setQuantityByMeters(itemData, nextPieces);
 				return;
 			}
 
@@ -749,6 +790,11 @@
 				return;
 			}
 
+			if (isNoLengthItem(itemData))
+			{
+				return;
+			}
+
 			qtyScheduler.clearItemTimers(itemData.ID);
 
 			var raw = String(target.value || '').trim();
@@ -805,6 +851,13 @@
 			var weightPerMeter = parseFloat(itemData.BASKET_WEIGHT_PER_METER) || 0;
 			if (weightPerMeter <= 0)
 			{
+				return;
+			}
+
+			if (isNoLengthItem(itemData))
+			{
+				var piecesFromWeight = snapPiecesValue(weight / weightPerMeter, itemData);
+				setQuantityByMeters(itemData, piecesFromWeight);
 				return;
 			}
 

@@ -921,6 +921,10 @@ jQuery(document).ready(function($) {
     return $row.data('half-pieces') == 1;
   }
 
+  function isNoSurcharge1mRow($row) {
+    return $row.data('no-surcharge-1m') == 1 && !isHalfPiecesRow($row);
+  }
+
   function isBasicSheetRow($row) {
     return $row.data('basic-sheet') == 1;
   }
@@ -1014,8 +1018,17 @@ jQuery(document).ready(function($) {
     }
 
     let weightPerMeter = getWeightPerMeter($row);
+    let metersInOnePiece = parseFloat($row.data('length')) || getMetersInOnePiece($row.find('[name="pieces"]')) || 0;
+    let pieces = parseFloat(String($row.find('[name="pieces"]').val()).replace(',', '.')) || 0;
     let meters = parseFloat(String($row.find('[name="meters"]').val()).replace(',', '.')) || 0;
-    if (!weightPerMeter || meters <= 0) {
+    let kg;
+
+    // Нет Длина_Расчет: вес = штуки × вес штуки (data-weight-per-meter = вес 1 шт)
+    if ((!metersInOnePiece || metersInOnePiece <= 0) && weightPerMeter > 0 && pieces > 0) {
+      kg = formatQty(pieces * weightPerMeter, 3);
+    } else if (weightPerMeter > 0 && meters > 0) {
+      kg = formatQty(meters * weightPerMeter, 3);
+    } else {
       if ($display.length) {
         $display.text('—');
       }
@@ -1025,7 +1038,6 @@ jQuery(document).ready(function($) {
       return;
     }
 
-    let kg = formatQty(meters * weightPerMeter, 3);
     if ($display.length) {
       $display.text(kg);
     }
@@ -1156,12 +1168,35 @@ jQuery(document).ready(function($) {
     return Math.max(0.1, Math.round(meters * 10) / 10);
   }
 
+  /** «Кратно 1м без наценки» — длина целыми метрами */
+  function snapMetersWhole(meters) {
+    meters = parseFloat(meters);
+    if (isNaN(meters) || meters <= 0) {
+      return 1;
+    }
+    return Math.max(1, Math.round(meters));
+  }
+
+  function snapMetersForRow(meters, $row) {
+    if (isNoSurcharge1mRow($row) && !isBasicSheetRow($row) && !isOnlyPiecesRow($row)) {
+      return snapMetersWhole(meters);
+    }
+    return snapMetersTenth(meters);
+  }
+
   function formatMetersDisplay(meters) {
     meters = snapMetersTenth(meters);
     if (Math.abs(meters - Math.round(meters)) < 1e-6) {
       return String(Math.round(meters));
     }
     return formatQty(meters, 1);
+  }
+
+  function formatMetersDisplayForRow(meters, $row) {
+    if (isNoSurcharge1mRow($row) && !isBasicSheetRow($row) && !isOnlyPiecesRow($row)) {
+      return String(snapMetersWhole(meters));
+    }
+    return formatMetersDisplay(meters);
   }
 
   /** Штуки кратно 0,1 (1.1, 1.2, 1.3…), не 1.35 */
@@ -1184,10 +1219,10 @@ jQuery(document).ready(function($) {
     }
     let metersInOnePiece = parseFloat($row.data('length')) || getMetersInOnePiece($piecesInput);
     let weightPerMeter = getWeightPerMeter($row);
-    let meters = snapMetersTenth(pieces * metersInOnePiece);
+    let meters = snapMetersForRow(pieces * metersInOnePiece, $row);
     let kg = meters * weightPerMeter;
 
-    $row.find('[name="meters"]').val(formatMetersDisplay(meters));
+    $row.find('[name="meters"]').val(formatMetersDisplayForRow(meters, $row));
 
     if (!isWeightFieldEditing($row)) {
       $row.find('[name="weight_kg"]').val(formatQty(kg, 3));
@@ -1295,6 +1330,10 @@ jQuery(document).ready(function($) {
 
     if ($row.data('only-pieces') == 1) {
       let pieces = ceilOnlyPiecesValue($row.find('[name="pieces"]').val());
+      // Нет Длина_Расчет (мотки и т.п.) — в корзину идут штуки, не метры
+      if (!metersInOnePiece || metersInOnePiece <= 0) {
+        return pieces;
+      }
       return pieces * metersInOnePiece;
     }
 
@@ -1592,11 +1631,18 @@ jQuery(document).ready(function($) {
     if (!isHalfPiecesRow($row)) {
       self.val(formatPiecesDisplay(pieces));
     }
+
+    // Без длины — вес из штук, метры не трогаем
+    if (!metersInOnePiece || metersInOnePiece <= 0) {
+      updateCalculatedWeightDisplay($row);
+      return;
+    }
+
     let meters = isHalfPiecesRow($row)
       ? pieces * metersInOnePiece
-      : snapMetersTenth(pieces * metersInOnePiece);
+      : snapMetersForRow(pieces * metersInOnePiece, $row);
     $row.find('[name="meters"]').val(
-      isHalfPiecesRow($row) ? formatQty(meters, 2) : formatMetersDisplay(meters)
+      isHalfPiecesRow($row) ? formatQty(meters, 2) : formatMetersDisplayForRow(meters, $row)
     );
     if (isHalfPiecesRow($row)) {
       syncHalfPiecesSheetArea($row, pieces);
@@ -1678,6 +1724,19 @@ jQuery(document).ready(function($) {
       self.val(formatQty(meters, 2));
       $row.find('[name="pieces"]').val(pieces % 1 === 0 ? String(Math.round(pieces)) : pieces.toFixed(1));
       syncHalfPiecesSheetArea($row, pieces);
+      if (isWeightEditableRow($row)) {
+        syncRowQuantities($row, 'meters');
+      }
+      updateCalculatedWeightDisplay($row);
+      return;
+    }
+
+    // «Кратно 1м без наценки» — длина целыми метрами
+    if (isNoSurcharge1mRow($row)) {
+      let meters = snapMetersWhole(self.val());
+      self.val(String(meters));
+      let pieces = meters / metersInOnePiece;
+      $row.find('[name="pieces"]').val(formatPiecesDisplay(pieces));
       if (isWeightEditableRow($row)) {
         syncRowQuantities($row, 'meters');
       }

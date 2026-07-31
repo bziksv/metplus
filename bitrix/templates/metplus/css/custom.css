@@ -1186,6 +1186,24 @@ button.product-hint {
     white-space: nowrap;
 }
 
+.cart-table_qty-value--readonly {
+    min-width: 3.5em;
+    font-weight: 600;
+    color: #3d3c3c;
+    text-align: center;
+}
+
+.cart-table_qty-na {
+    display: inline-block;
+    max-width: 7.5em;
+    padding: 0.25em 0.4em;
+    color: #8a9aab;
+    font-size: 0.85em;
+    font-weight: 500;
+    line-height: 1.25;
+    text-align: center;
+}
+
 .cart-table_qty-input {
     width: 4.6em;
     min-width: 3.2em;
