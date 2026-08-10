@@ -183,6 +183,12 @@ html[data-catalog-view="concept1"] .product-table_cell-weight .product-table-inp
   background: #fff;
 }
 
+html[data-catalog-view="concept1"] .product-table_field--stepper .product-table-input {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
 html[data-catalog-view="concept1"] .product-item_cart-btn {
   border-radius: 8px;
 }
@@ -438,6 +444,18 @@ html[data-catalog-view="concept2"] .product-table_cell-weight .product-table-inp
   width: 100%;
   max-width: 140px;
   margin-left: auto;
+}
+
+html[data-catalog-view="concept2"] .product-table_field--stepper {
+  max-width: 140px;
+}
+
+html[data-catalog-view="concept2"] .product-table_field--stepper .product-table-input {
+  width: auto;
+  max-width: none;
+  margin-left: 0;
+  border: 0 !important;
+  background: transparent !important;
 }
 
 html[data-catalog-view="concept2"] .product-hint-legend {

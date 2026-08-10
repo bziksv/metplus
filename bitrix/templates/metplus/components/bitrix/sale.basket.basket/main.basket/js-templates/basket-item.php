@@ -25,11 +25,11 @@ use Bitrix\Main\Localization\Loc;
                     {{/HAS_SECTION_LINK}}
                 </div>
 
-                {{#ONLY_PIECES}}
+                {{#NO_CUT_PIECE}}
                 <div class="basket-item-cutting-actions">
                     <span class="cutting-plan-notice">Данный товар не режется, отпускается поштучно</span>
                 </div>
-                {{/ONLY_PIECES}}
+                {{/NO_CUT_PIECE}}
                 {{#IS_CUTTING}}
                 <div class="basket-item-cutting-actions">
                     {{#BASIC_SHEET}}

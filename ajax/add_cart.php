@@ -47,7 +47,7 @@ $fields = [
 ];
 
 $cuttingService = getProductCuttingServices($productId);
-if (count($cuttingService) > 0) {
+if (count($cuttingService) > 0 && !productForbidsBasketCutting($productId)) {
     $basket = Sale\Basket::loadItemsForFUser(Sale\Fuser::getId(), Bitrix\Main\Context::getCurrent()->getSite());
 
     $isEmptyService = true;

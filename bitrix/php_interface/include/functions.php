@@ -395,6 +395,22 @@ function isOnlyPiecesProduct($value)
 }
 
 /**
+ * «_7 Поштучный товар, не режем» — в корзине нет мастера резки.
+ * «_3 Только штуки» резку больше не блокирует.
+ */
+function isPieceProductNoCutting($value)
+{
+    return isOnlyPiecesProduct($value);
+}
+
+function productForbidsBasketCutting($productId, $iblockId = 36)
+{
+    return isPieceProductNoCutting(
+        getPropVal($iblockId, (int)$productId, '_7_POSHTUCHNYY_TOVAR_NE_REZHEM')
+    );
+}
+
+/**
  * «ТОЛЬКО ШТ»: количество в метрах → кратно длине одной штуки.
  * Штуки всегда вверх (58.48 → 59).
  */
@@ -436,7 +452,14 @@ function snapHalfPiecesValue($pieces)
         return 0.5;
     }
 
-    return round($pieces * 2) / 2;
+    // Не кратно 0,5 — всегда вверх (3.7 → 4, 3.1 → 3.5)
+    $steps = $pieces * 2;
+    $nearest = round($steps);
+    if (abs($steps - $nearest) < 1e-6) {
+        return max(0.5, $nearest / 2);
+    }
+
+    return max(0.5, ceil($steps) / 2);
 }
 
 /**

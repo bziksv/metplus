@@ -182,14 +182,24 @@
 		return enrichItemDataFromRow(itemData, row);
 	}
 
+	function snapHalfPiecesUp(pieces)
+	{
+		pieces = parseFloat(pieces);
+		if (isNaN(pieces) || pieces < 0.5) {
+			return 0.5;
+		}
+		var steps = pieces * 2;
+		var nearest = Math.round(steps);
+		if (Math.abs(steps - nearest) < 1e-6) {
+			return Math.max(0.5, nearest / 2);
+		}
+		return Math.max(0.5, Math.ceil(steps) / 2);
+	}
+
 	function snapPiecesValue(pieces, itemData)
 	{
 		if (isHalfPiecesItem(itemData)) {
-			pieces = parseFloat(pieces);
-			if (isNaN(pieces) || pieces < 0.5) {
-				return 0.5;
-			}
-			return Math.round(pieces * 2) / 2;
+			return snapHalfPiecesUp(pieces);
 		}
 
 		if (isBasicSheetWidthMeterItem(itemData)) {
@@ -272,7 +282,7 @@
 
 		if (isHalfPiecesItem(itemData) && lengthPerPiece > 0)
 		{
-			var halfPieces = Math.max(0.5, Math.round((metersQty / lengthPerPiece) * 2) / 2);
+			var halfPieces = snapHalfPiecesUp(metersQty / lengthPerPiece);
 			return parseFloat((halfPieces * lengthPerPiece).toFixed(5));
 		}
 

@@ -64,6 +64,7 @@ foreach ($this->basketItems as $row)
 			: '',
         'IS_CUTTING' => false,
         'ONLY_PIECES' => false,
+        'NO_CUT_PIECE' => false,
         'HALF_PIECES' => false,
         'NO_SURCHARGE_1M' => false,
         'SKIP_SHEET_SURCHARGE' => false,
@@ -90,7 +91,9 @@ foreach ($this->basketItems as $row)
         $onlyPieces = isOnlyPiecesProduct(getPropVal(36, $row['PRODUCT_ID'], 'TOLKO_SHT'));
         $halfPieces = isHalfPiecesProduct(getPropVal(36, $row['PRODUCT_ID'], 'TOLKO_SHT_I_0_5_SHT'));
         $noSurcharge1m = productHasKratno1mBezNatsenki($row['PRODUCT_ID'], 36);
+        $noCutPiece = productForbidsBasketCutting($row['PRODUCT_ID'], 36);
         $rowData['ONLY_PIECES'] = $onlyPieces;
+        $rowData['NO_CUT_PIECE'] = $noCutPiece;
         $rowData['HALF_PIECES'] = $halfPieces;
         $rowData['NO_SURCHARGE_1M'] = $noSurcharge1m;
         $rowData['BASKET_WIDTH'] = floatval(getPropVal(36, $row['PRODUCT_ID'], 'SHIRINA_RASCHET'));
@@ -103,7 +106,7 @@ foreach ($this->basketItems as $row)
         $rowData['FREE_CUTTING_1M'] = ($halfPieces || $noSurcharge1m) && !$rowData['IS_SHEET'];
 
         $cuttingServices = getProductCuttingServices($row['PRODUCT_ID']);
-        $rowData['IS_CUTTING'] = count($cuttingServices) > 0 && !$onlyPieces;
+        $rowData['IS_CUTTING'] = count($cuttingServices) > 0 && !$noCutPiece;
         $rowData['BASKET_LENGTH_PER_PIECE'] = floatval(getPropVal(36, $row['PRODUCT_ID'], 'DLINA_RASCHET'));
         $rowData['STEEL_GRADE'] = trim((string)getPropVal(36, $row['PRODUCT_ID'], '_5_MARKASAYT_ILI_RAZMER_SETKI'));
         $rowData['BASKET_WEIGHT_PER_METER'] = getProductWeightPerMeterKg($row['PRODUCT_ID'], 36);
@@ -215,7 +218,7 @@ foreach ($this->basketItems as $row)
             foreach ($row['PROPS'] as $prop) {
                 $code = (string)($prop['CODE'] ?? '');
                 if ($code === 'CUTTING_ENABLED') {
-                    $rowData['CUTTING_ENABLED'] = !$onlyPieces && (string)($prop['VALUE'] ?? '') === 'Y';
+                    $rowData['CUTTING_ENABLED'] = !$noCutPiece && (string)($prop['VALUE'] ?? '') === 'Y';
                 }
                 if ($code === 'CUTTING_PLAN_TEXT') {
                     $rowData['CUTTING_PLAN_TEXT'] = (string)($prop['VALUE'] ?? '');

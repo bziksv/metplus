@@ -1098,7 +1098,7 @@ jQuery(document).ready(function($) {
       $field.addClass('product-table_field--restricted');
       $input.prop('readonly', true).addClass('is-readonly');
       if (!$lock.length) {
-        $field.prepend('<span class="product-hint__icon--lock" aria-hidden="true"></span>');
+        $field.append('<span class="product-hint__icon--lock" aria-hidden="true"></span>');
       }
       return;
     }
@@ -1129,6 +1129,7 @@ jQuery(document).ready(function($) {
       $row.find('[name="meters"]').closest('td').toggleClass('product-table_cell--locked', lockMeters);
       $row.find('[name="pieces"]').closest('td').removeClass('product-table_cell--locked');
       updateWeightFieldTip($row, mode);
+      enhanceProductTableSteppers($row.closest('.product-table').length ? $row.closest('.product-table') : $row);
       return;
     }
 
@@ -1141,6 +1142,7 @@ jQuery(document).ready(function($) {
     $row.find('[name="meters"]').closest('td').toggleClass('product-table_cell--locked', lockMeters);
     $row.find('[name="pieces"]').closest('td').removeClass('product-table_cell--locked');
     updateWeightFieldTip($row, mode);
+    enhanceProductTableSteppers($row.closest('.product-table').length ? $row.closest('.product-table') : $row);
   }
 
   function isWeightFieldEditing($row) {
@@ -1420,7 +1422,7 @@ jQuery(document).ready(function($) {
       let pieces = snapPiecesTenth(meters / metersInOnePiece);
       meters = snapMetersTenth(pieces * metersInOnePiece);
       if (isHalfPiecesRow($row)) {
-        pieces = Math.max(0.5, Math.round(pieces * 2) / 2);
+        pieces = snapHalfPiecesUp(pieces);
         meters = pieces * metersInOnePiece;
         kg = meters * weightPerMeter;
         $weight.val(formatQty(kg, 2));
@@ -1436,12 +1438,15 @@ jQuery(document).ready(function($) {
     }
 
     if (source === 'meters') {
+      if (isIncompleteQtyInput($meters.val())) {
+        return;
+      }
       let meters = isHalfPiecesRow($row)
-        ? (parseFloat($meters.val()) || 0)
+        ? (parseFloat(String($meters.val()).replace(',', '.')) || 0)
         : snapMetersTenth($meters.val());
       let pieces = meters / metersInOnePiece;
       if (isHalfPiecesRow($row)) {
-        pieces = Math.max(0.5, Math.round(pieces * 2) / 2);
+        pieces = snapHalfPiecesUp(pieces);
         meters = pieces * metersInOnePiece;
         $meters.val(formatQty(meters, 2));
       } else {
@@ -1456,9 +1461,12 @@ jQuery(document).ready(function($) {
     }
 
     if (source === 'pieces') {
+      if (isIncompleteQtyInput($pieces.val())) {
+        return;
+      }
       let pieces = parseFloat(String($pieces.val()).replace(',', '.')) || 0;
       if (isHalfPiecesRow($row)) {
-        pieces = Math.max(0.5, Math.round(pieces * 2) / 2);
+        pieces = snapHalfPiecesUp(pieces);
         $pieces.val(pieces % 1 === 0 ? String(Math.round(pieces)) : pieces.toFixed(1));
       } else {
         pieces = snapPiecesTenth(pieces);
@@ -1484,16 +1492,52 @@ jQuery(document).ready(function($) {
     return pieces;
   }
 
-  function normalizeHalfPiecesValue($input) {
-    let pieces = parseFloat(String($input.val()).replace(',', '.'));
-
+  function snapHalfPiecesUp(pieces) {
+    pieces = parseFloat(pieces);
     if (isNaN(pieces) || pieces < 0.5) {
-      pieces = 0.5;
+      return 0.5;
     }
+    let steps = pieces * 2;
+    let nearest = Math.round(steps);
+    // Уже кратно 0,5 — не трогаем; иначе всегда вверх (3.7 → 4)
+    if (Math.abs(steps - nearest) < 1e-6) {
+      return Math.max(0.5, nearest / 2);
+    }
+    return Math.max(0.5, Math.ceil(steps) / 2);
+  }
 
-    pieces = Math.round(pieces * 2) / 2;
+  function normalizeHalfPiecesValue($input) {
+    let pieces = snapHalfPiecesUp(String($input.val()).replace(',', '.'));
     $input.val(pieces % 1 === 0 ? String(Math.round(pieces)) : pieces.toFixed(1));
     return pieces;
+  }
+
+  /** Значение уже «полное», но не кратно 0,5 (например 3.8) — пора округлить. */
+  function needsHalfPiecesSnap(raw) {
+    if (isIncompleteQtyInput(raw)) {
+      return false;
+    }
+    let value = parseFloat(String(raw == null ? '' : raw).replace(',', '.'));
+    if (isNaN(value)) {
+      return false;
+    }
+    return Math.abs(value * 2 - Math.round(value * 2)) > 1e-6;
+  }
+
+  /** Пока пользователь набирает (пусто, «4.», «0») — не подменять значение на 0,5/1. */
+  function isIncompleteQtyInput(raw) {
+    let value = String(raw == null ? '' : raw).trim().replace(',', '.');
+    if (value === '' || value === '.' || value === '-' || value === '-.') {
+      return true;
+    }
+    if (/\.$/.test(value)) {
+      return true;
+    }
+    // «0» / «0.» — промежуточный ввод перед 0,5 или 4,5
+    if (value === '0') {
+      return true;
+    }
+    return false;
   }
 
   function syncHalfPiecesSheetArea($row, pieces) {
@@ -1522,7 +1566,7 @@ jQuery(document).ready(function($) {
     }
     let units = Math.max(1, Math.round(area / areaStep));
     area = parseFloat((units * areaStep).toFixed(3));
-    let pieces = Math.max(0.5, Math.round((area / fullArea) * 2) / 2);
+    let pieces = snapHalfPiecesUp(area / fullArea);
     area = parseFloat((pieces * fullArea).toFixed(3));
 
     $area.val(formatQty(area, 3));
@@ -1597,10 +1641,23 @@ jQuery(document).ready(function($) {
     syncRowQuantities($row, 'weight');
   });
 
-  $('.product-table').on('input blur', '[name="pieces"]', function() {
+  $('.product-table').on('input blur change', '[name="pieces"]', function(e) {
     let self = $(this);
     let $row = self.closest('tr');
     let metersInOnePiece = getMetersInOnePiece(self);
+    let isCommit = e.type === 'blur' || e.type === 'change';
+    let rawVal = self.val();
+
+    // Во время набора не форсируем 0,5/1 — иначе нельзя стереть и ввести 4,5
+    if (!isCommit && isIncompleteQtyInput(rawVal)) {
+      return;
+    }
+
+    // 3.8 при шаге 0,5 — округляем сразу (4), не ждём blur
+    let forceHalfSnap = isHalfPiecesRow($row) && needsHalfPiecesSnap(rawVal);
+    if (forceHalfSnap) {
+      isCommit = true;
+    }
 
     if (isBasicSheetRow($row)) {
       syncBasicSheetFromPieces($row);
@@ -1609,10 +1666,11 @@ jQuery(document).ready(function($) {
     }
 
     if (isOnlyPiecesRow($row)) {
-      normalizePiecesValue(self);
-    } else if (isHalfPiecesRow($row)) {
-      let pieces = normalizeHalfPiecesValue(self);
-      syncHalfPiecesSheetArea($row, pieces);
+      if (isCommit) {
+        normalizePiecesValue(self);
+      }
+    } else if (isHalfPiecesRow($row) && isCommit) {
+      normalizeHalfPiecesValue(self);
     }
 
     if (isWeightFrom500Row($row)) {
@@ -1622,14 +1680,29 @@ jQuery(document).ready(function($) {
 
     if (isWeightEditableRow($row)) {
       syncRowQuantities($row, 'pieces');
+      if (isCommit && isHalfPiecesRow($row)) {
+        normalizeHalfPiecesValue(self);
+        syncRowQuantities($row, 'pieces');
+      }
       return;
     }
 
-    let pieces = isHalfPiecesRow($row)
-      ? normalizeHalfPiecesValue(self)
-      : snapPiecesTenth(self.val());
-    if (!isHalfPiecesRow($row)) {
-      self.val(formatPiecesDisplay(pieces));
+    let pieces;
+    if (isHalfPiecesRow($row)) {
+      pieces = isCommit
+        ? normalizeHalfPiecesValue(self)
+        : parseFloat(String(self.val()).replace(',', '.'));
+      if (!isCommit && (isNaN(pieces) || pieces < 0.5)) {
+        return;
+      }
+      if (!isCommit) {
+        pieces = snapHalfPiecesUp(pieces);
+      }
+    } else {
+      pieces = snapPiecesTenth(self.val());
+      if (isCommit) {
+        self.val(formatPiecesDisplay(pieces));
+      }
     }
 
     // Без длины — вес из штук, метры не трогаем
@@ -1658,6 +1731,10 @@ jQuery(document).ready(function($) {
       return;
     }
 
+    if (isIncompleteQtyInput(self.val())) {
+      return;
+    }
+
     if (isWeightFrom500Row($row)) {
       syncFromMetersMode($row);
       return;
@@ -1669,9 +1746,12 @@ jQuery(document).ready(function($) {
     }
 
     let metersInOnePiece = getMetersInOnePiece(self);
-    let meters = parseFloat(self.val());
+    let meters = parseFloat(String(self.val()).replace(',', '.'));
+    if (isNaN(meters) || meters <= 0 || !metersInOnePiece) {
+      return;
+    }
     let pieces = isHalfPiecesRow($row)
-      ? Math.max(0.5, Math.round((meters / metersInOnePiece) * 2) / 2)
+      ? snapHalfPiecesUp(meters / metersInOnePiece)
       : snapPiecesTenth(meters / metersInOnePiece);
 
     $row.find('[name="pieces"]').val(
@@ -1719,7 +1799,7 @@ jQuery(document).ready(function($) {
       if (isNaN(meters) || meters <= 0) {
         meters = metersInOnePiece * 0.5;
       }
-      let pieces = Math.max(0.5, Math.round((meters / metersInOnePiece) * 2) / 2);
+      let pieces = snapHalfPiecesUp(meters / metersInOnePiece);
       meters = pieces * metersInOnePiece;
       self.val(formatQty(meters, 2));
       $row.find('[name="pieces"]').val(pieces % 1 === 0 ? String(Math.round(pieces)) : pieces.toFixed(1));
@@ -1769,6 +1849,152 @@ jQuery(document).ready(function($) {
     if (isOnlyPiecesRow($input.closest('tr'))) {
       $input.val($input.data('width-default'));
     }
+  });
+
+  function getProductInputStep($input) {
+    let step = parseFloat(String($input.attr('step') || $input.data('step') || '').replace(',', '.'));
+    if (!step || isNaN(step) || step <= 0) {
+      let name = $input.attr('name');
+      if (name === 'pieces') {
+        return isHalfPiecesRow($input.closest('tr')) ? 0.5 : (isOnlyPiecesRow($input.closest('tr')) ? 1 : 0.1);
+      }
+      if (name === 'meters') {
+        return isHalfPiecesRow($input.closest('tr'))
+          ? Math.max(0.1, (parseFloat($input.data('meters-in-one-piece')) || 1) * 0.5)
+          : (isNoSurcharge1mRow($input.closest('tr')) ? 1 : 0.1);
+      }
+      if (name === 'width') return 0.1;
+      if (name === 'weight_kg') return 0.1;
+      return 0.1;
+    }
+    return step;
+  }
+
+  function getProductInputMin($input) {
+    let min = parseFloat(String($input.attr('min') || $input.data('min') || '').replace(',', '.'));
+    if (isNaN(min)) {
+      let name = $input.attr('name');
+      if (name === 'pieces') {
+        return isHalfPiecesRow($input.closest('tr')) ? 0.5 : (isOnlyPiecesRow($input.closest('tr')) ? 1 : 0.1);
+      }
+      return 0;
+    }
+    return min;
+  }
+
+  function formatSteppedProductValue(value, step) {
+    let decimals = 0;
+    let stepStr = String(step);
+    if (stepStr.indexOf('.') >= 0) {
+      decimals = stepStr.split('.')[1].replace(/0+$/, '').length;
+    }
+    decimals = Math.min(Math.max(decimals, 0), 3);
+    let fixed = parseFloat(Number(value).toFixed(Math.max(decimals, 1)));
+    if (Math.abs(fixed - Math.round(fixed)) < 1e-9) {
+      return String(Math.round(fixed));
+    }
+    return String(fixed);
+  }
+
+  function stepProductTableInput($input, direction) {
+    if (!$input.length || $input.prop('disabled') || $input.prop('readonly')) {
+      return;
+    }
+    let $row = $input.closest('tr');
+    // Сначала дотянуть до сетки шага (3.8 → 4), потом ±step
+    if ($input.attr('name') === 'pieces' && isHalfPiecesRow($row) && needsHalfPiecesSnap($input.val())) {
+      normalizeHalfPiecesValue($input);
+    }
+    let step = getProductInputStep($input);
+    let min = getProductInputMin($input);
+    let current = parseFloat(String($input.val()).replace(',', '.'));
+    if (isNaN(current)) {
+      current = min > 0 ? min : 0;
+    }
+    let next = current + direction * step;
+    // привязка к сетке шага
+    next = Math.round(next / step) * step;
+    if (next < min) {
+      next = min;
+    }
+    let display = formatSteppedProductValue(next, step);
+    if ($input.attr('type') === 'number') {
+      $input.val(parseFloat(display));
+    } else {
+      $input.val(display);
+    }
+    $input.trigger('input').trigger('change').trigger('blur');
+  }
+
+  function enhanceProductTableSteppers($root) {
+    let $scope = $root && $root.length ? $root : $('.product-table');
+    let spinHtml =
+      '<span class="product-table_spin">' +
+        '<button type="button" class="product-table_spin-btn product-table_spin-btn--up" tabindex="-1" aria-label="Увеличить">' +
+          '<svg viewBox="0 0 10 6" aria-hidden="true"><path d="M5 0.6L9.4 5.2H0.6L5 0.6Z"/></svg>' +
+        '</button>' +
+        '<button type="button" class="product-table_spin-btn product-table_spin-btn--down" tabindex="-1" aria-label="Уменьшить">' +
+          '<svg viewBox="0 0 10 6" aria-hidden="true"><path d="M5 5.4L0.6 0.8H9.4L5 5.4Z"/></svg>' +
+        '</button>' +
+      '</span>';
+
+    $scope.find('.product-table_field').each(function() {
+      let $field = $(this);
+      if ($field.hasClass('product-table_field--restricted') || $field.hasClass('product-table_field--locked')) {
+        return;
+      }
+      let $input = $field.find('.product-table-input:not([type="hidden"])').first();
+      if (!$input.length || $input.prop('readonly') || $input.prop('disabled')) {
+        return;
+      }
+
+      // Убираем нативные стрелки number — оставляем только наши
+      if ($input.attr('type') === 'number') {
+        let step = $input.attr('step');
+        let min = $input.attr('min');
+        $input.attr({
+          type: 'text',
+          inputmode: 'decimal',
+          autocomplete: 'off'
+        });
+        if (step) {
+          $input.attr('data-step', step);
+        }
+        if (min) {
+          $input.attr('data-min', min);
+        }
+      }
+
+      if (!$field.find('.product-table_spin').length) {
+        $field.append(spinHtml);
+      }
+      $field.addClass('product-table_field--stepper');
+    });
+  }
+
+  $('.product-table').on('click', '.product-table_spin-btn', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    let $btn = $(this);
+    let $input = $btn.closest('.product-table_field').find('.product-table-input:not([type="hidden"])').first();
+    stepProductTableInput($input, $btn.hasClass('product-table_spin-btn--up') ? 1 : -1);
+  });
+
+  $('.product-table').on('keydown', '.product-table-input:not([type="hidden"])', function(e) {
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') {
+      return;
+    }
+    let $input = $(this);
+    if (!$input.closest('.product-table_field--stepper').length) {
+      return;
+    }
+    e.preventDefault();
+    stepProductTableInput($input, e.key === 'ArrowUp' ? 1 : -1);
+  });
+
+  enhanceProductTableSteppers();
+  $(document).on('catalog:view-updated productTable:refreshed', function() {
+    enhanceProductTableSteppers();
   });
 
   /**

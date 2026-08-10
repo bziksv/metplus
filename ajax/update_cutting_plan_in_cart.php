@@ -32,6 +32,10 @@ if (!$basketItem) {
 }
 
 $productId = (int)$basketItem->getProductId();
+if ($enabled === 'Y' && productForbidsBasketCutting($productId)) {
+    echo json_encode(['success' => false, 'error' => 'Этот товар не режется']);
+    die();
+}
 $cuttingSurcharge10 = 'N';
 $needPriceRefresh = false;
 $oldSurcharge10 = 'N';

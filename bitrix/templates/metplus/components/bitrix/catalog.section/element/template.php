@@ -208,10 +208,10 @@ if(count($arResult['ITEMS'])) :
             <td class="product-table_cell-qty<?=$lockSheetMeters ? ' product-table_cell--locked' : ''?>">
                 <?php if ($lockSheetMeters): ?>
                 <div class="product-table_field product-table_field--restricted" data-tip="<?=$basicSheet ? $basicSheetDimensionsTip : $lockedTitle?>">
+                    <span class="product-table_field-value"><?=$metersInPiece?></span>
                     <?php if ($onlyPieces): ?>
                     <span class="product-hint__icon--lock" aria-hidden="true"></span>
                     <?php endif; ?>
-                    <span class="product-table_field-value"><?=$metersInPiece?></span>
                     <input type="hidden" name="meters" value="<?=$metersInPiece?>" data-meters-in-one-piece="<?=$metersInPiece?>">
                 </div>
                 <?php else: ?>
@@ -225,10 +225,10 @@ if(count($arResult['ITEMS'])) :
             <td class="product-table_cell-qty<?=($onlyPieces || $basicSheet) ? ' product-table_cell--locked' : ''?>">
                 <?php if ($onlyPieces || $basicSheet): ?>
                 <div class="product-table_field product-table_field--restricted" data-tip="<?=$basicSheet ? $basicSheetDimensionsTip : $lockedTitle?>">
+                    <span class="product-table_field-value"><?=$widthValue?></span>
                     <?php if ($onlyPieces): ?>
                     <span class="product-hint__icon--lock" aria-hidden="true"></span>
                     <?php endif; ?>
-                    <span class="product-table_field-value"><?=$widthValue?></span>
                     <input type="hidden" name="width" value="<?=$widthValue?>" data-width-default="<?=$widthValue?>">
                 </div>
                 <?php else: ?>
@@ -255,7 +255,11 @@ if(count($arResult['ITEMS'])) :
             <?php endif; ?>
             <td class="product-table_cell-qty">
                 <div class="product-table_field">
+                    <?php if ($halfPieces && !$onlyPieces): ?>
+                    <input type="text" class="product-table-input" inputmode="decimal" placeholder="0" name="pieces" value="<?=$basicSheetSteps ? $basicSheetSteps['PIECE_STEP'] : 1?>" data-meters-in-one-piece="<?=$metersInPiece?>" data-min="0.5" data-step="0.5" autocomplete="off">
+                    <?php else: ?>
                     <input type="number" class="product-table-input" min="<?=$piecesMin?>" step="<?=$piecesStep?>" placeholder="0" name="pieces" value="<?=$basicSheetSteps ? $basicSheetSteps['PIECE_STEP'] : 1?>" data-meters-in-one-piece="<?=$metersInPiece?>">
+                    <?php endif; ?>
                 </div>
                 <?php if (empty($arResult['SHOW_LENGTH_COLUMN'])): ?>
                 <input type="hidden" name="meters" value="" data-meters-in-one-piece="">
