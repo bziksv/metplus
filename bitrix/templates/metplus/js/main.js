@@ -66,10 +66,57 @@ jQuery(document).ready(function($) {
     });
   }
   if (!is_mobile()) {
+    /** Как в miinox: панель каталога в пределах экрана после skew */
+    function menuAlignCatalogPanel($wrap) {
+      var $root = $wrap.children('.dropdown-content');
+      if (!$root.length) {
+        return;
+      }
+      $root[0].style.setProperty('--menu-nudge-x', '0px');
+      requestAnimationFrame(function() {
+        var pad = 16;
+        var maxNudge = 200;
+        var rootEl = $root[0];
+        var rootRect = rootEl.getBoundingClientRect();
+        var nudge = 0;
+
+        // уехала влево за край
+        if (rootRect.left < pad) {
+          nudge = pad - rootRect.left;
+        }
+
+        // уехала вправо (с запасом под L3)
+        var l3Reserve = 280;
+        var overflowRight = rootRect.right + l3Reserve + nudge - (window.innerWidth - pad);
+        if (overflowRight > 0) {
+          nudge -= Math.min(overflowRight, maxNudge);
+        }
+
+        if (Math.abs(nudge) > 0.5) {
+          rootEl.style.setProperty('--menu-nudge-x', Math.round(nudge) + 'px');
+        }
+      });
+    }
+
+    $(document).on('mouseenter', '.head-menu_catalog-item, .fixed-menu_catalog', function() {
+      var $wrap = $(this);
+      $wrap.addClass('is-hover');
+      // после visibility:visible — пересчитать, если обрезало слева
+      requestAnimationFrame(function() {
+        menuAlignCatalogPanel($wrap);
+        requestAnimationFrame(function() {
+          menuAlignCatalogPanel($wrap);
+        });
+      });
+    });
+
+    $(document).on('mouseleave', '.head-menu_catalog-item, .fixed-menu_catalog', function() {
+      $(this).removeClass('is-hover');
+    });
+
     $('.dropdown-menu_item').hover(function() {
       var height1 = $(this).find('.dropdown-submenu').outerHeight();
       var height2 = $(this).find('.dropdown-submenu_img').outerHeight();
-      console.log(height2)
       if (height1 < height2) {
         $(this).find('.dropdown-submenu').outerHeight(height2);
       }

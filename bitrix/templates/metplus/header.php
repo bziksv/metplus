@@ -106,26 +106,13 @@
                         </div>
                         <div class="head_phone-box tablet-small_hidden">
                             <a href="tel:+74732075555" class="head_phone-number">+7 (473) 207-55-55 </a>
-                            <!--<div class="head_callback-btn">
-                                <a href="#callback" data-toggle="modal">
-                                    <span class="glipf-call-answer"></span>
-                                    <span class="text">Заказать звонок</span>
-                                </a>
-                            </div>-->
                         </div>
-                    </div>
-                    <div class="col-lg-7 col-md-6 col-sm-7 col-4 main-head_right-column">
-                        <div class="head_opening-hours">
-                           <!-- <strong>График работы:</strong>
-                            <span class="min">Будни: 8:00 - 19:00</span>
-                            Выходные: 9.00 - 17:00
-							-->
-                        </div>
-                        <div class="head_select-city">
+                        <div class="head_select-city tablet-small_hidden">
                             <a href="#citySelect" data-toggle="modal" class="select-city_btn">Выберите город:</a>
                             <div class="select-city_field">Воронеж</div>
                         </div>
-
+                    </div>
+                    <div class="col-lg-7 col-md-6 col-sm-7 col-4 main-head_right-column">
                         <?$APPLICATION->IncludeComponent("bitrix:menu", "catalog.menu.fixed", Array(
                             "ROOT_MENU_TYPE" => "left",	// Тип меню для первого уровня
                             "MENU_CACHE_TYPE" => "A",	// Тип кеширования

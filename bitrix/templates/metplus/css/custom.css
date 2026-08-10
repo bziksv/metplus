@@ -2704,20 +2704,95 @@ html[data-cart-view="original"] .basket-root--page .cutting-plan-notice {
     }
 }
 
-/* Шапка: телефон крупнее и с нормальным отступом от логотипа */
-.main-head_left-column {
-    align-items: center;
-    gap: 2rem;
+/* Шапка: [logo · phone · city] [==== search ====] [cart] */
+@media (min-width: 992px) {
+    .main-head .container > .row {
+        align-items: center;
+        justify-content: flex-start;
+        flex-wrap: nowrap;
+        gap: 28px;
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .main-head_left-column {
+        display: flex !important;
+        flex: 0 0 auto !important;
+        width: auto !important;
+        max-width: none !important;
+        padding-left: 0;
+        padding-right: 0;
+        justify-content: flex-start !important;
+        align-items: center;
+        gap: 28px;
+    }
+
+    .main-head_right-column {
+        display: flex !important;
+        flex: 1 1 auto !important;
+        width: auto !important;
+        max-width: none !important;
+        min-width: 0;
+        padding-left: 0;
+        padding-right: 0;
+        justify-content: flex-end !important;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .main-head .head_phone-box {
+        margin-right: 0;
+        margin-left: 0;
+    }
+
+    .main-head .head_select-city {
+        margin-top: 0;
+        margin-right: 0;
+    }
+
+    /* Поиск занимает середину — без пустой дыры на 1400–1600 */
+    .main-head .head_form-search {
+        flex: 1 1 auto;
+        width: auto;
+        max-width: none;
+        min-width: 220px;
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .main-head .head-cart {
+        flex: 0 0 43px;
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .main-head .container,
+    .head-nav .container {
+        padding-left: 24px;
+        padding-right: 28px;
+    }
 }
 
 .head-logo {
     margin-right: 0;
+    flex: 0 0 auto;
+    max-width: 280px;
+    width: auto;
+}
+
+.head-logo img {
+    display: block;
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    max-height: 48px;
 }
 
 .head_phone-box {
     display: flex;
     align-items: center;
     margin-left: 0;
+    margin-right: 0;
     font-size: 1.125rem;
 }
 
@@ -2728,10 +2803,12 @@ html[data-cart-view="original"] .basket-root--page .cutting-plan-notice {
     line-height: 1.2;
     letter-spacing: 0.01em;
     color: #363637;
+    white-space: nowrap;
 }
 
 .head_select-city {
     margin-top: 0;
+    margin-right: 0;
     display: inline-flex;
     flex-direction: column;
     justify-content: center;
@@ -2740,6 +2817,155 @@ html[data-cart-view="original"] .basket-root--page .cutting-plan-notice {
 .select-city_field {
     font-size: 1.125rem;
     line-height: 1.2;
+}
+
+/* Выпадающий каталог: не клипать, не ломать оригинальный left:150% + skew */
+.ui-header,
+.head-nav,
+.head-nav .container,
+.head-menu,
+.head-menu_catalog-item {
+    overflow: visible !important;
+}
+
+.ui-header,
+.head-nav {
+    z-index: 200;
+}
+
+/* Не раздувать синюю полосу переносом «О компании» */
+.head-nav .head-menu_item > a,
+.head-nav .head-menu_text {
+    white-space: nowrap;
+}
+
+.head-nav .head-menu_item:last-child {
+    flex: 0.85;
+}
+
+/* База: left:150% (не fixed px из main @1390/1200), nudge-переменные */
+.head-nav .head-menu_catalog-item > .dropdown-content {
+    --menu-shift-x: 0px;
+    --menu-nudge-x: 0px;
+    left: 150% !important;
+    z-index: 300;
+    transform: skew(45deg) translate(calc(var(--menu-shift-x) + var(--menu-nudge-x)), 15px);
+}
+
+.head-nav .dropdown-content:before {
+    content: '';
+    position: absolute;
+    left: -40px;
+    right: -40px;
+    top: -40px;
+    height: 40px;
+}
+
+/*
+ * Важно: в main.css hover только с 1025px.
+ * При ширине ~992–1024 (DevTools сбоку) меню было, а dropdown — нет.
+ * Включаем с 992px — и обычный nav, и sticky «Каталог».
+ */
+@media (min-width: 992px) {
+    .head-nav .head-menu_item:hover > .dropdown-content,
+    .head-nav .head-menu_catalog-item:hover > .dropdown-content,
+    .head-nav .head-menu_catalog-item.is-hover > .dropdown-content,
+    .head-nav .head-menu_catalog-item.is-active > .dropdown-content {
+        visibility: visible !important;
+        transform: skew(45deg) translate(calc(var(--menu-shift-x) + var(--menu-nudge-x)), 0) !important;
+    }
+
+    .fixed-menu .fixed-menu_catalog:hover > .dropdown-content,
+    .fixed-menu .fixed-menu_catalog.is-hover > .dropdown-content,
+    .fixed-menu .fixed-menu_catalog.is-active > .dropdown-content {
+        visibility: visible !important;
+        transform: translate(calc(var(--menu-shift-x) + var(--menu-nudge-x)), 0) !important;
+    }
+}
+
+.fixed-menu .fixed-menu_catalog .dropdown-content {
+    left: 0 !important;
+    --menu-shift-x: 0px;
+    --menu-nudge-x: 0px;
+    transform: translate(calc(var(--menu-shift-x) + var(--menu-nudge-x)), 15px);
+    position: absolute !important;
+    top: 100%;
+    height: auto !important;
+    max-height: none;
+    z-index: 300;
+}
+
+/* Плавающая шапка: не раздувать «Каталог» на всю высоту (как miinox) */
+@media (min-width: 992px) {
+    .fixed-menu .head-nav {
+        display: none !important;
+    }
+
+    .fixed-menu .main-head,
+    .fixed-menu .main-head > .container,
+    .fixed-menu .main-head > .container > .row {
+        min-height: 64px;
+        max-height: 72px;
+        align-items: center !important;
+    }
+
+    .fixed-menu .main-head_left-column,
+    .fixed-menu .main-head_right-column {
+        align-items: center !important;
+        max-height: 72px;
+    }
+
+    .fixed-menu .main-head_right-column {
+        justify-content: flex-start !important;
+        gap: 10px;
+    }
+
+    .fixed-menu .main-head .head_form-search {
+        flex: 1 1 auto;
+        max-width: none;
+        min-width: 160px;
+        margin-left: 0;
+    }
+
+    .fixed-menu .fixed-menu_catalog {
+        display: block !important;
+        position: relative;
+        z-index: 120;
+        flex: 0 0 auto;
+        align-self: stretch;
+        height: auto;
+        min-height: 64px;
+        max-height: 72px;
+        overflow: visible;
+    }
+
+    .fixed-menu .fixed-panel_catalog-btn {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        min-height: 64px;
+        max-height: 72px;
+        padding: 0 2.5em;
+        box-sizing: border-box;
+    }
+
+    /* На десктопе head-nav скрыт — гамбургер не открывает меню, только путает */
+    .fixed-menu .fixed-menu_hamburger {
+        display: none !important;
+    }
+
+    .fixed-menu .head-logo {
+        max-width: 220px;
+    }
+
+    .fixed-menu .head-logo img {
+        max-height: 40px;
+    }
+
+    .fixed-menu .head_select-city {
+        margin-top: 0;
+    }
 }
 
 @media (max-width: 1199px) {
