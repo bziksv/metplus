@@ -2,7 +2,7 @@
 define("HIDE_SIDEBAR", true);
 require($_SERVER["DOCUMENT_ROOT"]."/bitrix/header.php");
 $APPLICATION->SetTitle("Каталог продукции Металлинвест Плюс");
-$IBLOCK_ID = 13;
+$IBLOCK_ID = 36;
 
 $link = explode('/', $APPLICATION->GetCurPage(false));
 TrimArr($link);
@@ -32,7 +32,7 @@ if($code &&  $cat == "catalog"){
 	"bitrix:catalog", 
 	"catalog", 
 	array(
-		"IBLOCK_TYPE" => "catalog",
+		"IBLOCK_TYPE" => "1c_catalog",
 		"IBLOCK_ID" => $IBLOCK_ID,
 		"TEMPLATE_THEME" => "site",
 		"HIDE_NOT_AVAILABLE" => "N",

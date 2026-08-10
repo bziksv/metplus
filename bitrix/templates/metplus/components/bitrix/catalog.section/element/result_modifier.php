@@ -19,7 +19,7 @@ $arResult['SHOW_WIDTH_COLUMN'] = $isSquareMeter;
 $arResult['SHOW_WEIGHT_COLUMN'] = true;
 $arResult['SHOW_LENGTH_COLUMN'] = !isPricePerPieceSection($arParams['SECTION_CODE'] ?? '');
 $arResult['EDITABLE_WEIGHT_COLUMN'] = false; // ввод веса — только у товаров с от 500/1000 кг
-$iblockId = (int)($arParams['IBLOCK_ID'] ?? 13);
+$iblockId = (int)($arParams['IBLOCK_ID'] ?? 36);
 
 foreach ($arResult['ITEMS'] as &$arItem) {
     if (empty($arItem['PROPERTIES']['TOLKO_SHT']['VALUE'])) {

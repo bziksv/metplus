@@ -152,14 +152,14 @@
 
                         <?$APPLICATION->IncludeComponent("bitrix:search.title", "search.title", Array(
                             "CATEGORY_0" => array(	// Ограничение области поиска
-                                0 => "iblock_catalog",
+                                0 => "iblock_1c_catalog",
                             ),
                             "CATEGORY_0_TITLE" => "",	// Название категории
-                            "CATEGORY_0_iblock_catalog" => array(	// Искать в информационных блоках типа "iblock_catalog"
-                                0 => "13",
+                            "CATEGORY_0_iblock_1c_catalog" => array(	// Искать в информационных блоках типа "iblock_1c_catalog"
+                                0 => "36",
                             ),
-                            "IBLOCK_ID" => "13",
-                            "IBLOCK_TYPE" => "catalog",
+                            "IBLOCK_ID" => "36",
+                            "IBLOCK_TYPE" => "1c_catalog",
                             "CHECK_DATES" => "N",	// Искать только в активных по дате документах
                             "CONTAINER_ID" => "title-search",	// ID контейнера, по ширине которого будут выводиться результаты
                             "INPUT_ID" => "title-search-input",	// ID строки ввода поискового запроса
