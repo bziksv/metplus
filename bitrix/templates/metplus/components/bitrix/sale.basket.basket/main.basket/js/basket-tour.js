@@ -2,8 +2,11 @@
 	'use strict';
 
 	var PAD = 8;
+	var AUTO_KEY = 'metplus_basket_tour_auto_v1';
 	var booted = false;
 	var active = false;
+	var closing = false;
+	var autoScheduled = false;
 	var stepIndex = 0;
 	var openedForTour = false;
 	var tourCuttingId = null;
@@ -115,8 +118,8 @@
 	var STEPS = [
 		{
 			id: 'welcome',
-			title: 'Как пользоваться корзиной',
-			text: 'Короткий интерактивный тур: количество, сумма, резка и итог. Можно выйти в любой момент — крестик, «Выйти» или клавиша Esc.',
+			title: 'Как пользоваться корзиной и сделать резку товаров?',
+			text: 'Короткий интерактивный тур по корзине: количество, сумма, резка и итог. Нажмите «Начать тур», чтобы пройти путь визуально. Закрыть можно в любой момент — попап свернётся в кнопку «?» над таблицей.',
 			center: true
 		},
 		{
@@ -367,7 +370,13 @@
 		var prevBtn = card.querySelector('[data-tour-prev]');
 		var nextBtn = card.querySelector('[data-tour-next]');
 		prevBtn.style.display = stepIndex > 0 ? '' : 'none';
-		nextBtn.textContent = stepIndex >= STEPS.length - 1 ? 'Готово' : 'Далее';
+		if (stepIndex >= STEPS.length - 1) {
+			nextBtn.textContent = 'Готово';
+		} else if (stepIndex === 0) {
+			nextBtn.textContent = 'Начать тур';
+		} else {
+			nextBtn.textContent = 'Далее';
+		}
 
 		if (el && !step.center) {
 			try {
@@ -407,8 +416,11 @@
 
 	function go(delta) {
 		if (delta > 0 && stepIndex >= STEPS.length - 1) {
-			stopTour();
+			stopTour({ animateToButton: true });
 			return;
+		}
+		if (delta > 0 && stepIndex === 0) {
+			markAutoSeen();
 		}
 		stepIndex = Math.max(0, Math.min(STEPS.length - 1, stepIndex + delta));
 		prepareAndShow();
@@ -436,30 +448,203 @@
 		}
 	}
 
-	function startTour() {
-		buildOverlay();
-		active = true;
-		stepIndex = 0;
-		document.documentElement.classList.add('basket-tour-active');
-		overlay.style.display = '';
-		document.addEventListener('keydown', onKey);
-		window.addEventListener('resize', onResize);
-		window.addEventListener('scroll', onResize, true);
-		prepareAndShow();
+	function markAutoSeen() {
+		try {
+			window.sessionStorage.setItem(AUTO_KEY, '1');
+		} catch (e) {}
 	}
 
-	function stopTour() {
+	function wasAutoSeen() {
+		try {
+			return window.sessionStorage.getItem(AUTO_KEY) === '1';
+		} catch (e) {
+			return false;
+		}
+	}
+
+	function getTourStartButton() {
+		return document.querySelector('#basket-root [data-entity="basket-tour-start"]');
+	}
+
+	function pulseTourButton() {
+		var btn = getTourStartButton();
+		if (!btn) {
+			return;
+		}
+		btn.classList.remove('is-tour-pulse');
+		void btn.offsetWidth;
+		btn.classList.add('is-tour-pulse');
+		window.setTimeout(function () {
+			btn.classList.remove('is-tour-pulse');
+		}, 1600);
+	}
+
+	function resetCardMotion() {
+		if (!card) {
+			return;
+		}
+		card.classList.remove('basket-tour-card--shrinking');
+		card.style.transition = '';
+		card.style.transform = '';
+		card.style.opacity = '';
+		card.style.transformOrigin = '';
+		if (dim) {
+			dim.classList.remove('basket-tour-dim--fade');
+			dim.style.opacity = '';
+			dim.style.transition = '';
+		}
+		if (spot) {
+			spot.style.opacity = '';
+			spot.style.transition = '';
+		}
+	}
+
+	function animateCloseToButton(done) {
+		var btn = getTourStartButton();
+		if (!card || !btn) {
+			done();
+			return;
+		}
+
+		var from = card.getBoundingClientRect();
+		var to = btn.getBoundingClientRect();
+		if (from.width < 8 || to.width < 8) {
+			done();
+			return;
+		}
+
+		if (spot) {
+			spot.style.transition = 'opacity .25s ease';
+			spot.style.opacity = '0';
+		}
+		if (dim) {
+			dim.classList.add('basket-tour-dim--fade');
+			dim.style.transition = 'opacity .35s ease';
+			dim.style.opacity = '0';
+		}
+
+		card.classList.remove('basket-tour-card--center');
+		card.classList.add('basket-tour-card--shrinking');
+		card.style.left = from.left + 'px';
+		card.style.top = from.top + 'px';
+		card.style.right = 'auto';
+		card.style.bottom = 'auto';
+		card.style.width = from.width + 'px';
+		card.style.transformOrigin = 'top left';
+		card.style.transition = 'transform .45s cubic-bezier(.4,0,.2,1), opacity .45s ease';
+
+		var sx = Math.max(0.08, to.width / from.width);
+		var sy = Math.max(0.08, to.height / from.height);
+		var tx = to.left - from.left;
+		var ty = to.top - from.top;
+
+		window.requestAnimationFrame(function () {
+			card.style.transform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + sx + ', ' + sy + ')';
+			card.style.opacity = '0';
+		});
+
+		window.setTimeout(function () {
+			done();
+		}, 460);
+	}
+
+	function finishStopTour() {
 		active = false;
+		closing = false;
 		document.documentElement.classList.remove('basket-tour-active');
 		document.removeEventListener('keydown', onKey);
 		window.removeEventListener('resize', onResize);
 		window.removeEventListener('scroll', onResize, true);
 		if (overlay) {
 			overlay.style.display = 'none';
-			spot.hidden = true;
-			dim.style.clipPath = 'none';
+			if (spot) {
+				spot.hidden = true;
+			}
+			if (dim) {
+				dim.style.clipPath = 'none';
+			}
+		}
+		resetCardMotion();
+		if (card) {
+			card.style.width = '';
+			card.style.left = '';
+			card.style.top = '';
 		}
 		closeTourCutting();
+		pulseTourButton();
+	}
+
+	function startTour() {
+		if (active || closing) {
+			return;
+		}
+		buildOverlay();
+		resetCardMotion();
+		active = true;
+		stepIndex = 0;
+		document.documentElement.classList.add('basket-tour-active');
+		overlay.style.display = '';
+		if (dim) {
+			dim.style.opacity = '';
+		}
+		if (spot) {
+			spot.style.opacity = '';
+		}
+		document.addEventListener('keydown', onKey);
+		window.addEventListener('resize', onResize);
+		window.addEventListener('scroll', onResize, true);
+		prepareAndShow();
+	}
+
+	function stopTour(opts) {
+		opts = opts || {};
+		if (!active || closing) {
+			return;
+		}
+		markAutoSeen();
+		closing = true;
+		active = false;
+		document.removeEventListener('keydown', onKey);
+		window.removeEventListener('resize', onResize);
+		window.removeEventListener('scroll', onResize, true);
+
+		var finish = function () {
+			finishStopTour();
+		};
+
+		if (opts.animateToButton !== false) {
+			animateCloseToButton(finish);
+			return;
+		}
+
+		finish();
+	}
+
+	function maybeAutoStartTour() {
+		if (wasAutoSeen() || active || closing || autoScheduled) {
+			return;
+		}
+		var root = document.getElementById('basket-root');
+		if (!root) {
+			return;
+		}
+		// Только страница /cart или полноценный корень корзины
+		var onCartPage = root.classList.contains('basket-root--page')
+			|| root.getAttribute('data-cart-mode') === 'page'
+			|| (window.location.pathname || '').indexOf('/cart') === 0;
+		if (!onCartPage) {
+			return;
+		}
+		if (!getTourStartButton()) {
+			injectButton();
+		}
+		autoScheduled = true;
+		window.setTimeout(function () {
+			if (wasAutoSeen() || active || closing || !document.getElementById('basket-root')) {
+				return;
+			}
+			startTour();
+		}, 450);
 	}
 
 	function injectButton() {
@@ -624,13 +809,17 @@
 		booted = true;
 		document.addEventListener('click', onDocClick);
 		injectButton();
+		maybeAutoStartTour();
 
 		var root = document.getElementById('basket-root');
 		if (root && window.MutationObserver) {
 			var t = null;
 			new MutationObserver(function () {
 				window.clearTimeout(t);
-				t = window.setTimeout(injectButton, 200);
+				t = window.setTimeout(function () {
+					injectButton();
+					maybeAutoStartTour();
+				}, 200);
 			}).observe(root, { childList: true, subtree: true });
 		}
 	}
@@ -643,6 +832,9 @@
 
 	window.MetplusBasketTour = {
 		start: startTour,
-		stop: stopTour
+		stop: function () {
+			stopTour({ animateToButton: true });
+		},
+		autoStart: maybeAutoStartTour
 	};
 })(window, document);

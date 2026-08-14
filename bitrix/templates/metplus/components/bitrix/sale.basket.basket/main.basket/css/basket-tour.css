@@ -67,6 +67,25 @@
 	color: #fff;
 }
 
+.basket-tour-start.is-tour-pulse {
+	animation: basket-tour-btn-pulse 1.5s ease 1;
+}
+
+@keyframes basket-tour-btn-pulse {
+	0% {
+		box-shadow: 0 0 0 0 rgba(7, 62, 113, 0.45);
+		transform: scale(1);
+	}
+	40% {
+		box-shadow: 0 0 0 10px rgba(7, 62, 113, 0);
+		transform: scale(1.03);
+	}
+	100% {
+		box-shadow: 0 0 0 0 rgba(7, 62, 113, 0);
+		transform: scale(1);
+	}
+}
+
 .basket-tour-start__icon {
 	display: inline-flex;
 	width: 18px;
@@ -198,6 +217,16 @@ html.basket-tour-active body {
 	padding: 16px 16px 14px;
 	pointer-events: auto;
 	color: #1e293b;
+}
+
+.basket-tour-card--shrinking {
+	pointer-events: none;
+	overflow: hidden;
+	will-change: transform, opacity;
+}
+
+.basket-tour-dim--fade {
+	pointer-events: none;
 }
 
 .basket-tour-card__top {
