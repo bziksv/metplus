@@ -371,10 +371,33 @@ function isWeightSection($sectionCode)
     return true;
 }
 
-/** Разделы, где колонку «₽ / кг» показываем как «₽ / тонна» (×1000). */
+/** Разделы, где колонку «₽ / кг» показываем как «₽ / тонна» = цена «1-1000» × 1000. */
 function isPricePerTonSection($sectionCode)
 {
     return in_array((string)$sectionCode, ['stal_armaturnaya_a3', 'stal_kruglaya'], true);
+}
+
+/**
+ * Цена за тонну для отображения = цена типа «1-1000» × 1000 (без KOEFF).
+ */
+function getProductPricePerTonDisplay($productId)
+{
+    $productId = (int)$productId;
+    if ($productId <= 0 || !function_exists('fetchCatalogPriceRow')) {
+        return null;
+    }
+
+    $baseRow = fetchCatalogPriceRow($productId, getBaseCatalogPriceTypeId());
+    if (!$baseRow) {
+        return null;
+    }
+
+    $basePrice = (float)($baseRow['PRICE'] ?? 0);
+    if ($basePrice <= 0) {
+        return null;
+    }
+
+    return round($basePrice * 1000, 2);
 }
 
 /** Разделы без Длина_Расчет (мотки, электроды) — «₽ / шт» вместо «₽ / м». */

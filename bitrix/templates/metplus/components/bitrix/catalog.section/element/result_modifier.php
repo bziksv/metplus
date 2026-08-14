@@ -124,10 +124,10 @@ foreach ($arResult['ITEMS'] as &$arItem) {
 
     $pricePerKg = getProductPricePerKg((int)$arItem['ID'], $iblockId);
     $arItem['PRICE_PER_KG'] = $pricePerKg;
-    $priceForDisplay = $pricePerKg;
-    if ($priceForDisplay !== null && isPricePerTonSection($arParams['SECTION_CODE'] ?? '')) {
-        $priceForDisplay = round($priceForDisplay * 1000, 2);
-    }
+    // «₽ / тонна»: только 1-1000 × 1000; «₽ / кг»: 1-1000 × KOEFF
+    $priceForDisplay = isPricePerTonSection($arParams['SECTION_CODE'] ?? '')
+        ? getProductPricePerTonDisplay((int)$arItem['ID'])
+        : $pricePerKg;
     if ($priceForDisplay !== null && class_exists('CCurrencyLang')) {
         $arItem['PRINT_PRICE_PER_KG'] = CCurrencyLang::CurrencyFormat($priceForDisplay, 'RUB', true);
     } elseif ($priceForDisplay !== null) {
