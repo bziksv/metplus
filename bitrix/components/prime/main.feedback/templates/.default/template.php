@@ -1,13 +1,8 @@
-<?
+<?php
 if(!defined("B_PROLOG_INCLUDED")||B_PROLOG_INCLUDED!==true)die();
 /**
- * Bitrix vars
- *
  * @var array $arParams
  * @var array $arResult
- * @var CBitrixComponentTemplate $this
- * @global CMain $APPLICATION
- * @global CUser $USER
  */
 ?>
 
@@ -45,20 +40,7 @@ if(!defined("B_PROLOG_INCLUDED")||B_PROLOG_INCLUDED!==true)die();
         </div>
 
         <div class="col-md-4">
-            <?if($arParams["USE_CAPTCHA"] == "Y"):?>
-                <div class="g-recaptcha" data-sitekey="<?=$arParams["CAPTCHA_SITE_KEY"]?>"></div>
-            <?endif;?>
-
-            <input type="hidden" name="PARAMS_HASH" value="<?=$arResult["PARAMS_HASH"]?>">
-            <input type="submit" name="submit" value="Отправить" class="form-static_submit-btn main-btn">
-
-            <span class="form-static_policy-text">
-Нажимая кнопку вы соглашаетес с 
-<a href="/upload/politics.pdf" target="_blank">политикой конфилициальности </a>
-и 
-<a href="/upload/compliance.pdf" target="_blank">правилами обработки персональных данных</a>
-
-</span>
+            <?php require $_SERVER['DOCUMENT_ROOT'] . '/include/legal/form-submit-block.php'; ?>
         </div>
     </div>
 </form>

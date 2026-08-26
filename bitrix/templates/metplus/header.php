@@ -10,7 +10,6 @@
     <link href="<?=SITE_DIR?>apple-touch-icon.png" rel="apple-touch-icon" />
     <? $APPLICATION->ShowHead(); ?>
     <style>body{opacity: 0;}</style>
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 
 
    
@@ -160,6 +159,8 @@
                         ),
                             false
                         );?>
+
+                        <?php require $_SERVER['DOCUMENT_ROOT'] . '/include/head-auth.php'; ?>
 
                         <div class="head-cart">
                             <?$APPLICATION->IncludeComponent("bitrix:sale.basket.basket.line", "basket.small", Array(

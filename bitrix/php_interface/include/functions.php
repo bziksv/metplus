@@ -1873,3 +1873,44 @@ function formatCatalogPriceHeaderHtml($priceName, $xmlId, $isSquareMeter, $secti
 
     return formatCatalogColumnHeaderHtml(htmlspecialcharsbx($priceName));
 }
+
+/**
+ * Нормализация российского номера: только цифры, 11 символов, начинается с 7.
+ */
+function normalizeRuPhoneDigits($phone)
+{
+    $digits = preg_replace('/\D+/', '', (string)$phone);
+    if ($digits === '') {
+        return '';
+    }
+
+    if (strlen($digits) === 11 && $digits[0] === '8') {
+        $digits = '7' . substr($digits, 1);
+    }
+
+    if (strlen($digits) === 10) {
+        $digits = '7' . $digits;
+    }
+
+    return $digits;
+}
+
+function isValidRuPhone($phone)
+{
+    $digits = normalizeRuPhoneDigits($phone);
+
+    return (bool)preg_match('/^7\d{10}$/', $digits);
+}
+
+function isOrderPhoneField(array $field)
+{
+    if (!empty($field['IS_PHONE']) && $field['IS_PHONE'] === 'Y') {
+        return true;
+    }
+
+    if (!empty($field['CODE']) && $field['CODE'] === 'PHONE') {
+        return true;
+    }
+
+    return false;
+}

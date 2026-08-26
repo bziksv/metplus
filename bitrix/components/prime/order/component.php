@@ -45,13 +45,36 @@ if($arParams['PERSON_TYPE']){
 
 if(check_bitrix_sessid() && $_SERVER["REQUEST_METHOD"] == "POST")
 {
+    global $USER;
+    if (!is_object($USER) || !$USER->IsAuthorized()) {
+        $arResult["ERROR_MESSAGE"][] = "Для оформления заказа необходимо авторизоваться";
+    }
+
     $request = Context::getCurrent()->getRequest();
 
     foreach ($arResult['FIELD'] as $field){
+        $value = trim((string)$request->get($field['CODE']));
         if($field['REQUIED'] == 'Y'){
-            if(empty($request[$field['CODE']]))
+            if($value === '')
                 $arResult["ERROR_MESSAGE"][] = "Пустое поле: $field[NAME]";
         }
+
+        if($value !== '' && isOrderPhoneField($field) && !isValidRuPhone($value))
+            $arResult["ERROR_MESSAGE"][] = "Укажите корректный номер телефона";
+    }
+
+    if(empty($request['PERSONAL_DATA_CONSENT']))
+        $arResult["ERROR_MESSAGE"][] = "Необходимо дать согласие на обработку персональных данных";
+
+    $arResult['PERSONAL_DATA_CONSENT'] = !empty($request['PERSONAL_DATA_CONSENT']);
+    $arResult['VALUES'] = [];
+    foreach ($arResult['FIELD'] as $field) {
+        if ($request->offsetExists($field['CODE'])) {
+            $arResult['VALUES'][$field['CODE']] = htmlspecialcharsbx($request->get($field['CODE']));
+        }
+    }
+    if ($request->offsetExists('COMMENT')) {
+        $arResult['VALUES']['COMMENT'] = htmlspecialcharsbx($request->get('COMMENT'));
     }
 
     if(empty($arResult["ERROR_MESSAGE"]))

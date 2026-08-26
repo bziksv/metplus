@@ -33,22 +33,33 @@ $this->setFrameMode(true);
             }
             ?>
             <div class="row">
-                <? foreach ($arResult['FIELD'] as $field):?>
+                <? foreach ($arResult['FIELD'] as $field):
+                    $isPhone = isOrderPhoneField($field);
+                    $inputType = $isPhone ? 'tel' : (($field['DESCRIPTION']) ?: 'text');
+                    $fieldValue = $arResult['VALUES'][$field['CODE']] ?? '';
+                ?>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <input type="<?=($field['DESCRIPTION']) ?: 'text'?>" class="form-input" name="<?=$field['CODE']?>" placeholder="<?=$field['NAME']?><?if($field['REQUIED'] == 'Y'):?>*<?endif;?>" <?if($field['REQUIED'] == 'Y'):?>required<?endif;?>>
+                        <input type="<?=htmlspecialcharsbx($inputType)?>"
+                               class="form-input"
+                               name="<?=$field['CODE']?>"
+                               value="<?=$fieldValue?>"
+                               placeholder="<?=$field['NAME']?><?if($field['REQUIED'] == 'Y'):?>*<?endif;?>"
+                               <?if($field['REQUIED'] == 'Y'):?>required<?endif;?>
+                               <?if($isPhone):?>inputmode="tel" autocomplete="tel"<?endif?>>
                     </div>
                 </div>
                 <? endforeach; ?>
                 <div class="col-md-12">
                     <div class="form-group form-group_last">
-                        <textarea class="form-textarea" name="COMMENT" placeholder="Ваш комментарий"></textarea>
+                        <textarea class="form-textarea" name="COMMENT" placeholder="Ваш комментарий"><?=$arResult['VALUES']['COMMENT'] ?? ''?></textarea>
                     </div>
                 </div>
             </div>
 
-			<noindex><p style="margin-top: 15px;">На нашем сайте осуществляется сбор персональных данных и <span style="color: #073e71;"><a target="_blank" href="/upload/https://metplus-vrn.ru/upload/politika-ispolzovanija-cookies-metplus-vrn.pdf">cookies</a></span> для улучшения работы сайта, персонализации контента и анализа посещаемости. Продолжая, вы соглашаетесь с использованием cookies и <span style="color: #073e71;"><a target="_blank" href="/upload/compliance.pdf">обработкой ваших данных</a></span> в соответствии с нашей <span style="color: #073e71;"><a target="_blank" href="/upload/politics.pdf">Политикой конфиденциальности</a></span>.</p></noindex>
-
+            <div class="checkout-form__consent">
+                <?php require $_SERVER['DOCUMENT_ROOT'] . '/include/legal/form-consent-notice.php'; ?>
+            </div>
         </div>
         <div class="cart-content_footer cart-content_footer-second align-items-center">
             <div class="left-column">

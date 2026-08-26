@@ -20,6 +20,17 @@ EventManager::getInstance()->addEventHandler(
     'OnSaleBasketBeforeSavedHandler'
 );
 
+$phoneAuthBootstrap = $_SERVER['DOCUMENT_ROOT'] . '/local/modules/prime.phoneauth/include.php';
+if (is_file($phoneAuthBootstrap)) {
+    if (!\Bitrix\Main\ModuleManager::isModuleInstalled('prime.phoneauth')) {
+        include_once $_SERVER['DOCUMENT_ROOT'] . '/local/modules/prime.phoneauth/install/index.php';
+        if (class_exists('prime_phoneauth', false)) {
+            (new prime_phoneauth())->DoInstall();
+        }
+    }
+    require_once $phoneAuthBootstrap;
+}
+
 function priceDiscount($id) {
     global $USER;
     $ar_res_price = CCatalogProduct::GetOptimalPrice($id, 1, $USER->GetUserGroupArray(), 'N');

@@ -676,10 +676,122 @@ jQuery(document).ready(function($) {
     return false;
   });
 
+  function initTelInputMask(context) {
+    var $scope = context ? $(context) : $(document);
+    $scope.find('input[type="tel"]').each(function() {
+      var $input = $(this);
+      if ($input.data('inputmask')) {
+        $input.inputmask('remove');
+      }
+      $input.inputmask('+7 (999) 999 99 99', {
+        clearIncomplete: true,
+        showMaskOnHover: false,
+      });
+    });
+  }
+
+  initTelInputMask();
+
+  function normalizeRuPhoneDigits(value) {
+    var digits = String(value || '').replace(/\D+/g, '');
+    if (digits.length === 11 && digits.charAt(0) === '8') {
+      digits = '7' + digits.slice(1);
+    }
+    if (digits.length === 10) {
+      digits = '7' + digits;
+    }
+    return digits;
+  }
+
+  function isValidRuPhoneDigits(digits) {
+    return /^7\d{10}$/.test(digits);
+  }
+
+  function isRuPhoneComplete(value) {
+    return isValidRuPhoneDigits(normalizeRuPhoneDigits(value));
+  }
+
+  $('.cart-content').on('submit', '.checkout-form', function(e) {
+    var $form = $(this);
+    var hasPhoneError = false;
+
+    $form.find('input[type="tel"]').each(function() {
+      var $input = $(this);
+      var complete = this.inputmask ? this.inputmask.isComplete() : isRuPhoneComplete($input.val());
+      if (!complete) {
+        hasPhoneError = true;
+        $input.addClass('is-invalid');
+      } else {
+        $input.removeClass('is-invalid');
+      }
+    });
+
+    if (hasPhoneError) {
+      e.preventDefault();
+      if (!$form.find('.checkout-form__phone-error').length) {
+        $form.find('.checkout-form__consent').before(
+          '<div class="checkout-form__phone-error">Укажите корректный номер телефона</div>'
+        );
+      }
+      return false;
+    }
+
+    $form.find('.checkout-form__phone-error').remove();
+    return true;
+  });
+
+  $('.cart-content').on('input', '.checkout-form input[type="tel"]', function() {
+    $(this).removeClass('is-invalid');
+    $(this).closest('.checkout-form').find('.checkout-form__phone-error').remove();
+  });
+
+  function openAuthModal(options) {
+    options = options || {};
+    var $modal = $('#authRequired');
+    if (!$modal.length) {
+      window.location.href = '/auth/';
+      return;
+    }
+    var $title = $modal.find('.auth-mode-panel[data-mode-panel="login"] .auth .title');
+    if (!$title.length) {
+      $title = $modal.find('.auth .title').first();
+    }
+    if ($title.length) {
+      $title.text(options.checkout
+        ? 'Для оформления заказа войдите или зарегистрируйтесь'
+        : 'Авторизация');
+    }
+    var $notice = $modal.find('.auth-shell__notice').first();
+    if ($notice.length) {
+      $notice.text('').removeClass('is-visible');
+    }
+    if (options.register && window.primePhoneauthSetMode) {
+      window.primePhoneauthSetMode('register');
+    } else if (window.primePhoneauthSetMode) {
+      window.primePhoneauthSetMode('login');
+    }
+    $modal.modal('show');
+  }
+
+  $(document).on('click', '.js-open-auth', function(e) {
+    e.preventDefault();
+    openAuthModal({ checkout: false });
+  });
+
   function openCheckoutFromComment(comment) {
-    $.get("/ajax/", { component: "order" }).done(function(data) {
+    if (!window.METPLUS_AUTH || !window.METPLUS_AUTH.authorized) {
+      try {
+        sessionStorage.setItem('metplus_checkout_after_auth', '1');
+        sessionStorage.setItem('metplus_checkout_comment', comment || '');
+      } catch (e) {}
+      openAuthModal({ checkout: true });
+      return;
+    }
+
+    $.get('/ajax/', { component: 'order' }).done(function(data) {
       $('.cart-content > .cart-content_second').html(data);
       $('.cart-content > .cart-content_second').find('textarea[name="COMMENT"]').val(comment || '');
+      initTelInputMask($('.cart-content_second'));
       $('.cart-content').addClass('is-open');
       $('.cart-content_second').addClass('is-open');
       if (!is_mobile()) {
@@ -702,10 +814,37 @@ jQuery(document).ready(function($) {
     return false;
   });
 
+  if (window.METPLUS_AUTH && window.METPLUS_AUTH.authorized) {
+    try {
+      if (sessionStorage.getItem('metplus_checkout_after_auth') === '1') {
+        var pendingComment = sessionStorage.getItem('metplus_checkout_comment') || '';
+        sessionStorage.removeItem('metplus_checkout_after_auth');
+        sessionStorage.removeItem('metplus_checkout_comment');
+        openCheckoutFromComment(pendingComment);
+      }
+    } catch (e) {}
+  }
+
+
+  function closeCheckoutStep() {
+    $('.cart-content_second').removeClass('is-open');
+    $('html').removeClass('is-hidden');
+
+    if ($('.basket-root--page').length) {
+      $('.cart-content').removeClass('is-open');
+      return;
+    }
+
+    if ($('.cart-content_first').children().length) {
+      $('.cart-content_first').addClass('is-open');
+      return;
+    }
+
+    $('.cart-content').removeClass('is-open');
+  }
 
   $('.cart-content').on('click', '.cart-content_second .js_back-site', function() {
-    $('.cart-content_second').removeClass('is-open');
-    $('.cart-content_first').addClass('is-open');
+    closeCheckoutStep();
     return false;
   });
 
@@ -824,11 +963,6 @@ jQuery(document).ready(function($) {
       scrollTop: 0
     }, 800);
     return false;
-  });
-
-  $('input[type="tel"]').inputmask("+7 (999) 999 99 99", {
-    "clearIncomplete": true,
-    showMaskOnHover: false,
   });
 
   $("#product-table").fancyTable({

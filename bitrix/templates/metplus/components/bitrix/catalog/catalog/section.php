@@ -187,15 +187,13 @@ if ($isFilter)
 									"prime:main.feedback",
 									"reviews",
 									Array(
-										"CAPTCHA_SERVER_KEY" => "6Ld60c4UAAAAAP7qkcYtAQ_byWeHtD0kgGFiH0Q9",
-										"CAPTCHA_SITE_KEY" => "6Ld60c4UAAAAAGXC83w4_ZPy-Q6OErFzaVYjjNQl",
 										"COMPONENT_TEMPLATE" => "reviews",
 										"EVENT_MESSAGE_ID" => array(0 => "89"),
 										"IBLOCK_ID" => "30",
 										"IBLOCK_TYPE" => "feedback",
 										"OK_TEXT" => "Спасибо, ваше сообщение принято.",
 										"PROPERTY_CODE" => array(0=>"NAME",1=>"PHONE",2=>"EMAIL",),
-										"USE_CAPTCHA" => "Y"
+										"USE_CAPTCHA" => "N"
 									)
 								);?>
 							</div>
@@ -367,9 +365,7 @@ if ($isFilter)
                 2 => "EMAIL",
                 3 => "THEME",
             ),
-            "USE_CAPTCHA" => "Y",
-            "CAPTCHA_SITE_KEY" => "6Ld60c4UAAAAAGXC83w4_ZPy-Q6OErFzaVYjjNQl",
-            "CAPTCHA_SERVER_KEY" => "6Ld60c4UAAAAAP7qkcYtAQ_byWeHtD0kgGFiH0Q9",
+            "USE_CAPTCHA" => "N",
         ),
             false
         );?>

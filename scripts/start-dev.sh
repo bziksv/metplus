@@ -5,6 +5,13 @@ PROJECT="$(pwd)"
 PHP83=/opt/homebrew/opt/php@8.3
 NGINX=/opt/homebrew/bin/nginx
 RUN_DIR="$PROJECT/.local/run"
+LIGHT=false
+
+for arg in "$@"; do
+  case "$arg" in
+    --light|-l) LIGHT=true ;;
+  esac
+done
 
 mkdir -p "$RUN_DIR"
 
@@ -33,13 +40,25 @@ sleep 1
 USER_NAME="$(whoami)"
 USER_GROUP="$(id -gn)"
 
+if [ "$LIGHT" = true ]; then
+  NGINX_SRC="$PROJECT/.local/nginx/nginx-light.conf"
+  POOLS_SRC="$PROJECT/.local/php/pools-light.conf"
+  PHP_INI_SRC="$PROJECT/.local/php/php-light.ini"
+  echo "Mode: light (1 nginx worker, php-fpm max 2, memory 256M)"
+else
+  NGINX_SRC="$PROJECT/.local/nginx/nginx.conf"
+  POOLS_SRC="$PROJECT/.local/php/pools.conf"
+  PHP_INI_SRC="$PROJECT/.local/php/php.ini"
+fi
+
 sed "s|PROJECT_ROOT|$PROJECT|g; s|RUN_DIR|$RUN_DIR|g" \
-  "$PROJECT/.local/nginx/nginx.conf" > "$RUN_DIR/nginx.conf"
+  "$NGINX_SRC" > "$RUN_DIR/nginx.conf"
 sed "s|RUN_DIR|$RUN_DIR|g" \
   "$PROJECT/.local/php/fpm.conf" > "$RUN_DIR/fpm.conf"
 sed "s|USER_NAME|$USER_NAME|g; s|USER_GROUP|$USER_GROUP|g" \
-  "$PROJECT/.local/php/pools.conf" > "$RUN_DIR/pools.conf"
-cp "$PROJECT/.local/php/php.ini" "$RUN_DIR/php.ini"
+  "$POOLS_SRC" > "$RUN_DIR/pools.conf"
+cp "$PHP_INI_SRC" "$RUN_DIR/php.ini"
+echo "$LIGHT" > "$RUN_DIR/light.mode"
 
 export PHPRC="$RUN_DIR/php.ini"
 
@@ -58,6 +77,11 @@ sleep 1
 HTTP=$(curl -sS -o /tmp/metplus-check.html -w '%{http_code}' --max-time 60 http://localhost:8086/ || echo 000)
 
 echo "http://localhost:8086/ → HTTP $HTTP"
+if [ "$LIGHT" = true ]; then
+  echo "light mode: ./scripts/start-dev.sh --light"
+else
+  echo "full mode:  ./scripts/start-dev.sh"
+fi
 echo "stop: ./scripts/stop-dev.sh"
 
 if [ "$HTTP" = "000" ]; then

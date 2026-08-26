@@ -1,13 +1,8 @@
 <?
 if(!defined("B_PROLOG_INCLUDED")||B_PROLOG_INCLUDED!==true)die();
 /**
- * Bitrix vars
- *
  * @var array $arParams
  * @var array $arResult
- * @var CBitrixComponentTemplate $this
- * @global CMain $APPLICATION
- * @global CUser $USER
  */
 ?>
 
@@ -25,7 +20,7 @@ if(!defined("B_PROLOG_INCLUDED")||B_PROLOG_INCLUDED!==true)die();
             if($field['PROPERTY_TYPE'] == "F")
                 continue;
             ?>
-        <div class="col-sm-6">
+        <div class="col-sm-6 col-md-4">
             <div class="form-group">
                 <input type="<?=($field['CODE'] == 'PHONE') ? 'tel' : 'text'?>"
                        class="form-input"
@@ -38,31 +33,26 @@ if(!defined("B_PROLOG_INCLUDED")||B_PROLOG_INCLUDED!==true)die();
         </div>
         <? endforeach; ?>
     </div>
-    <div class="form-group">
-        <textarea name="PREVIEW_TEXT" class="form-textarea" placeholder="Краткое описание к резюме*" required><?=$arResult['PREVIEW_TEXT']?></textarea>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="form-group">
+                <textarea name="PREVIEW_TEXT" class="form-textarea" placeholder="Краткое описание к резюме*" required><?=$arResult['PREVIEW_TEXT']?></textarea>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <?php
+            $submitLabel = 'Выслать резюме';
+            $submitClass = 'form-static_submit-btn form-static_submit-btn--mod main-btn';
+            require $_SERVER['DOCUMENT_ROOT'] . '/include/legal/form-submit-block.php';
+            ?>
+        </div>
     </div>
-
-    <?if($arParams["USE_CAPTCHA"] == "Y"):?>
-    <div class="form-group">
-        <div class="g-recaptcha" data-sitekey="<?=$arParams["CAPTCHA_SITE_KEY"]?>"></div>
-    </div>
-
-        <script>
-            window.onload = function() {
-                var $recaptcha = document.querySelector('#g-recaptcha-response');
-
-                if($recaptcha) {
-                    $recaptcha.setAttribute("required", "required");
-                }
-            };
-        </script>
-    <?endif;?>
 
     <div class="row form-static_footer">
         <? foreach($arResult['USER_FIELD'] as $field):
         if($field['PROPERTY_TYPE'] == "F"):
         ?>
-        <div class="col-sm-6">
+        <div class="col-sm-6 col-md-4">
             <label class="input-file">
                 <span class="input-file_icon glipf-paper-clip"></span>
                 <span class="button">
@@ -73,9 +63,5 @@ if(!defined("B_PROLOG_INCLUDED")||B_PROLOG_INCLUDED!==true)die();
         <?
         endif;
         endforeach; ?>
-        <div class="col-sm-6 static-form_right-column">
-            <input type="hidden" name="PARAMS_HASH" value="<?=$arResult["PARAMS_HASH"]?>">
-            <input type="submit" name="submit" value="Выслать резюме" class="form-static_submit-btn form-static_submit-btn--mod main-btn">
-        </div>
     </div>
 </form>

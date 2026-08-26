@@ -65,23 +65,24 @@
                 </ul>-->
  </div>
 		</div>
-		<div style= "text-align= center">
-<iframe align="middle" src="https://yandex.ru/sprav/widget/rating-badge/1288614717?type=rating&theme=dark"; width="150" height="50" frameborder="0"></iframe>
-		</div>
-        <div class="row">
-            <div class="col-lg-10">
+        <div class="row footer-bottom-row">
+            <div class="col-lg-6 col-md-12">
                 <div class="rules">
                      @ 2006-2025. ООО «Корпорация Металлинвест»
-                    <a href="/upload/politics.pdf" target="_blank">Политика конфиденциальности</a>
-                    <a href="/upload/compliance.pdf" target="_blank">Согласие на обработку персональных данных</a>
+                    <?php require $_SERVER['DOCUMENT_ROOT'] . '/include/legal/footer-links.php'; ?>
                 </div>
             </div>
-            <div class="col-lg-2">
-                <a class="prime-incut white colour" style="padding: 1.2em 0 0;"></a>
+            <div class="col-lg-4 col-md-12 footer-rating-col">
+                <div class="footer-rating">
+                    <iframe src="https://yandex.ru/sprav/widget/rating-badge/1288614717?type=rating&theme=dark" width="150" height="50" frameborder="0" title="Рейтинг организации в Яндексе"></iframe>
+                </div>
             </div>
-</div>
+            <div class="col-lg-2 col-md-12 footer-partner-col">
+                <a class="prime-incut white colour"></a>
+            </div>
+        </div>
 		<hr style="margin: 25px 0;">
-		<noindex><p style="font-size: 0.8rem;">На нашем сайте осуществляется сбор персональных данных и <a target="_blank" href="/upload/politika-ispolzovanija-cookies-metplus-vrn.pdf">cookies</a> для улучшения работы сайта, персонализации контента и анализа посещаемости. Продолжая пользоваться сайтом, вы соглашаетесь с использованием cookies и <a target="_blank" href="/upload/compliance.pdf">обработкой ваших данных</a> в соответствии с нашей <a target="_blank" href="/upload/politics.pdf">Политикой конфиденциальности</a>. Чтобы отказаться от обработки, отключите сохранение cookies в настройках вашего браузера.</p></noindex>
+		<p class="legal-cookie-notice-wrap"><?php require $_SERVER['DOCUMENT_ROOT'] . '/include/legal/cookie-notice.php'; ?></p>
 
 	</div>
 
@@ -94,6 +95,14 @@
     <div class="cart-content_first"></div>
     <div class="cart-content_second"></div>
 </div>
+
+<?php
+global $USER;
+?>
+<script>window.METPLUS_AUTH=<?=\Bitrix\Main\Web\Json::encode([
+    'authorized' => is_object($USER) && $USER->IsAuthorized(),
+])?>;</script>
+<?php require $_SERVER['DOCUMENT_ROOT'] . '/include/auth-modal.php'; ?>
 
 <div aria-hidden="true" class="modal fade js-modal" id="citySelect" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-dialog-city" role="document">
@@ -140,8 +149,6 @@
                         1 => "PHONE",
                     ),
                     "USE_CAPTCHA" => "N",
-                    "CAPTCHA_SITE_KEY" => "6Ld60c4UAAAAAGXC83w4_ZPy-Q6OErFzaVYjjNQl",
-                    "CAPTCHA_SERVER_KEY" => "6Ld60c4UAAAAAP7qkcYtAQ_byWeHtD0kgGFiH0Q9",
                     "COMPONENT_TEMPLATE" => "call"
                 ),
                 false
