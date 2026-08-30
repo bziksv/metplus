@@ -371,6 +371,13 @@ function isWeightSection($sectionCode)
     return true;
 }
 
+/** Показывать ли колонку «₽ / кг» / «₽ / тонна» в таблице раздела. */
+function shouldShowPricePerKgColumn($sectionCode)
+{
+    // Сетка: цена за кг не нужна (в картах считают по м / шт)
+    return !in_array((string)$sectionCode, ['setka_svarnaya'], true);
+}
+
 /** Разделы, где колонку «₽ / кг» показываем как «₽ / тонна» = цена «1-1000» × 1000. */
 function isPricePerTonSection($sectionCode)
 {

@@ -211,40 +211,47 @@ foreach ($arResult['CATALOG_PRICE'] as $id => &$arPrice) {
 }
 unset($arPrice);
 
-// «Цена за кг» сразу после «Цена за метр»
+// «Цена за кг» сразу после «Цена за метр» (не во всех разделах)
 $sectionCode = $arParams['SECTION_CODE'] ?? '';
-$pricePerKgColumnName = isPricePerTonSection($sectionCode) ? 'Цена за тонну' : 'Цена за кг';
-$pricePerKgColumn = [
-    'CATALOG_GROUP_ID' => 'PRICE_PER_KG',
-    'NAME' => $pricePerKgColumnName,
-    'XML_ID' => 'PRICE_PER_KG',
-    'NAME_HTML' => formatCatalogPriceHeaderHtml($pricePerKgColumnName, 'PRICE_PER_KG', $isSquareMeter, $sectionCode),
-    'IS_PRICE_PER_KG' => true,
-];
 $orderedPrices = [];
-$kgInserted = false;
 foreach ($arResult['CATALOG_PRICE'] as $id => $arPrice) {
     $orderedPrices[$id] = $arPrice;
-    $xmlId = (string)($arPrice['XML_ID'] ?? '');
-    if (!$kgInserted && ($xmlId === 'PER_METER' || (int)$id === 17)) {
-        $orderedPrices['PRICE_PER_KG'] = $pricePerKgColumn;
-        $kgInserted = true;
-    }
 }
-if (!$kgInserted) {
-    if (empty($orderedPrices)) {
-        $orderedPrices['PRICE_PER_KG'] = $pricePerKgColumn;
-    } else {
-        $withKg = [];
-        $index = 0;
-        foreach ($orderedPrices as $id => $arPrice) {
-            $withKg[$id] = $arPrice;
-            if ($index === 0) {
-                $withKg['PRICE_PER_KG'] = $pricePerKgColumn;
-            }
-            $index++;
+if (shouldShowPricePerKgColumn($sectionCode)) {
+    $pricePerKgColumnName = isPricePerTonSection($sectionCode) ? 'Цена за тонну' : 'Цена за кг';
+    $pricePerKgColumn = [
+        'CATALOG_GROUP_ID' => 'PRICE_PER_KG',
+        'NAME' => $pricePerKgColumnName,
+        'XML_ID' => 'PRICE_PER_KG',
+        'NAME_HTML' => formatCatalogPriceHeaderHtml($pricePerKgColumnName, 'PRICE_PER_KG', $isSquareMeter, $sectionCode),
+        'IS_PRICE_PER_KG' => true,
+    ];
+    $withKg = [];
+    $kgInserted = false;
+    foreach ($orderedPrices as $id => $arPrice) {
+        $withKg[$id] = $arPrice;
+        $xmlId = (string)($arPrice['XML_ID'] ?? '');
+        if (!$kgInserted && ($xmlId === 'PER_METER' || (int)$id === 17)) {
+            $withKg['PRICE_PER_KG'] = $pricePerKgColumn;
+            $kgInserted = true;
         }
-        $orderedPrices = $withKg;
     }
+    if (!$kgInserted) {
+        if (empty($withKg)) {
+            $withKg['PRICE_PER_KG'] = $pricePerKgColumn;
+        } else {
+            $fallback = [];
+            $index = 0;
+            foreach ($withKg as $id => $arPrice) {
+                $fallback[$id] = $arPrice;
+                if ($index === 0) {
+                    $fallback['PRICE_PER_KG'] = $pricePerKgColumn;
+                }
+                $index++;
+            }
+            $withKg = $fallback;
+        }
+    }
+    $orderedPrices = $withKg;
 }
 $arResult['CATALOG_PRICE'] = $orderedPrices;
